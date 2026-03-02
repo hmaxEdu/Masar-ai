@@ -1,0 +1,40 @@
+/* Cairo Font - Example Arabic font */
+@font-face {
+  font-family: 'ibm-ar';
+  src: url('./IBMPlexSansArabic-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ibm-ar';
+  src: url('./IBMPlexSansArabic-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ibm-ar';
+  src: url('./IBMPlexSansArabic-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ibm-ar';
+  src: url('./IBMPlexSansArabic-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'readex';
+  src: url('./ReadexPro-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
