@@ -11,6 +11,7 @@ export interface Project {
 export interface Task {
   id?: number;
   projectId: number;
+  parentId?: number; // For infinite sub-tasks
   title: string;
   description: string; // HTML or JSON from TipTap
   startedAt: Date;
@@ -18,13 +19,6 @@ export interface Task {
   priority: number; // 1 (High) to 5 (Low)
   status: TaskStatus;
   previousStatus?: TaskStatus; // To revert when unblocked
-}
-
-export interface Subtask {
-  id?: number;
-  taskId: number;
-  title: string;
-  completed: boolean;
 }
 
 export interface Dependency {
@@ -36,15 +30,13 @@ export interface Dependency {
 export class MasarDatabase extends Dexie {
   projects!: Table<Project>;
   tasks!: Table<Task>;
-  subtasks!: Table<Subtask>;
   dependencies!: Table<Dependency>;
 
   constructor() {
     super('MasarDatabase');
-    this.version(1).stores({
+    this.version(2).stores({
       projects: '++id, name',
-      tasks: '++id, projectId, priority, status',
-      subtasks: '++id, taskId',
+      tasks: '++id, projectId, parentId, priority, status',
       dependencies: '++id, blockingTaskId, blockedTaskId'
     });
   }

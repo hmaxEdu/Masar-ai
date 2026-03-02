@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import { type Task, type TaskStatus } from '@/lib/db';
-import { useTask, useSubtasks, useDependencies, useTasks, masarActions } from '@/hooks/use-masar';
+import { useState } from 'react';
+import { useTask, useChildTasks, useTasks, useDependencies, masarActions } from '@/hooks/use-masar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { format } from 'date-fns';
-import { AlertCircle, X, Plus, Trash2, Link as LinkIcon } from 'lucide-react';
+import { type Task, type TaskStatus } from '@/lib/db';
+import { X, Plus, AlertCircle, Link as LinkIcon, Trash2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface TaskDetailDialogProps {
@@ -21,46 +21,47 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogProps) {
-  const fetchedTask = useTask(taskId || undefined);
-  const [task, setTask] = useState<Task | null>(null);
-  const subtasks = useSubtasks(taskId || 0);
-  const { blockingMe, iAmBlocking } = useDependencies(taskId || 0);
+  const task = useTask(taskId || undefined);
+  const childTasks = useChildTasks(taskId || 0);
   const allTasks = useTasks(task?.projectId);
-  const [newSubtask, setNewSubtask] = useState('');
-
-  useEffect(() => {
-    if (fetchedTask) {
-      setTask(fetchedTask);
-    }
-  }, [fetchedTask]);
+  const { blockingMe, iAmBlocking } = useDependencies(taskId || 0);
+  const [newChildTask, setNewChildTask] = useState('');
+  const [editingChildTaskId, setEditingChildTaskId] = useState<number | null>(null);
 
   if (!task) return null;
 
   const handleUpdate = (changes: Partial<Task>) => {
-    if (!taskId) return;
-    masarActions.updateTask(taskId, changes);
-    setTask(prev => prev ? { ...prev, ...changes } : null);
+    if (taskId) masarActions.updateTask(taskId, changes);
   };
 
-  const handleAddSubtask = async (e: React.FormEvent) => {
+  const handleAddChildTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubtask.trim() || !taskId) return;
-    await masarActions.addSubtask(taskId, newSubtask);
-    setNewSubtask('');
+    if (newChildTask.trim() && taskId) {
+      await masarActions.addTask({
+        projectId: task.projectId,
+        parentId: taskId,
+        title: newChildTask,
+        description: '',
+        startedAt: new Date(),
+        priority: 3,
+        status: 'To Do'
+      });
+      setNewChildTask('');
+    }
   };
 
-  const completedSubtasks = subtasks.filter(s => s.completed).length;
-  const progress = subtasks.length > 0 ? (completedSubtasks / subtasks.length) * 100 : 0;
+  const completedChildren = childTasks.filter(t => t.status === 'Done').length;
+  const progress = childTasks.length > 0 ? (completedChildren / childTasks.length) * 100 : (task.status === 'Done' ? 100 : 0);
 
   const availableTasksToBlock = allTasks.filter(t =>
     t.id !== taskId &&
-    !blockingMe.some(d => d.blockingTaskId === t.id) &&
-    !iAmBlocking.some(d => d.blockedTaskId === t.id)
+    !blockingMe.some(dep => dep.blockingTaskId === t.id) &&
+    t.status !== 'Done'
   );
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto font-['ibm-ar']" dir="rtl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto font-['ibm-ar']" dir="rtl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -93,13 +94,13 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
 
               <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <Label>المهام الفرعية ({completedSubtasks}/{subtasks.length})</Label>
+                  <Label>المهام الفرعية ({completedChildren}/{childTasks.length})</Label>
                   <span className="text-xs font-bold text-primary">{Math.round(progress)}%</span>
                 </div>
                 <Progress value={progress} className="h-2" />
-                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                   <AnimatePresence>
-                    {subtasks.map(s => (
+                    {childTasks.map(s => (
                       <motion.div
                         key={s.id}
                         initial={{ opacity: 0, x: 10 }}
@@ -108,27 +109,42 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                         className="flex items-center gap-2 group bg-card p-2 rounded border"
                       >
                         <Checkbox
-                          checked={s.completed}
-                          onCheckedChange={(checked) => masarActions.toggleSubtask(s.id!, !!checked)}
+                          checked={s.status === 'Done'}
+                          onCheckedChange={(checked) => masarActions.updateTask(s.id!, { status: checked ? 'Done' : 'To Do' })}
                         />
-                        <span className={s.completed ? 'line-through text-muted-foreground' : ''}>{s.title}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 mr-auto opacity-0 group-hover:opacity-100 text-destructive"
-                          onClick={() => masarActions.deleteSubtask(s.id!)}
+                        <span
+                          className={`flex-1 cursor-pointer ${s.status === 'Done' ? 'line-through text-muted-foreground' : ''}`}
+                          onClick={() => setEditingChildTaskId(s.id!)}
                         >
-                          <X className="h-3 w-3" />
-                        </Button>
+                          {s.title}
+                        </span>
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground"
+                            onClick={() => setEditingChildTaskId(s.id!)}
+                          >
+                            <ChevronRight className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive"
+                            onClick={() => masarActions.deleteTask(s.id!)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </div>
-                <form onSubmit={handleAddSubtask} className="flex gap-2 pt-2">
+                <form onSubmit={handleAddChildTask} className="flex gap-2 pt-2">
                   <Input
                     placeholder="أضف مهمة فرعية..."
-                    value={newSubtask}
-                    onChange={(e) => setNewSubtask(e.target.value)}
+                    value={newChildTask}
+                    onChange={(e) => setNewChildTask(e.target.value)}
                     className="h-9 text-right"
                   />
                   <Button type="submit" size="sm" variant="secondary">
@@ -259,6 +275,15 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
             <Button onClick={onClose} variant="secondary">إغلاق</Button>
           </DialogFooter>
         </motion.div>
+
+        {/* Support for infinite nesting by opening another dialog for the child */}
+        {editingChildTaskId !== null && (
+          <TaskDetailDialog
+            taskId={editingChildTaskId}
+            isOpen={editingChildTaskId !== null}
+            onClose={() => setEditingChildTaskId(null)}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

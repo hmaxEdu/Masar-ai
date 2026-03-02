@@ -11,16 +11,19 @@ export function useTasks(projectId?: number) {
   ) || [];
 }
 
+export function useTopLevelTasks(projectId?: number) {
+  return useLiveQuery(() => {
+    if (!projectId) return db.tasks.filter(t => t.parentId === undefined).toArray();
+    return db.tasks.where('projectId').equals(projectId).filter(t => t.parentId === undefined).toArray();
+  }, [projectId]) || [];
+}
+
+export function useChildTasks(parentId: number) {
+  return useLiveQuery(() => db.tasks.where('parentId').equals(parentId).toArray(), [parentId]) || [];
+}
+
 export function useTask(taskId?: number) {
   return useLiveQuery(() => taskId ? db.tasks.get(taskId) : undefined, [taskId]);
-}
-
-export function useSubtasks(taskId: number) {
-  return useLiveQuery(() => db.subtasks.where('taskId').equals(taskId).toArray()) || [];
-}
-
-export function useAllSubtasks() {
-  return useLiveQuery(() => db.subtasks.toArray()) || [];
 }
 
 export function useDependencies(taskId: number) {
@@ -29,26 +32,59 @@ export function useDependencies(taskId: number) {
   return { blockingMe, iAmBlocking };
 }
 
+async function deleteRecursive(taskId: number) {
+  const children = await db.tasks.where('parentId').equals(taskId).toArray();
+  for (const child of children) {
+    await deleteRecursive(child.id!);
+  }
+
+  // Find tasks that were blocked by this task BEFORE deleting dependencies
+  const dependents = await db.dependencies.where('blockingTaskId').equals(taskId).toArray();
+
+  await db.tasks.delete(taskId);
+  await db.dependencies.where('blockingTaskId').equals(taskId).or('blockedTaskId').equals(taskId).delete();
+
+  // Update status of tasks that were blocked by the deleted task
+  for (const dep of dependents) {
+    await updateBlockedStatus(dep.blockedTaskId);
+  }
+}
+
 export const masarActions = {
   async addProject(name: string) {
     return await db.projects.add({ name, createdAt: new Date() });
   },
 
   async deleteProject(id: number) {
-    await db.transaction('rw', [db.projects, db.tasks, db.dependencies, db.subtasks], async () => {
-      const taskIds = (await db.tasks.where('projectId').equals(id).toArray()).map(t => t.id!);
+    await db.transaction('rw', [db.projects, db.tasks, db.dependencies], async () => {
+      const tasks = await db.tasks.where('projectId').equals(id).toArray();
+      const taskIds = tasks.map(t => t.id!);
+
+      // Find all tasks outside this project that might be blocked by tasks in this project
+      const externalDependents = await db.dependencies
+        .where('blockingTaskId')
+        .anyOf(taskIds)
+        .filter(async dep => {
+          const blockedTask = await db.tasks.get(dep.blockedTaskId);
+          return blockedTask?.projectId !== id;
+        })
+        .toArray();
+
       await db.projects.delete(id);
       await db.tasks.where('projectId').equals(id).delete();
-      for (const taskId of taskIds) {
-        await db.dependencies.where('blockingTaskId').equals(taskId).or('blockedTaskId').equals(taskId).delete();
-        await db.subtasks.where('taskId').equals(taskId).delete();
+      await db.dependencies.where('blockingTaskId').anyOf(taskIds).delete();
+      await db.dependencies.where('blockedTaskId').anyOf(taskIds).delete();
+
+      // Update external tasks
+      for (const dep of externalDependents) {
+        await updateBlockedStatus(dep.blockedTaskId);
       }
     });
   },
 
   async addTask(task: Omit<Task, 'id'>) {
     const id = await db.tasks.add(task);
-    await updateBlockedStatus(id);
+    await updateBlockedStatus(id as number);
     return id;
   },
 
@@ -62,29 +98,9 @@ export const masarActions = {
   },
 
   async deleteTask(id: number) {
-    await db.transaction('rw', [db.tasks, db.dependencies, db.subtasks], async () => {
-      await db.tasks.delete(id);
-      await db.dependencies.where('blockingTaskId').equals(id).or('blockedTaskId').equals(id).delete();
-      await db.subtasks.where('taskId').equals(id).delete();
-      // After deleting a task, we should check if tasks it was blocking can now be unblocked
-      // In theory, if a task is deleted, it's as if it was completed for its dependents
-      const dependents = await db.dependencies.where('blockingTaskId').equals(id).toArray();
-      for (const dep of dependents) {
-        await updateBlockedStatus(dep.blockedTaskId);
-      }
+    await db.transaction('rw', [db.tasks, db.dependencies], async () => {
+      await deleteRecursive(id);
     });
-  },
-
-  async addSubtask(taskId: number, title: string) {
-    return await db.subtasks.add({ taskId, title, completed: false });
-  },
-
-  async toggleSubtask(id: number, completed: boolean) {
-    await db.subtasks.update(id, { completed });
-  },
-
-  async deleteSubtask(id: number) {
-    await db.subtasks.delete(id);
   },
 
   async addDependency(blockingTaskId: number, blockedTaskId: number) {
