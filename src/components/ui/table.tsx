@@ -1,5 +1,5 @@
 import * as React from "react"
-
+import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
@@ -68,7 +68,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-foreground h-10 px-2 text-start align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -102,13 +102,19 @@ function TableCaption({
   )
 }
 
+// Motion versions
+const MotionTableBody = motion.tbody;
+const MotionTableRow = motion.tr;
+
 export {
   Table,
   TableHeader,
   TableBody,
   TableFooter,
-  TableHead,
   TableRow,
   TableCell,
+  TableHead,
   TableCaption,
+  MotionTableBody,
+  MotionTableRow
 }

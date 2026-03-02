@@ -19,6 +19,10 @@ export function useSubtasks(taskId: number) {
   return useLiveQuery(() => db.subtasks.where('taskId').equals(taskId).toArray()) || [];
 }
 
+export function useAllSubtasks() {
+  return useLiveQuery(() => db.subtasks.toArray()) || [];
+}
+
 export function useDependencies(taskId: number) {
   const blockingMe = useLiveQuery(() => db.dependencies.where('blockedTaskId').equals(taskId).toArray()) || [];
   const iAmBlocking = useLiveQuery(() => db.dependencies.where('blockingTaskId').equals(taskId).toArray()) || [];
@@ -28,6 +32,18 @@ export function useDependencies(taskId: number) {
 export const masarActions = {
   async addProject(name: string) {
     return await db.projects.add({ name, createdAt: new Date() });
+  },
+
+  async deleteProject(id: number) {
+    await db.transaction('rw', [db.projects, db.tasks, db.dependencies, db.subtasks], async () => {
+      const taskIds = (await db.tasks.where('projectId').equals(id).toArray()).map(t => t.id!);
+      await db.projects.delete(id);
+      await db.tasks.where('projectId').equals(id).delete();
+      for (const taskId of taskIds) {
+        await db.dependencies.where('blockingTaskId').equals(taskId).or('blockedTaskId').equals(taskId).delete();
+        await db.subtasks.where('taskId').equals(taskId).delete();
+      }
+    });
   },
 
   async addTask(task: Omit<Task, 'id'>) {
@@ -46,10 +62,16 @@ export const masarActions = {
   },
 
   async deleteTask(id: number) {
-    await db.transaction('rw', db.tasks, db.dependencies, db.subtasks, async () => {
+    await db.transaction('rw', [db.tasks, db.dependencies, db.subtasks], async () => {
       await db.tasks.delete(id);
       await db.dependencies.where('blockingTaskId').equals(id).or('blockedTaskId').equals(id).delete();
       await db.subtasks.where('taskId').equals(id).delete();
+      // After deleting a task, we should check if tasks it was blocking can now be unblocked
+      // In theory, if a task is deleted, it's as if it was completed for its dependents
+      const dependents = await db.dependencies.where('blockingTaskId').equals(id).toArray();
+      for (const dep of dependents) {
+        await updateBlockedStatus(dep.blockedTaskId);
+      }
     });
   },
 

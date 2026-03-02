@@ -7,7 +7,8 @@ import { TaskDetailDialog } from '@/components/TaskDetailDialog';
 import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, LayoutList, Calendar, Settings } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Plus, LayoutList, Calendar, Settings, Trash2, MoreVertical, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -17,12 +18,21 @@ export default function App() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     if (projects.length > 0 && activeProjectId === null) {
       setActiveProjectId(projects[0].id!);
     }
   }, [projects, activeProjectId]);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   const handleCreateProject = async () => {
     const name = prompt('اسم المشروع:');
@@ -32,13 +42,23 @@ export default function App() {
     }
   };
 
+  const handleDeleteProject = async (id: number) => {
+    if (confirm('هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المهام والتبعيات المرتبطة به.')) {
+      await masarActions.deleteProject(id);
+      if (activeProjectId === id) {
+        const remaining = projects.filter(p => p.id !== id);
+        setActiveProjectId(remaining.length > 0 ? remaining[0].id! : null);
+      }
+    }
+  };
+
   const handleTaskClick = (id: number) => {
     setSelectedTaskId(id);
     setIsTaskDetailOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-['ibm-ar']" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col font-['ibm-ar'] transition-colors duration-300" dir="rtl">
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -70,9 +90,29 @@ export default function App() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="ghost" size="icon" onClick={handleCreateProject}>
-              <Plus className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={handleCreateProject} className="flex gap-2">
+                  <Plus className="h-4 w-4" /> مشروع جديد
+                </DropdownMenuItem>
+                {activeProjectId && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteProject(activeProjectId)}
+                      className="flex gap-2 text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" /> حذف المشروع الحالي
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -87,6 +127,9 @@ export default function App() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
+            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           <Button variant="outline" size="icon">
             <Settings className="h-4 w-4" />
           </Button>
