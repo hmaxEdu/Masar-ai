@@ -8,6 +8,7 @@ import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, LayoutList, Calendar, Settings } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const projects = useProjects();
@@ -24,7 +25,7 @@ export default function App() {
   }, [projects, activeProjectId]);
 
   const handleCreateProject = async () => {
-    const name = prompt('Project Name:');
+    const name = prompt('اسم المشروع:');
     if (name) {
       const id = await masarActions.addProject(name);
       setActiveProjectId(id as number);
@@ -37,21 +38,31 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b px-6 py-3 flex items-center justify-between bg-card">
+    <div className="min-h-screen bg-background flex flex-col font-['ibm-ar']" dir="rtl">
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="border-b px-6 py-3 flex items-center justify-between bg-card"
+      >
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground">M</div>
-            Masar <span className="text-muted-foreground font-normal">مسار</span>
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground"
+            >
+              م
+            </motion.div>
+            مسار <span className="text-muted-foreground font-normal text-sm">Masar</span>
           </h1>
 
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-2 mr-4">
             <Select
               value={activeProjectId?.toString() || ''}
               onValueChange={(v) => setActiveProjectId(parseInt(v))}
             >
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select Project" />
+                <SelectValue placeholder="اختر المشروع" />
               </SelectTrigger>
               <SelectContent>
                 {projects.map(p => (
@@ -69,10 +80,10 @@ export default function App() {
           <Tabs value={view} onValueChange={(v) => setView(v as 'list' | 'timeline')}>
             <TabsList>
               <TabsTrigger value="list" className="flex gap-2">
-                <LayoutList className="h-4 w-4" /> List
+                <LayoutList className="h-4 w-4" /> القائمة
               </TabsTrigger>
               <TabsTrigger value="timeline" className="flex gap-2">
-                <Calendar className="h-4 w-4" /> Timeline
+                <Calendar className="h-4 w-4" /> الجدول الزمني
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -80,39 +91,62 @@ export default function App() {
             <Settings className="h-4 w-4" />
           </Button>
         </div>
-      </header>
+      </motion.header>
 
-      <main className="flex-1 p-6 overflow-hidden flex flex-col gap-4">
+      <motion.main
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="flex-1 p-6 overflow-hidden flex flex-col gap-4"
+      >
         {activeProjectId ? (
           <>
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">
-                {projects.find(p => p.id === activeProjectId)?.name} Tasks
+                مهام {projects.find(p => p.id === activeProjectId)?.name}
               </h2>
-              <Button onClick={() => setIsCreateTaskOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Add Task
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button onClick={() => setIsCreateTaskOpen(true)}>
+                  <Plus className="h-4 w-4 ml-2" /> إضافة مهمة
+                </Button>
+              </motion.div>
             </div>
 
-            {view === 'list' ? (
-              <ListView projectId={activeProjectId} onTaskClick={handleTaskClick} />
-            ) : (
-              <TimelineView projectId={activeProjectId} onTaskClick={handleTaskClick} />
-            )}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={view}
+                initial={{ opacity: 0, x: view === 'list' ? 20 : -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: view === 'list' ? -20 : 20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex-1 overflow-hidden"
+              >
+                {view === 'list' ? (
+                  <ListView projectId={activeProjectId} onTaskClick={handleTaskClick} />
+                ) : (
+                  <TimelineView projectId={activeProjectId} onTaskClick={handleTaskClick} />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"
+            >
               <Plus className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h2 className="text-2xl font-semibold">Welcome to Masar</h2>
+            </motion.div>
+            <h2 className="text-2xl font-semibold">مرحباً بك في مسار</h2>
             <p className="text-muted-foreground max-w-md">
-              Create your first project to start tracking your path and managing your tasks with dependencies.
+              أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع التبعيات.
             </p>
-            <Button onClick={handleCreateProject}>Create Your First Project</Button>
+            <Button onClick={handleCreateProject}>أنشئ مشروعك الأول</Button>
           </div>
         )}
-      </main>
+      </motion.main>
 
       <TaskDetailDialog
         taskId={selectedTaskId}

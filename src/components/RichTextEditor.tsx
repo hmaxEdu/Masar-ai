@@ -15,7 +15,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     extensions: [
       StarterKit,
       Placeholder.configure({
-        placeholder: placeholder || 'Write something...',
+        placeholder: placeholder || 'اكتب شيئاً...',
       }),
     ],
     content,
@@ -27,7 +27,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   if (!editor) return null;
 
   return (
-    <div className="border rounded-md focus-within:ring-1 focus-within:ring-ring">
+    <div className="border rounded-md focus-within:ring-1 focus-within:ring-ring" dir="rtl">
       <div className="flex items-center gap-1 p-1 border-b bg-muted/50">
         <Button
           variant="ghost"
@@ -62,7 +62,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
           <ListOrdered className="h-4 w-4" />
         </Button>
       </div>
-      <EditorContent editor={editor} className="p-3 min-h-[100px] prose prose-sm max-w-none focus:outline-none" />
+      <EditorContent editor={editor} className="p-3 min-h-[100px] prose prose-sm max-w-none focus:outline-none text-right" />
     </div>
   );
 }
