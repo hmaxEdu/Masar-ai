@@ -86,12 +86,15 @@ export async function updateBlockedStatus(taskId: number) {
   if (isBlocked && task.status !== 'Blocked') {
     await db.tasks.update(taskId, {
       previousStatus: task.status,
-      status: 'Blocked'
+      status: 'Blocked',
+      finishedAt: undefined
     });
   } else if (!isBlocked && task.status === 'Blocked') {
+    const nextStatus = task.previousStatus || 'To Do';
     await db.tasks.update(taskId, {
-      status: task.previousStatus || 'To Do',
-      previousStatus: undefined
+      status: nextStatus,
+      previousStatus: undefined,
+      finishedAt: nextStatus === 'Done' ? new Date() : undefined
     });
   }
 }

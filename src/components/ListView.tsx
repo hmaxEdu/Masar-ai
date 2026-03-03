@@ -4,11 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { useTasks } from '@/hooks/use-masar';
+import { useTasks, useProjects } from '@/hooks/use-masar';
 import { format, differenceInMinutes, differenceInHours, differenceInDays } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { type Task } from '@/lib/db';
-import { Search, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, AlertCircle, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface ListViewProps {
@@ -39,6 +39,7 @@ const statusMap: Record<string, string> = {
 
 export function ListView({ projectId, onTaskClick }: ListViewProps) {
   const tasks = useTasks(projectId === 'all' ? undefined : projectId);
+  const projects = useProjects();
   const [sortField, setSortField] = useState<keyof Task>('priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [search, setSearch] = useState('');
@@ -141,6 +142,11 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
           <TableCell className="font-mono text-sm text-right py-4">
             {formatDuration(task.startedAt, task.finishedAt)}
           </TableCell>
+          {projectId === 'all' && (
+            <TableCell className="text-right py-4">
+              <Badge variant="outline" className="bg-primary/5">{projects.find(p => p.id === task.projectId)?.name || 'غير معروف'}</Badge>
+            </TableCell>
+          )}
         </TableRow>
       );
 
@@ -196,18 +202,39 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('title')}>العنوان</TableHead>
-              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('priority')}>الأولوية</TableHead>
-              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('status')}>الحالة</TableHead>
+              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('title')}>
+                <div className="flex items-center gap-1">
+                  العنوان
+                  {sortField === 'title' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+                </div>
+              </TableHead>
+              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('priority')}>
+                <div className="flex items-center gap-1">
+                  الأولوية
+                  {sortField === 'priority' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+                </div>
+              </TableHead>
+              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('status')}>
+                <div className="flex items-center gap-1">
+                  الحالة
+                  {sortField === 'status' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+                </div>
+              </TableHead>
               <TableHead className="text-right font-bold h-12">الإنجاز</TableHead>
-              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('startedAt')}>بدأ في</TableHead>
+              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('startedAt')}>
+                <div className="flex items-center gap-1">
+                  بدأ في
+                  {sortField === 'startedAt' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+                </div>
+              </TableHead>
+              {projectId === 'all' && <TableHead className="text-right font-bold h-12">المشروع</TableHead>}
               <TableHead className="text-right font-bold h-12">المدة</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Object.keys(groups).length === 0 || topLevelFiltered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic">
+                <TableCell colSpan={projectId === 'all' ? 7 : 6} className="text-center py-20 text-muted-foreground italic">
                   لم يتم العثور على مهام.
                 </TableCell>
               </TableRow>
@@ -216,7 +243,7 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
                 <Fragment key={groupName}>
                   {groupBy !== 'none' && (
                     <TableRow className="bg-muted/40 hover:bg-muted/40 transition-none">
-                      <TableCell colSpan={6} className="py-2.5 font-bold text-xs uppercase tracking-wider text-right text-primary px-4">
+                      <TableCell colSpan={projectId === 'all' ? 7 : 6} className="py-2.5 font-bold text-xs uppercase tracking-wider text-right text-primary px-4">
                         {groupName} ({groupTasks.length})
                       </TableCell>
                     </TableRow>

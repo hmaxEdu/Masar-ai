@@ -5,6 +5,7 @@ import { ListView } from '@/components/ListView';
 import { TimelineView } from '@/components/TimelineView';
 import { TaskDetailDialog } from '@/components/TaskDetailDialog';
 import { CreateTaskDialog } from '@/components/CreateTaskDialog';
+import { SettingsDialog } from '@/components/SettingsDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -13,12 +14,13 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const projects = useProjects();
-  const [activeProjectId, setActiveProjectId] = useState<number | null>(null);
+  const [activeProjectId, setActiveProjectId] = useState<number | 'all' | null>(null);
   const [view, setView] = useState<'list' | 'timeline'>('list');
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => { if (typeof window !== 'undefined') { return localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches); } return false; });
 
   useEffect(() => {
     if (projects.length > 0 && activeProjectId === null) {
@@ -29,8 +31,10 @@ export default function App() {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -41,6 +45,17 @@ export default function App() {
       setActiveProjectId(id as number);
     }
   };
+
+    const handleRenameProject = async (id: number) => {
+    const project = projects.find(p => p.id === id);
+    if (!project) return;
+    const name = prompt('اسم المشروع الجديد:', project.name);
+    if (name && name !== project.name) {
+      await masarActions.updateProject(id, { name });
+    }
+  };
+
+
 
   const handleDeleteProject = async (id: number) => {
     if (confirm('هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المهام والتبعيات المرتبطة به.')) {
@@ -79,12 +94,13 @@ export default function App() {
           <div className="flex items-center gap-2 mr-4">
             <Select
               value={activeProjectId?.toString() || ''}
-              onValueChange={(v) => setActiveProjectId(parseInt(v))}
+              onValueChange={(v) => setActiveProjectId(v === 'all' ? 'all' : parseInt(v))}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="اختر المشروع" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">كل المشاريع</SelectItem>
                 {projects.map(p => (
                   <SelectItem key={p.id} value={p.id!.toString()}>{p.name}</SelectItem>
                 ))}
@@ -100,7 +116,17 @@ export default function App() {
                 <DropdownMenuItem onClick={handleCreateProject} className="flex gap-2">
                   <Plus className="h-4 w-4" /> مشروع جديد
                 </DropdownMenuItem>
-                {activeProjectId && (
+                {activeProjectId && activeProjectId !== 'all' && (
+                  <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as number)} className="flex gap-2">
+                    <Settings className="h-4 w-4" /> إعادة تسمية المشروع
+                  </DropdownMenuItem>
+                )}
+                {activeProjectId && activeProjectId !== 'all' && (
+                  <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as number)} className="flex gap-2">
+                    <Settings className="h-4 w-4" /> إعادة تسمية المشروع
+                  </DropdownMenuItem>
+                )}
+                {activeProjectId && activeProjectId !== 'all' && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -130,7 +156,7 @@ export default function App() {
           <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
             <Settings className="h-4 w-4" />
           </Button>
         </div>
@@ -146,13 +172,15 @@ export default function App() {
           <>
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">
-                مهام {projects.find(p => p.id === activeProjectId)?.name}
+                {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name}`}
               </h2>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button onClick={() => setIsCreateTaskOpen(true)}>
-                  <Plus className="h-4 w-4 ml-2" /> إضافة مهمة
-                </Button>
-              </motion.div>
+              {activeProjectId !== 'all' && (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button onClick={() => setIsCreateTaskOpen(true)}>
+                    <Plus className="h-4 w-4 ml-2" /> إضافة مهمة
+                  </Button>
+                </motion.div>
+              )}
             </div>
 
             <AnimatePresence mode="wait">
@@ -165,9 +193,9 @@ export default function App() {
                 className="flex-1 overflow-hidden"
               >
                 {view === 'list' ? (
-                  <ListView projectId={activeProjectId} onTaskClick={handleTaskClick} />
+                  <ListView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
                 ) : (
-                  <TimelineView projectId={activeProjectId} onTaskClick={handleTaskClick} />
+                  <TimelineView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
                 )}
               </motion.div>
             </AnimatePresence>
@@ -191,15 +219,16 @@ export default function App() {
         )}
       </motion.main>
 
+      <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <TaskDetailDialog
         taskId={selectedTaskId}
         isOpen={isTaskDetailOpen}
         onClose={() => setIsTaskDetailOpen(false)}
       />
 
-      {activeProjectId && (
+      {activeProjectId && activeProjectId !== 'all' && (
         <CreateTaskDialog
-          projectId={activeProjectId}
+          projectId={activeProjectId as number}
           isOpen={isCreateTaskOpen}
           onClose={() => setIsCreateTaskOpen(false)}
         />

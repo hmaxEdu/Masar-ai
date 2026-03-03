@@ -56,20 +56,28 @@ export const masarActions = {
     return await db.projects.add({ name, createdAt: new Date() });
   },
 
+  async updateProject(id: number, changes: Partial<{name: string}>) {
+    await db.projects.update(id, changes);
+  },
+
   async deleteProject(id: number) {
     await db.transaction('rw', [db.projects, db.tasks, db.dependencies], async () => {
       const tasks = await db.tasks.where('projectId').equals(id).toArray();
       const taskIds = tasks.map(t => t.id!);
 
       // Find all tasks outside this project that might be blocked by tasks in this project
-      const externalDependents = await db.dependencies
+      const allDependents = await db.dependencies
         .where('blockingTaskId')
         .anyOf(taskIds)
-        .filter(async dep => {
-          const blockedTask = await db.tasks.get(dep.blockedTaskId);
-          return blockedTask?.projectId !== id;
-        })
         .toArray();
+
+      const externalDependents = [];
+      for (const dep of allDependents) {
+        const blockedTask = await db.tasks.get(dep.blockedTaskId);
+        if (blockedTask?.projectId !== id) {
+          externalDependents.push(dep);
+        }
+      }
 
       await db.projects.delete(id);
       await db.tasks.where('projectId').equals(id).delete();
@@ -91,9 +99,20 @@ export const masarActions = {
 
   async updateTask(id: number, changes: Partial<Task>) {
     const oldTask = await db.tasks.get(id);
-    await db.tasks.update(id, changes);
+    if (!oldTask) return;
 
-    if (changes.status && changes.status !== oldTask?.status) {
+    const finalChanges = { ...changes };
+    if (changes.status && changes.status !== oldTask.status) {
+      if (changes.status === 'Done') {
+        finalChanges.finishedAt = new Date();
+      } else {
+        finalChanges.finishedAt = undefined;
+      }
+    }
+
+    await db.tasks.update(id, finalChanges);
+
+    if (finalChanges.status && finalChanges.status !== oldTask.status) {
       await onTaskStatusChange(id);
     }
   },
