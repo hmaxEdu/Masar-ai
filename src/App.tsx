@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useProjects, masarActions } from '@/hooks/use-masar';
-import { Button } from '@/components/ui/button';
 import { ListView } from '@/components/ListView';
 import { TimelineView } from '@/components/TimelineView';
 import { TaskTreeView } from '@/components/TaskTreeView';
 import { TaskDetailDialog } from '@/components/TaskDetailDialog';
+import { Button } from '@/components/ui/button';
 import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 import { SettingsDialog } from '@/components/SettingsDialog';
+import { AIAssistant } from '@/components/AIAssistant';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Plus, LayoutList, Calendar, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph } from 'lucide-react';
+import { Plus, LayoutList, Calendar, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAIOpen, setIsAIOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => { if (typeof window !== 'undefined') { return localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches); } return false; });
 
   useEffect(() => {
@@ -72,12 +74,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-['ibm-ar'] transition-colors duration-300" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col font-['ibm-ar'] transition-colors duration-300 overflow-hidden h-screen" dir="rtl">
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="border-b px-6 py-3 flex items-center justify-between bg-card"
+        className="border-b px-6 py-3 flex items-center justify-between bg-card shrink-0 z-10"
       >
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
@@ -150,6 +152,16 @@ export default function App() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          <Button
+            variant={isAIOpen ? "default" : "outline"}
+            size="icon"
+            onClick={() => setIsAIOpen(!isAIOpen)}
+            className={isAIOpen ? "" : "text-primary"}
+          >
+            <Sparkles className="h-4 w-4" />
+          </Button>
+
           <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
@@ -159,64 +171,73 @@ export default function App() {
         </div>
       </motion.header>
 
-      <motion.main
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex-1 p-6 overflow-hidden flex flex-col gap-4"
-      >
-        {activeProjectId ? (
-          <>
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">
-                {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name}`}
-              </h2>
-              {activeProjectId !== 'all' && (
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button onClick={() => setIsCreateTaskOpen(true)}>
-                    <Plus className="h-4 w-4 ml-2" /> إضافة مهمة
-                  </Button>
-                </motion.div>
-              )}
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={view}
-                initial={{ opacity: 0, x: view === 'list' ? 20 : -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: view === 'list' ? -20 : 20 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex-1 overflow-hidden"
-              >
-                {view === 'list' ? (
-                  <ListView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
-                ) : view === 'tree' ? (
-                  <TaskTreeView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
-                ) : (
-                  <TimelineView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+      <div className="flex flex-1 overflow-hidden relative">
+        <motion.main
+          layout
+          className="flex-1 p-6 overflow-hidden flex flex-col gap-4"
+        >
+          {activeProjectId ? (
+            <>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">
+                  {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name}`}
+                </h2>
+                {activeProjectId !== 'all' && (
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button onClick={() => setIsCreateTaskOpen(true)}>
+                      <Plus className="h-4 w-4 ml-2" /> إضافة مهمة
+                    </Button>
+                  </motion.div>
                 )}
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={view}
+                  initial={{ opacity: 0, x: view === 'list' ? 20 : -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: view === 'list' ? -20 : 20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex-1 overflow-hidden"
+                >
+                  {view === 'list' ? (
+                    <ListView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+                  ) : view === 'tree' ? (
+                    <TaskTreeView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+                  ) : (
+                    <TimelineView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"
+              >
+                <Plus className="h-8 w-8 text-muted-foreground" />
               </motion.div>
-            </AnimatePresence>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"
-            >
-              <Plus className="h-8 w-8 text-muted-foreground" />
-            </motion.div>
-            <h2 className="text-2xl font-semibold">مرحباً بك في مسار</h2>
-            <p className="text-muted-foreground max-w-md">
-              أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع التبعيات.
-            </p>
-            <Button onClick={handleCreateProject}>أنشئ مشروعك الأول</Button>
-          </div>
-        )}
-      </motion.main>
+              <h2 className="text-2xl font-semibold">مرحباً بك في مسار</h2>
+              <p className="text-muted-foreground max-w-md">
+                أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع التبعيات.
+              </p>
+              <Button onClick={handleCreateProject}>أنشئ مشروعك الأول</Button>
+            </div>
+          )}
+        </motion.main>
+
+        <AnimatePresence>
+          {isAIOpen && (
+            <AIAssistant
+              projectId={activeProjectId}
+              onClose={() => setIsAIOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
 
       <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <TaskDetailDialog
