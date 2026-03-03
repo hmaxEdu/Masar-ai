@@ -5,7 +5,7 @@ import { type Task } from '@/lib/db';
 
 export interface ChatProposal {
   type: 'add_task' | 'update_task' | 'delete_task';
-  data: any;
+  data: Record<string, unknown>;
   description: string;
 }
 
@@ -44,33 +44,70 @@ export function useOllama(projectId?: number) {
 
 ابدأ بمساعدة المستخدم الآن.`;
 
-      const response = await ollamaService.chat([
-        { role: 'system', content: systemPrompt },
-        ...messages.slice(-6).map(m => ({ role: m.role, content: m.content })), // Limit history for context
+      const stream = await ollamaService.chat([
+        { role: "system", content: systemPrompt },
+        ...messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
         userMessage
-      ]) as any;
+      ], true) as ReadableStream;
 
-      let assistantContent = response.message.content;
-      let proposal: ChatProposal | undefined;
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
 
-      const proposalMatch = assistantContent.match(/\[PROPOSAL:(.*?)\]/);
-      if (proposalMatch) {
-        try {
-          const rawJson = proposalMatch[1].trim();
-          proposal = JSON.parse(rawJson);
-          assistantContent = assistantContent.replace(/\[PROPOSAL:.*?\]/, '').trim();
-        } catch (e) {
-          console.error('Failed to parse proposal', e);
+      // Add an empty assistant message to be updated
+      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const json = JSON.parse(line);
+            if (json.message?.content) {
+              fullContent += json.message.content;
+              // Update the last message content
+              setMessages(prev => {
+                const newMessages = [...prev];
+                const last = newMessages[newMessages.length - 1];
+                if (last && last.role === "assistant") {
+                  return [...newMessages.slice(0, -1), { ...last, content: fullContent }];
+                }
+                return newMessages;
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing streaming chunk:", e);
+          }
         }
       }
 
-      const assistantMessage: ExtendedMessage = {
-        role: 'assistant',
-        content: assistantContent,
-        proposal
-      };
+      // Final processing for proposals
+      let proposal: ChatProposal | undefined;
+      const proposalMatch = fullContent.match(/\[PROPOSAL:(.*?)\]/);
+      if (proposalMatch) {
+        try {
+          proposal = JSON.parse(proposalMatch[1].trim());
+          fullContent = fullContent.replace(/\[PROPOSAL:.*?\]/, "").trim();
+        } catch (e) {
+          console.error("Failed to parse proposal", e);
+        }
+      }
 
-      setMessages(prev => [...prev, assistantMessage]);
+      // Final update with the cleaned content and proposal
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const last = newMessages[newMessages.length - 1];
+        if (last && last.role === "assistant") {
+          return [...newMessages.slice(0, -1), { ...last, content: fullContent, proposal }];
+        }
+        return newMessages;
+      });
+
     } catch (error) {
       console.error('Ollama Chat Error:', error);
       setMessages(prev => [...prev, {
@@ -91,18 +128,18 @@ export function useOllama(projectId?: number) {
           if (!projectId) throw new Error('No active project');
           await masarActions.addTask({
             projectId: projectId,
-            title: proposal.data.title,
-            description: proposal.data.description || '',
+            title: proposal.data.title as string,
+            description: (proposal.data.description as string) || '',
             status: 'To Do',
-            priority: proposal.data.priority || 3,
+            priority: (proposal.data.priority as number) || 3,
             startedAt: new Date(),
           });
           break;
         case 'update_task':
-          await masarActions.updateTask(proposal.data.id, proposal.data);
+          await masarActions.updateTask(proposal.data.id as number, proposal.data as Partial<Task>);
           break;
         case 'delete_task':
-          await masarActions.deleteTask(proposal.data.id);
+          await masarActions.deleteTask(proposal.data.id as number);
           break;
       }
       // Remove proposal from message after execution
