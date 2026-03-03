@@ -190,3 +190,29 @@
 .prose em {
   @apply italic;
 }
+
+/* Markdown Content Styles */
+.markdown-content {
+  @apply text-sm leading-relaxed;
+}
+.markdown-content p {
+  @apply mb-2 last:mb-0;
+}
+.markdown-content ul {
+  @apply list-disc list-inside mb-2;
+}
+.markdown-content ol {
+  @apply list-decimal list-inside mb-2;
+}
+.markdown-content li {
+  @apply mb-1;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+  @apply font-bold mt-3 mb-2;
+}
+.markdown-content code {
+  @apply bg-background/20 px-1 rounded font-mono text-xs;
+}
+.markdown-content pre {
+  @apply bg-background/20 p-2 rounded mb-2 overflow-x-auto;
+}

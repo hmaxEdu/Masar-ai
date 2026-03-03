@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ollamaService, type OllamaMessage } from '@/lib/ollama';
+import { ollamaService, type OllamaMessage, type OllamaChatResponse } from '@/lib/ollama';
 import { masarActions } from '@/hooks/use-masar';
 import { type Task } from '@/lib/db';
 
@@ -44,70 +44,32 @@ export function useOllama(projectId?: number) {
 
 ابدأ بمساعدة المستخدم الآن.`;
 
-      const stream = await ollamaService.chat([
-        { role: "system", content: systemPrompt },
+      const response = await ollamaService.chat([
+        { role: 'system', content: systemPrompt },
         ...messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
         userMessage
-      ], true) as ReadableStream;
+      ], false) as OllamaChatResponse;
 
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = "";
-
-      // Add an empty assistant message to be updated
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const json = JSON.parse(line);
-            if (json.message?.content) {
-              fullContent += json.message.content;
-              // Update the last message content
-              setMessages(prev => {
-                const newMessages = [...prev];
-                const last = newMessages[newMessages.length - 1];
-                if (last && last.role === "assistant") {
-                  return [...newMessages.slice(0, -1), { ...last, content: fullContent }];
-                }
-                return newMessages;
-              });
-            }
-          } catch (e) {
-            console.error("Error parsing streaming chunk:", e);
-          }
-        }
-      }
-
-      // Final processing for proposals
+      let assistantContent = response.message.content;
       let proposal: ChatProposal | undefined;
-      const proposalMatch = fullContent.match(/\[PROPOSAL:(.*?)\]/);
+
+      const proposalMatch = assistantContent.match(/\[PROPOSAL:(.*?)\]/);
       if (proposalMatch) {
         try {
           proposal = JSON.parse(proposalMatch[1].trim());
-          fullContent = fullContent.replace(/\[PROPOSAL:.*?\]/, "").trim();
+          assistantContent = assistantContent.replace(/\[PROPOSAL:.*?\]/, '').trim();
         } catch (e) {
-          console.error("Failed to parse proposal", e);
+          console.error('Failed to parse proposal', e);
         }
       }
 
-      // Final update with the cleaned content and proposal
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const last = newMessages[newMessages.length - 1];
-        if (last && last.role === "assistant") {
-          return [...newMessages.slice(0, -1), { ...last, content: fullContent, proposal }];
-        }
-        return newMessages;
-      });
+      const assistantMessage: ExtendedMessage = {
+        role: 'assistant',
+        content: assistantContent,
+        proposal
+      };
 
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Ollama Chat Error:', error);
       setMessages(prev => [...prev, {

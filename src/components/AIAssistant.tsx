@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useOllama } from '@/hooks/use-ollama';
 import { useTasks, useProjects } from '@/hooks/use-masar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, User, Send, X, Check, Trash2, Sparkles, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface AIAssistantProps {
   projectId: number | 'all' | null;
@@ -152,7 +153,15 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
                         ? 'bg-muted text-foreground rounded-tr-none'
                         : 'bg-primary text-primary-foreground rounded-tl-none shadow-md'
                     }`}>
-                      {m.content || (isLoading && i === messages.length - 1 ? "..." : "")}
+                      {m.role === 'user' ? (
+                        m.content
+                      ) : (
+                        <div className="markdown-content">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {m.content || (isLoading && i === messages.length - 1 ? "..." : "")}
+                          </ReactMarkdown>
+                        </div>
+                      )}
                     </div>
 
                     {m.proposal && (
@@ -218,12 +227,12 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
 
       <div className="p-4 border-t bg-background/80 backdrop-blur-sm">
         <div className="relative group">
-          <Input
+          <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="اسأل المساعد..."
-            className="pl-10 h-10 rounded-xl border-primary/20 focus-visible:ring-primary/30 transition-all bg-muted/30 group-hover:bg-muted/50"
+            className="w-full flex h-10 rounded-xl border border-primary/20 bg-muted/30 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-10 transition-all group-hover:bg-muted/50"
             disabled={isLoading}
           />
           <Button
