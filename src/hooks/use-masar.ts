@@ -7,7 +7,8 @@ export function useProjects() {
 
 export function useTasks(projectId?: number) {
   return useLiveQuery(() =>
-    projectId ? db.tasks.where('projectId').equals(projectId).toArray() : db.tasks.toArray()
+    projectId ? db.tasks.where('projectId').equals(projectId).toArray() : db.tasks.toArray(),
+    [projectId]
   ) || [];
 }
 
@@ -27,8 +28,8 @@ export function useTask(taskId?: number) {
 }
 
 export function useDependencies(taskId: number) {
-  const blockingMe = useLiveQuery(() => db.dependencies.where('blockedTaskId').equals(taskId).toArray()) || [];
-  const iAmBlocking = useLiveQuery(() => db.dependencies.where('blockingTaskId').equals(taskId).toArray()) || [];
+  const blockingMe = useLiveQuery(() => db.dependencies.where('blockedTaskId').equals(taskId).toArray(), [taskId]) || [];
+  const iAmBlocking = useLiveQuery(() => db.dependencies.where('blockingTaskId').equals(taskId).toArray(), [taskId]) || [];
   return { blockingMe, iAmBlocking };
 }
 
