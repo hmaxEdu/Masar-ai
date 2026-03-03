@@ -3,19 +3,20 @@ import { useProjects, masarActions } from '@/hooks/use-masar';
 import { Button } from '@/components/ui/button';
 import { ListView } from '@/components/ListView';
 import { TimelineView } from '@/components/TimelineView';
+import { TaskTreeView } from '@/components/TaskTreeView';
 import { TaskDetailDialog } from '@/components/TaskDetailDialog';
 import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 import { SettingsDialog } from '@/components/SettingsDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Plus, LayoutList, Calendar, Settings, Trash2, MoreVertical, Moon, Sun } from 'lucide-react';
+import { Plus, LayoutList, Calendar, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const projects = useProjects();
   const [activeProjectId, setActiveProjectId] = useState<number | 'all' | null>(null);
-  const [view, setView] = useState<'list' | 'timeline'>('list');
+  const [view, setView] = useState<'list' | 'timeline' | 'tree'>('list');
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -46,7 +47,7 @@ export default function App() {
     }
   };
 
-    const handleRenameProject = async (id: number) => {
+  const handleRenameProject = async (id: number) => {
     const project = projects.find(p => p.id === id);
     if (!project) return;
     const name = prompt('اسم المشروع الجديد:', project.name);
@@ -54,8 +55,6 @@ export default function App() {
       await masarActions.updateProject(id, { name });
     }
   };
-
-
 
   const handleDeleteProject = async (id: number) => {
     if (confirm('هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المهام والتبعيات المرتبطة به.')) {
@@ -122,15 +121,10 @@ export default function App() {
                   </DropdownMenuItem>
                 )}
                 {activeProjectId && activeProjectId !== 'all' && (
-                  <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as number)} className="flex gap-2">
-                    <Settings className="h-4 w-4" /> إعادة تسمية المشروع
-                  </DropdownMenuItem>
-                )}
-                {activeProjectId && activeProjectId !== 'all' && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => handleDeleteProject(activeProjectId)}
+                      onClick={() => handleDeleteProject(activeProjectId as number)}
                       className="flex gap-2 text-destructive focus:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" /> حذف المشروع الحالي
@@ -143,10 +137,13 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Tabs value={view} onValueChange={(v) => setView(v as 'list' | 'timeline')}>
+          <Tabs value={view} onValueChange={(v) => setView(v as 'list' | 'timeline' | 'tree')}>
             <TabsList>
               <TabsTrigger value="list" className="flex gap-2">
                 <LayoutList className="h-4 w-4" /> القائمة
+              </TabsTrigger>
+              <TabsTrigger value="tree" className="flex gap-2">
+                <GitGraph className="h-4 w-4" /> الشجرة
               </TabsTrigger>
               <TabsTrigger value="timeline" className="flex gap-2">
                 <Calendar className="h-4 w-4" /> الجدول الزمني
@@ -194,6 +191,8 @@ export default function App() {
               >
                 {view === 'list' ? (
                   <ListView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+                ) : view === 'tree' ? (
+                  <TaskTreeView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
                 ) : (
                   <TimelineView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
                 )}
