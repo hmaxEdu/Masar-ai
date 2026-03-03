@@ -136,8 +136,11 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
 
             {messages.map((m, i) => (
               <motion.div
-                key={i}
+                key={`${m.role}-${i}`}
                 layout
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
                 variants={messageVariants}
                 className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}
               >
@@ -203,10 +206,11 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
               </motion.div>
             ))}
 
-            {isLoading && !messages[messages.length-1]?.content && (
+            {isLoading && messages[messages.length - 1]?.role === 'user' && (
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
                 className="flex justify-end"
               >
                 <div className="flex gap-2 flex-row-reverse">

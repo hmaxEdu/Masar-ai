@@ -50,7 +50,11 @@ export function useOllama(projectId?: number) {
         userMessage
       ], false) as OllamaChatResponse;
 
-      let assistantContent = response.message.content;
+      if (!response || !response.message) {
+        throw new Error('Invalid response from Ollama');
+      }
+
+      let assistantContent = response.message.content || '';
       let proposal: ChatProposal | undefined;
 
       const proposalMatch = assistantContent.match(/\[PROPOSAL:(.*?)\]/);
