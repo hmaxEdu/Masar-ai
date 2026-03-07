@@ -74,7 +74,7 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 300, opacity: 0 }}
-      className="w-80 border-r bg-card flex flex-col h-full shadow-xl"
+      className="w-140 border-r bg-card flex flex-col h-full shadow-xl"
     >
       <div className="p-4 border-b flex items-center justify-between bg-primary/5">
         <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4" viewportRef={scrollRef}>
+      <ScrollArea className="h-[92%]  rounded-md border p-4">
         <motion.div
           className="space-y-4"
           variants={containerVariants}
@@ -152,8 +152,8 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
                   </div>
                   <div className="space-y-2">
                     <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
-                      m.role === 'user'
-                        ? 'bg-muted text-foreground rounded-tr-none'
+                      m.role != 'user'
+                        ? 'bg-muted text-foreground rounded-tr-none shadow-sm'
                         : 'bg-primary text-primary-foreground rounded-tl-none shadow-md'
                     }`}>
                       {m.role === 'user' ? (

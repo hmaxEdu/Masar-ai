@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Plus, LayoutList, Calendar, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-
+import Logo from './assets/masar.png';
 export default function App() {
   const projects = useProjects();
   const [activeProjectId, setActiveProjectId] = useState<number | 'all' | null>(null);
@@ -82,15 +82,12 @@ export default function App() {
         className="border-b px-6 py-3 flex items-center justify-between bg-card shrink-0 z-10"
       >
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
             <motion.div
               whileHover={{ scale: 1.1, rotate: 5 }}
-              className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground"
+              className="w-10 h-10"
             >
-              م
+              <img src={Logo} alt="Project Logo" />
             </motion.div>
-            مسار <span className="text-muted-foreground font-normal text-sm">Masar</span>
-          </h1>
 
           <div className="flex items-center gap-2 mr-4">
             <Select
