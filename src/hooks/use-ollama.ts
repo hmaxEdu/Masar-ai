@@ -123,25 +123,26 @@ export function useOllama(projectId?: number) {
 - المشروع: "${projectContext.projectName}".
 - المهام الحالية والتبعيات: ${JSON.stringify(projectContext.tasks.map(t => ({ id: t.id, title: t.title, status: t.status, priority: t.priority, parentId: t.parentId })))}.
 
-أدواتك المتاحة (استخدم تنسيق [PROPOSAL:JSON]):
-1. إضافة مهمة: {"type": "add_task", "data": {"title": "...", "description": "...", "priority": 1-5, "parentId": number | null}, "description": "..."}
-2. تحديث مهمة: {"type": "update_task", "data": {"id": number, "status": "To Do" | "Doing" | "Done", "priority": 1-5, "title": "..."}, "description": "..."}
-3. حذف مهمة: {"type": "delete_task", "data": {"id": number}, "description": "..."}
-4. إضافة تبعية: {"type": "add_dependency", "data": {"blockingTaskId": number, "blockedTaskId": number}, "description": "..."}
-5. إزالة تبعية: {"type": "remove_dependency", "data": {"id": number}, "description": "..."}
+أدواتك المتاحة (يجب استخدام هذا التنسيق حصراً لكل إجراء على حدة):
+[PROPOSAL:{"type": "add_task", "data": {"title": "...", "description": "...", "priority": 1-5, "parentId": number | null}, "description": "..."}]
 
-إرشادات العمل كخبير:
-- التحليل: قبل الاقتراح، حلل طلب المستخدم. هل يحتاج لمشروع كامل؟ هل يحتاج لتعديل في مسار العمل؟
-- التخطيط: قسم الأهداف الكبيرة إلى مهام صغيرة قابلة للتنفيذ. اربط المهام ببعضها باستخدام التبعيات (Dependencies) لإنشاء مسار عمل منطقي.
-- التكرار: إذا تم تنفيذ خطة، حلل النتيجة واقترح الخطوات التالية.
+الصيغ المتاحة:
+1. إضافة مهمة: [PROPOSAL:{"type": "add_task", "data": {"title": "...", "description": "...", "priority": 1-5, "parentId": number | null}, "description": "..."}]
+2. تحديث مهمة: [PROPOSAL:{"type": "update_task", "data": {"id": number, "status": "To Do" | "Doing" | "Done", "priority": 1-5, "title": "..."}, "description": "..."}]
+3. حذف مهمة: [PROPOSAL:{"type": "delete_task", "data": {"id": number}, "description": "..."}]
+4. إضافة تبعية: [PROPOSAL:{"type": "add_dependency", "data": {"blockingTaskId": number, "blockedTaskId": number}, "description": "..."}]
+5. إزالة تبعية: [PROPOSAL:{"type": "remove_dependency", "data": {"id": number}, "description": "..."}]
+
+إرشادات هامة جداً:
+- لا ترسل الإجراءات كصفوف JSON عادية أو مصفوفة واحدة.
+- كل إجراء يجب أن يكون مغلفاً بـ [PROPOSAL:...] بشكل مستقل.
+- مثال لإجراءين:
+  لقد أعددت خطة:
+  1. إنشاء المهمة الأولى: [PROPOSAL:{"type": "add_task", "data": {...}, "description": "وصف 1"}]
+  2. إنشاء المهمة الثانية: [PROPOSAL:{"type": "add_task", "data": {...}, "description": "وصف 2"}]
+
 - اللغة: أجب دائماً بالعربية بلهجة مهنية ومحفزة.
 - التفاصيل: اجعل عناوين المهام واضحة ووصفها مفصلاً.
-
-حالات المهام:
-- 'To Do': مهمة لم تبدأ.
-- 'Doing': مهمة قيد العمل.
-- 'Done': مهمة اكتملت.
-- 'Blocked': مهمة معطلة بسبب تبعية (يتم إدارتها تلقائياً من التطبيق عند إضافة تبعية).
 
 ابدأ الآن في مساعدة المستخدم لتحقيق أهدافه بأعلى كفاءة.`
         },
@@ -158,6 +159,7 @@ export function useOllama(projectId?: number) {
       let assistantContent = response.message.content || '';
       const proposals: ChatProposal[] = [];
 
+      // Improved parsing: find all [PROPOSAL:...] blocks
       const proposalRegex = /\[PROPOSAL:({.*?})\]/g;
       let match;
       while ((match = proposalRegex.exec(assistantContent)) !== null) {
@@ -171,6 +173,28 @@ export function useOllama(projectId?: number) {
         } catch (e) {
           console.error('Failed to parse proposal', e);
         }
+      }
+
+      // Fallback: if no [PROPOSAL:] found but content looks like JSON array or object
+      if (proposals.length === 0) {
+          const jsonArrayMatch = assistantContent.match(/\[\s*{[\s\S]*}\s*\]/);
+          if (jsonArrayMatch) {
+              try {
+                  const items = JSON.parse(jsonArrayMatch[0]);
+                  if (Array.isArray(items)) {
+                      items.forEach(item => {
+                          if (item.type && item.data) {
+                              proposals.push({
+                                  ...item,
+                                  id: Math.random().toString(36).substr(2, 9),
+                                  status: 'pending'
+                              });
+                          }
+                      });
+                      assistantContent = assistantContent.replace(jsonArrayMatch[0], '').trim();
+                  }
+              } catch (e) {}
+          }
       }
 
       assistantContent = assistantContent.replace(/\[PROPOSAL:.*?\]/g, '').trim();
