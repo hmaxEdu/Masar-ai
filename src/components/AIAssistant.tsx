@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { useOllama } from '@/hooks/use-ollama';
+import { useOllama, type ChatProposal } from '@/hooks/use-ollama';
 import { useTasks, useProjects } from '@/hooks/use-masar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, X, Check, Trash2, Sparkles, AlertCircle } from 'lucide-react';
+import { Bot, User, Send, X, Check, Trash2, Sparkles, AlertCircle, Loader2, Play } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -15,7 +15,7 @@ interface AIAssistantProps {
 
 export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
   const [input, setInput] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const projects = useProjects();
   const tasks = useTasks(projectId === 'all' ? undefined : (projectId || undefined));
 
@@ -29,10 +29,10 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
 
   // Auto scroll to bottom
   useEffect(() => {
-    if (scrollRef.current) {
-      const scrollElement = scrollRef.current;
-      scrollElement.scrollTo({
-        top: scrollElement.scrollHeight,
+    const scrollArea = document.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollArea) {
+      scrollArea.scrollTo({
+        top: scrollArea.scrollHeight,
         behavior: 'smooth'
       });
     }
@@ -42,6 +42,16 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
     if (!input.trim() || isLoading) return;
     sendMessage(input, { tasks, projectName: currentProjectName });
     setInput('');
+  };
+
+  const handleExecuteAll = async (proposals: ChatProposal[]) => {
+    for (const p of proposals) {
+      if (p.status === 'pending') {
+        await executeProposal(p.id);
+      }
+    }
+
+    sendMessage("تم تنفيذ جميع الخطوات. ما هي الخطوة التالية؟", { tasks, projectName: currentProjectName }, true);
   };
 
   const containerVariants: Variants = {
@@ -69,6 +79,67 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
     }
   };
 
+  const renderProposal = (p: ChatProposal) => {
+    const isPending = p.status === 'pending';
+    const isExecuting = p.status === 'executing';
+    const isCompleted = p.status === 'completed';
+    const isFailed = p.status === 'failed';
+    const isRejected = p.status === 'rejected';
+
+    if (isRejected) return null;
+
+    return (
+      <motion.div
+        key={p.id}
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className={`relative border rounded-xl p-3 space-y-2 transition-all ${
+          isCompleted ? 'bg-green-500/5 border-green-500/20' :
+          isFailed ? 'bg-destructive/5 border-destructive/20' :
+          'bg-accent/30 border-primary/10 shadow-sm'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+            isCompleted ? 'bg-green-500/20 text-green-600' :
+            isFailed ? 'bg-destructive/20 text-destructive' :
+            'bg-primary/10 text-primary'
+          }`}>
+            {isExecuting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+             isCompleted ? <Check className="h-3.5 w-3.5" /> :
+             <Sparkles className="h-3.5 w-3.5" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium leading-relaxed">{p.description}</p>
+            {isFailed && p.error && (
+              <p className="text-[10px] text-destructive mt-1 font-mono">{p.error}</p>
+            )}
+          </div>
+        </div>
+
+        {isPending && (
+          <div className="flex gap-2 justify-end pt-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-[10px] px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              onClick={() => rejectProposal(p.id)}
+            >
+              <X className="h-3 w-3 ml-1" /> تجاهل
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-[10px] px-3 font-medium shadow-sm"
+              onClick={() => executeProposal(p.id)}
+            >
+              تنفيد
+            </Button>
+          </div>
+        )}
+      </motion.div>
+    );
+  };
+
   return (
     <motion.div
       initial={{ x: 300, opacity: 0 }}
@@ -85,7 +156,7 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
             <h3 className="font-bold text-sm">مساعد مسار الذكي</h3>
             <div className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <p className="text-[10px] text-muted-foreground">Ollama نشط</p>
+              <p className="text-[10px] text-muted-foreground">الوضع المتطور نشط</p>
             </div>
           </div>
         </div>
@@ -99,7 +170,7 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
         </div>
       </div>
 
-      <ScrollArea className="h-[92%]  rounded-md border p-4">
+      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <motion.div
           className="space-y-4"
           variants={containerVariants}
@@ -119,16 +190,16 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
                   <Sparkles className="h-8 w-8 text-primary/60" />
                 </div>
                 <p className="text-sm text-muted-foreground px-4 leading-relaxed">
-                  أهلاً بك! أنا مساعدك الذكي. يمكنني مساعدتك في تنظيم مهامك في مشروع <span className="text-primary font-semibold">"{currentProjectName}"</span>.
+                  أهلاً بك! أنا مساعدك الذكي المتطور. يمكنني مساعدتك في تخطيط وتنفيذ مشاريعك بالكامل في <span className="text-primary font-semibold">"{currentProjectName}"</span>.
                 </p>
                 <div className="grid grid-cols-1 gap-2 px-4 pt-2">
-                  <Button variant="outline" size="sm" onClick={() => setInput('اقترح عليّ 3 مهام جديدة للمشروع')} className="text-xs justify-start hover:bg-primary/5 transition-colors">
-                    <Sparkles className="h-3 w-3 ml-2 text-primary" />
-                    اقترح مهام جديدة
+                  <Button variant="outline" size="sm" onClick={() => setInput('خطط لمشروع تطبيق توصيل طلبات مع المهام والتبعيات')} className="text-xs justify-start hover:bg-primary/5 transition-colors">
+                    <Play className="h-3 w-3 ml-2 text-primary" />
+                    خطط لمشروع جديد كامل
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setInput('لخص حالة المشروع الحالية')} className="text-xs justify-start hover:bg-primary/5 transition-colors">
+                  <Button variant="outline" size="sm" onClick={() => setInput('حلل المهام الحالية واقترح تحسينات للأولوية والتبعيات')} className="text-xs justify-start hover:bg-primary/5 transition-colors">
                     <Sparkles className="h-3 w-3 ml-2 text-primary" />
-                    لخص حالة المشروع
+                    تحليل وتحسين المشروع
                   </Button>
                 </div>
               </motion.div>
@@ -144,69 +215,58 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
                 variants={messageVariants}
                 className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}
               >
-                <div className={`flex gap-2 max-w-[90%] ${m.role === 'user' ? 'flex-row' : 'flex-row-reverse'}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                <div className={`flex gap-3 max-w-[90%] ${m.role === 'user' ? 'flex-row' : 'flex-row-reverse'}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
                     m.role === 'user' ? 'bg-muted' : 'bg-primary/20 text-primary'
                   }`}>
-                    {m.role === 'user' ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+                    {m.role === 'user' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
                   </div>
-                  <div className="space-y-2">
-                    <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
-                      m.role != 'user'
-                        ? 'bg-muted text-foreground rounded-tr-none shadow-sm'
-                        : 'bg-primary text-primary-foreground rounded-tl-none shadow-md'
-                    }`}>
-                      {m.role === 'user' ? (
-                        m.content
-                      ) : (
-                        <div className="markdown-content">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {m.content || (isLoading && i === messages.length - 1 ? "..." : "")}
-                          </ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
+                  <div className="space-y-3">
+                    {m.content && (
+                      <div className={`p-3.5 rounded-2xl text-sm leading-relaxed ${
+                        m.role != 'user'
+                          ? 'bg-muted/80 text-foreground rounded-tr-none shadow-sm border border-border/50'
+                          : 'bg-primary text-primary-foreground rounded-tl-none shadow-md'
+                      }`}>
+                        {m.role === 'user' ? (
+                          m.content
+                        ) : (
+                          <div className="markdown-content">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {m.content}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    {m.proposal && (
-                      <motion.div
-                        initial={{ scale: 0.9, opacity: 0, y: 5 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        className="bg-accent/50 border border-primary/20 rounded-xl p-3 space-y-3 backdrop-blur-sm shadow-sm"
-                      >
-                        <div className="flex items-start gap-2 text-xs">
-                          <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <Sparkles className="h-3 w-3 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-semibold mb-1 text-primary">إجراء مقترح:</p>
-                            <p className="text-muted-foreground leading-snug">{m.proposal.description}</p>
-                          </div>
+                    {m.proposals && m.proposals.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                            <Play className="w-2.5 h-2.5" /> خطة العمل المقترحة
+                          </p>
+                          {m.proposals.some(p => p.status === 'pending') && (
+                            <Button
+                              variant="link"
+                              className="h-auto p-0 text-[10px] text-primary hover:no-underline font-bold"
+                              onClick={() => handleExecuteAll(m.proposals!)}
+                            >
+                              تنفيذ الخطة بالكامل
+                            </Button>
+                          )}
                         </div>
-                        <div className="flex gap-2 justify-end pt-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-[10px] px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => rejectProposal(m.proposal!)}
-                          >
-                            <X className="h-3 w-3 ml-1" /> رفض
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="h-7 text-[10px] px-3 font-medium shadow-sm"
-                            onClick={() => executeProposal(m.proposal!)}
-                          >
-                            <Check className="h-3 w-3 ml-1" /> تنفيذ
-                          </Button>
+                        <div className="space-y-2">
+                          {m.proposals.map(renderProposal)}
                         </div>
-                      </motion.div>
+                      </div>
                     )}
                   </div>
                 </div>
               </motion.div>
             ))}
 
-            {isLoading && messages[messages.length - 1]?.role === 'user' && (
+            {isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -214,10 +274,10 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
                 className="flex justify-end"
               >
                 <div className="flex gap-2 flex-row-reverse">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center animate-pulse">
-                    <Bot className="h-3 w-3" />
+                  <div className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center animate-pulse">
+                    <Bot className="h-3.5 w-3.5" />
                   </div>
-                  <div className="bg-primary/10 p-3 rounded-2xl rounded-tl-none flex gap-1.5 items-center h-10 shadow-sm">
+                  <div className="bg-primary/10 p-3.5 rounded-2xl rounded-tl-none flex gap-2 items-center h-11 shadow-sm border border-primary/10">
                     <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -235,14 +295,14 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="اسأل المساعد..."
-            className="w-full flex h-10 rounded-xl border border-primary/20 bg-muted/30 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-10 transition-all group-hover:bg-muted/50"
+            placeholder="اطلب تنفيذ خطة عمل..."
+            className="w-full flex h-11 rounded-xl border border-primary/20 bg-muted/30 px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-12 transition-all group-hover:bg-muted/50"
             disabled={isLoading}
           />
           <Button
             size="icon"
             variant="ghost"
-            className={`absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg transition-all ${
+            className={`absolute left-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg transition-all ${
               input.trim() ? "text-primary hover:bg-primary/10" : "text-muted-foreground"
             }`}
             onClick={handleSend}
@@ -254,7 +314,7 @@ export function AIAssistant({ projectId, onClose }: AIAssistantProps) {
         <div className="flex items-center justify-center gap-1.5 mt-2.5 opacity-60">
           <AlertCircle className="h-2.5 w-2.5" />
           <p className="text-[9px] text-muted-foreground">
-            قد يرتكب الذكاء الاصطناعي أخطاء. راجع الإجراءات.
+            المساعد في الوضع المتقدم يمكنه تنفيذ عمليات متعددة الخطوات.
           </p>
         </div>
       </div>

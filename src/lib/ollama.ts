@@ -19,7 +19,7 @@ export interface OllamaChatResponse {
 }
 
 export const ollamaService = {
-  async chat(messages: OllamaMessage[], stream = false): Promise<OllamaChatResponse | ReadableStream> {
+  async chat(messages: OllamaMessage[], stream = false, signal?: AbortSignal): Promise<OllamaChatResponse | ReadableStream> {
     const url = localStorage.getItem('ollama_url') || 'http://localhost:11434';
     const model = localStorage.getItem('ollama_model') || 'llama3';
 
@@ -32,7 +32,15 @@ export const ollamaService = {
         model,
         messages,
         stream,
+        options: {
+          temperature: 0.1, // Lower temperature for more consistent JSON/Proposal generation
+          num_ctx: 16384, // Larger context for complex projects
+          top_p: 0.9,
+          num_predict: 2048,
+        },
+        keep_alive: '5m', // Keep model in memory for 5 minutes
       }),
+      signal,
     });
 
     if (!response.ok) {
