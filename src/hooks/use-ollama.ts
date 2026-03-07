@@ -30,50 +30,78 @@ export function useOllama(projectId?: number) {
 
   const clearChat = () => setMessages([]);
 
-  const executeProposal = async (proposalId: string) => {
+  const resolveDataRefs = (data: Record<string, any>, idMap: Map<string, number>) => {
+    const resolved = { ...data };
+    for (const key in resolved) {
+      const val = resolved[key];
+      if (typeof val === 'string' && val.startsWith('ref:')) {
+        const tempId = val.substring(4);
+        if (idMap.has(tempId)) {
+          resolved[key] = idMap.get(tempId);
+        }
+      }
+    }
+    return resolved;
+  };
+
+  const executeProposal = async (proposalId: string, idMap?: Map<string, number>) => {
     let targetProposal: ChatProposal | undefined;
 
-    setMessages(prev => prev.map(m => {
-      const p = m.proposals?.find(p => p.id === proposalId);
-      if (p) {
-        targetProposal = p;
-        return {
-          ...m,
-          proposals: m.proposals?.map(pp => pp.id === proposalId ? { ...pp, status: 'executing' as const } : pp)
-        };
-      }
-      return m;
-    }));
+    setMessages(prev => {
+      let found = false;
+      const next = prev.map(m => {
+        const p = m.proposals?.find(p => p.id === proposalId);
+        if (p) {
+          targetProposal = p;
+          found = true;
+          return {
+            ...m,
+            proposals: m.proposals?.map(pp => pp.id === proposalId ? { ...pp, status: 'executing' as const } : pp)
+          };
+        }
+        return m;
+      });
+      return found ? next : prev;
+    });
 
+    // Wait for state update to settle if needed, but since we have targetProposal from the loop, we can proceed.
     if (!targetProposal) return;
 
     try {
       const proposal = targetProposal;
+      const data = idMap ? resolveDataRefs(proposal.data, idMap) : proposal.data;
+
+      let resultId: number | undefined;
+
       switch (proposal.type) {
         case 'add_task':
-          if (!projectId && !proposal.data.projectId) throw new Error('No active project');
-          await masarActions.addTask({
-            projectId: (proposal.data.projectId as number) || (projectId as number),
-            title: proposal.data.title as string,
-            description: (proposal.data.description as string) || '',
-            status: (proposal.data.status as 'To Do' | 'Doing' | 'Done') || 'To Do',
-            priority: (proposal.data.priority as number) || 3,
+          if (!projectId && !data.projectId) throw new Error('No active project');
+          resultId = await masarActions.addTask({
+            projectId: (data.projectId as number) || (projectId as number),
+            title: data.title as string,
+            description: (data.description as string) || '',
+            status: (data.status as any) || 'To Do',
+            priority: (data.priority as number) || 3,
             startedAt: new Date(),
-            parentId: proposal.data.parentId as number | undefined,
-          });
+            parentId: data.parentId as number | undefined,
+          }) as number;
+
+          if (data.tempId && idMap) {
+            idMap.set(data.tempId as string, resultId);
+          }
           break;
         case 'update_task':
-          await masarActions.updateTask(proposal.data.id as number, proposal.data as Partial<Task>);
+          await masarActions.updateTask(data.id as number, data as Partial<Task>);
           break;
         case 'delete_task':
-          await masarActions.deleteTask(proposal.data.id as number);
+          await masarActions.deleteTask(data.id as number);
           break;
         case 'add_dependency':
-          await masarActions.addDependency(proposal.data.blockingTaskId as number, proposal.data.blockedTaskId as number);
+          await masarActions.addDependency(data.blockingTaskId as number, data.blockedTaskId as number);
           break;
         case 'remove_dependency':
-          if (proposal.data.id) {
-            await masarActions.removeDependency(proposal.data.id as number);
+          if (data.id) {
+            await masarActions.removeDependency(data.id as number);
           } else {
              throw new Error('Dependency ID is required for removal');
           }
@@ -95,6 +123,13 @@ export function useOllama(projectId?: number) {
     }
   };
 
+  const executeBatch = async (proposalIds: string[]) => {
+    const idMap = new Map<string, number>();
+    for (const id of proposalIds) {
+      await executeProposal(id, idMap);
+    }
+  };
+
   const rejectProposal = (proposalId: string) => {
     setMessages(prev => prev.map(m => ({
       ...m,
@@ -113,41 +148,32 @@ export function useOllama(projectId?: number) {
     setIsLoading(true);
 
     try {
+      const history = messages.slice(-15).map(m => ({ role: m.role, content: m.content }));
+
       const currentMessages: OllamaMessage[] = [
         {
           role: 'system',
           content: `أنت مساعد ذكي متطور للغاية لتطبيق "مسار" (Masar)، وهو تطبيق احترافي لإدارة المهام والتبعيات.
-أنت تعمل الآن في وضع "العميل المستقل" (Autonomous Agent)، مما يعني أنك تمتلك القدرة على التخطيط الاستراتيجي، التحليل العميق، وتنفيذ العمليات المعقدة.
+أنت تعمل الآن في وضع "العميل المستقل" (Autonomous Agent).
 
 السياق الحالي:
 - المشروع: "${projectContext.projectName}".
-- المهام الحالية والتبعيات: ${JSON.stringify(projectContext.tasks.map(t => ({ id: t.id, title: t.title, status: t.status, priority: t.priority, parentId: t.parentId })))}.
+- المهام الحالية: ${JSON.stringify(projectContext.tasks.map(t => ({ id: t.id, title: t.title, status: t.status, priority: t.priority, parentId: t.parentId })))}.
 
-أدواتك المتاحة (يجب استخدام هذا التنسيق حصراً لكل إجراء على حدة):
-[PROPOSAL:{"type": "add_task", "data": {"title": "...", "description": "...", "priority": 1-5, "parentId": number | null}, "description": "..."}]
-
-الصيغ المتاحة:
-1. إضافة مهمة: [PROPOSAL:{"type": "add_task", "data": {"title": "...", "description": "...", "priority": 1-5, "parentId": number | null}, "description": "..."}]
+أدواتك المتاحة:
+1. إضافة مهمة: [PROPOSAL:{"type": "add_task", "data": {"tempId": "string", "title": "...", "description": "...", "priority": 1-5, "parentId": number | "ref:tempId"}, "description": "..."}]
 2. تحديث مهمة: [PROPOSAL:{"type": "update_task", "data": {"id": number, "status": "To Do" | "Doing" | "Done", "priority": 1-5, "title": "..."}, "description": "..."}]
 3. حذف مهمة: [PROPOSAL:{"type": "delete_task", "data": {"id": number}, "description": "..."}]
-4. إضافة تبعية: [PROPOSAL:{"type": "add_dependency", "data": {"blockingTaskId": number, "blockedTaskId": number}, "description": "..."}]
+4. إضافة تبعية: [PROPOSAL:{"type": "add_dependency", "data": {"blockingTaskId": number | "ref:tempId", "blockedTaskId": number | "ref:tempId"}, "description": "..."}]
 5. إزالة تبعية: [PROPOSAL:{"type": "remove_dependency", "data": {"id": number}, "description": "..."}]
 
-إرشادات هامة جداً:
-- لا ترسل الإجراءات كصفوف JSON عادية أو مصفوفة واحدة.
-- كل إجراء يجب أن يكون مغلفاً بـ [PROPOSAL:...] بشكل مستقل.
-- مثال لإجراءين:
-  لقد أعددت خطة:
-  1. إنشاء المهمة الأولى: [PROPOSAL:{"type": "add_task", "data": {...}, "description": "وصف 1"}]
-  2. إنشاء المهمة الثانية: [PROPOSAL:{"type": "add_task", "data": {...}, "description": "وصف 2"}]
-
-- اللغة: أجب دائماً بالعربية بلهجة مهنية ومحفزة.
-- التفاصيل: اجعل عناوين المهام واضحة ووصفها مفصلاً.
-
-ابدأ الآن في مساعدة المستخدم لتحقيق أهدافه بأعلى كفاءة.`
+إرشادات هامة:
+- التبعيات: يمكنك إنشاء مهمة واستخدامها كتبعية في نفس الخطة باستخدام "tempId" و "ref:tempId".
+- التنسيق: كل إجراء يجب أن يكون مغلفاً بـ [PROPOSAL:...] بشكل مستقل.
+- اللغة: أجب دائماً بالعربية بلهجة مهنية.`
         },
-        ...messages.slice(-15).map(m => ({ role: m.role, content: m.content })),
-        ...(isSystemGenerated ? [] : [{ role: 'user' as const, content }])
+        ...history,
+        ...(isSystemGenerated ? [{ role: 'system' as const, content }] : [{ role: 'user' as const, content }])
       ];
 
       const response = await ollamaService.chat(currentMessages, false, abortControllerRef.current?.signal) as OllamaChatResponse;
@@ -159,45 +185,64 @@ export function useOllama(projectId?: number) {
       let assistantContent = response.message.content || '';
       const proposals: ChatProposal[] = [];
 
-      // Improved parsing: find all [PROPOSAL:...] blocks
-      const proposalRegex = /\[PROPOSAL:({.*?})\]/g;
-      let match;
-      while ((match = proposalRegex.exec(assistantContent)) !== null) {
-        try {
-          const rawProposal = JSON.parse(match[1]);
-          proposals.push({
-            ...rawProposal,
-            id: Math.random().toString(36).substr(2, 9),
-            status: 'pending'
-          });
-        } catch (e) {
-          console.error('Failed to parse proposal', e);
+      // Robust parsing for [PROPOSAL:...]
+      let searchIndex = 0;
+      while (true) {
+        const startIndex = assistantContent.indexOf('[PROPOSAL:', searchIndex);
+        if (startIndex === -1) break;
+
+        let depth = 0;
+        let endIndex = -1;
+        for (let i = startIndex + 10; i < assistantContent.length; i++) {
+          if (assistantContent[i] === '{') depth++;
+          if (assistantContent[i] === '}') depth--;
+          if (assistantContent[i] === ']' && depth === 0) {
+            endIndex = i;
+            break;
+          }
+        }
+
+        if (endIndex !== -1) {
+          const rawJson = assistantContent.substring(startIndex + 10, endIndex);
+          try {
+            const parsed = JSON.parse(rawJson);
+            proposals.push({
+              ...parsed,
+              id: Math.random().toString(36).substr(2, 9),
+              status: 'pending'
+            });
+          } catch (e) {
+            console.error('Failed to parse proposal JSON', e);
+          }
+          searchIndex = endIndex + 1;
+        } else {
+          searchIndex = startIndex + 10;
         }
       }
 
-      // Fallback: if no [PROPOSAL:] found but content looks like JSON array or object
+      // Fallback: if no [PROPOSAL:] found but content looks like JSON array
       if (proposals.length === 0) {
-          const jsonArrayMatch = assistantContent.match(/\[\s*{[\s\S]*}\s*\]/);
-          if (jsonArrayMatch) {
-              try {
-                  const items = JSON.parse(jsonArrayMatch[0]);
-                  if (Array.isArray(items)) {
-                      items.forEach(item => {
-                          if (item.type && item.data) {
-                              proposals.push({
-                                  ...item,
-                                  id: Math.random().toString(36).substr(2, 9),
-                                  status: 'pending'
-                              });
-                          }
-                      });
-                      assistantContent = assistantContent.replace(jsonArrayMatch[0], '').trim();
-                  }
-              } catch (e) {}
-          }
+        const jsonArrayMatch = assistantContent.match(/\[\s*{[\s\S]*}\s*\]/);
+        if (jsonArrayMatch) {
+          try {
+            const items = JSON.parse(jsonArrayMatch[0]);
+            if (Array.isArray(items)) {
+              items.forEach(item => {
+                if (item.type && item.data) {
+                  proposals.push({
+                    ...item,
+                    id: Math.random().toString(36).substr(2, 9),
+                    status: 'pending'
+                  });
+                }
+              });
+              assistantContent = assistantContent.replace(jsonArrayMatch[0], '').trim();
+            }
+          } catch (e) {}
+        }
       }
 
-      assistantContent = assistantContent.replace(/\[PROPOSAL:.*?\]/g, '').trim();
+      assistantContent = assistantContent.replace(/\[PROPOSAL:[\s\S]*?\]/g, '').trim();
 
       const assistantMessage: ExtendedMessage = {
         role: 'assistant',
@@ -209,11 +254,10 @@ export function useOllama(projectId?: number) {
 
     } catch (error: any) {
       if (error.name === 'AbortError') return;
-
       console.error('Ollama Chat Error:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'عذراً، حدث خطأ أثناء الاتصال بـ Ollama. تأكد من تشغيله في الخلفية وتوفر الموديل المطلوب وتفعيل CORS.'
+        content: 'عذراً، حدث خطأ أثناء الاتصال بـ Ollama.'
       }]);
     } finally {
       setIsLoading(false);
@@ -226,6 +270,7 @@ export function useOllama(projectId?: number) {
     sendMessage,
     clearChat,
     executeProposal,
+    executeBatch,
     rejectProposal
   };
 }
