@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase, type Project, type Task, type Dependency, type ProjectMember, type Profile, type ProjectRole } from '@/lib/supabase';
 
+const getChannelName = (base: string) => `${base}-${Math.random().toString(36).substring(2, 9)}`;
+
 export function useProjects(userId?: string) {
   const [projects, setProjects] = useState<Project[]>([]);
 
@@ -19,7 +21,7 @@ export function useProjects(userId?: string) {
     fetchProjects();
 
     const channel = supabase
-      .channel('projects-all')
+      .channel(getChannelName('projects-all'))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, fetchProjects)
       .subscribe();
 
@@ -48,7 +50,7 @@ export function useTasks(projectId?: string | 'all') {
     fetchTasks();
 
     const channel = supabase
-      .channel('tasks-all')
+      .channel(getChannelName('tasks-all'))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, fetchTasks)
       .subscribe();
 
@@ -77,7 +79,7 @@ export function useTopLevelTasks(projectId?: string | 'all') {
     fetchTasks();
 
     const channel = supabase
-      .channel('top-tasks')
+      .channel(getChannelName('top-tasks'))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, fetchTasks)
       .subscribe();
 
@@ -93,6 +95,8 @@ export function useChildTasks(parentId: string) {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
+    if (!parentId) return;
+
     const fetchTasks = async () => {
       const { data } = await supabase
         .from('tasks')
@@ -106,7 +110,7 @@ export function useChildTasks(parentId: string) {
     fetchTasks();
 
     const channel = supabase
-      .channel(`child-tasks-${parentId}`)
+      .channel(getChannelName(`child-tasks-${parentId}`))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `parent_id=eq.${parentId}` }, fetchTasks)
       .subscribe();
 
@@ -123,6 +127,7 @@ export function useTask(taskId?: string | null) {
 
   useEffect(() => {
     if (!taskId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTask(null);
       return;
     }
@@ -140,7 +145,7 @@ export function useTask(taskId?: string | null) {
     fetchTask();
 
     const channel = supabase
-      .channel(`task-${taskId}`)
+      .channel(getChannelName(`task-${taskId}`))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `id=eq.${taskId}` }, fetchTask)
       .subscribe();
 
@@ -157,6 +162,8 @@ export function useDependencies(taskId: string) {
   const [iAmBlocking, setIAmBlocking] = useState<Dependency[]>([]);
 
   useEffect(() => {
+    if (!taskId) return;
+
     const fetchDeps = async () => {
       const { data: bMe } = await supabase.from('dependencies').select('*').eq('blocked_task_id', taskId);
       const { data: iAB } = await supabase.from('dependencies').select('*').eq('blocking_task_id', taskId);
@@ -167,7 +174,7 @@ export function useDependencies(taskId: string) {
     fetchDeps();
 
     const channel = supabase
-      .channel(`deps-${taskId}`)
+      .channel(getChannelName(`deps-${taskId}`))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'dependencies' }, fetchDeps)
       .subscribe();
 
@@ -180,6 +187,7 @@ export function useDependencies(taskId: string) {
 }
 
 export async function updateBlockedStatus(taskId: string) {
+  if (!taskId) return;
   const { data: task } = await supabase.from('tasks').select('*').eq('id', taskId).single();
   if (!task) return;
 
@@ -213,6 +221,7 @@ export async function updateBlockedStatus(taskId: string) {
 }
 
 export async function onTaskStatusChange(taskId: string) {
+  if (!taskId) return;
   const { data: blockedTasks } = await supabase.from('dependencies').select('blocked_task_id').eq('blocking_task_id', taskId);
   if (blockedTasks) {
     for (const dep of blockedTasks) {
@@ -280,11 +289,17 @@ export const masarActions = {
   }
 };
 
+type MemberWithProfile = ProjectMember & { profiles: Profile };
+
 export function useProjectMembers(projectId?: string) {
-  const [members, setMembers] = useState<(ProjectMember & { profiles: Profile })[]>([]);
+  const [members, setMembers] = useState<MemberWithProfile[]>([]);
 
   useEffect(() => {
-    if (!projectId || projectId === 'all') return;
+    if (!projectId || projectId === 'all') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMembers([]);
+      return;
+    }
 
     const fetchMembers = async () => {
       const { data } = await supabase
@@ -292,13 +307,13 @@ export function useProjectMembers(projectId?: string) {
         .select('*, profiles(*)')
         .eq('project_id', projectId);
 
-      if (data) setMembers(data as any);
+      if (data) setMembers(data as MemberWithProfile[]);
     };
 
     fetchMembers();
 
     const channel = supabase
-      .channel(`members-${projectId}`)
+      .channel(getChannelName(`members-${projectId}`))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'project_members', filter: `project_id=eq.${projectId}` }, fetchMembers)
       .subscribe();
 
