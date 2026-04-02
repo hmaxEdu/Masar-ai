@@ -8,22 +8,22 @@ import { masarActions } from '@/hooks/use-masar';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface CreateTaskDialogProps {
-  projectId: number;
+  projectId: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function CreateTaskDialog({ projectId, isOpen, onClose }: CreateTaskDialogProps) {
+export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState('3');
 
   const handleCreate = async () => {
     if (!title.trim()) return;
     await masarActions.addTask({
-      projectId,
+      project_id: projectId,
       title,
       description: '',
-      startedAt: new Date(),
+      started_at: new Date().toISOString(),
       priority: parseInt(priority),
       status: 'To Do'
     });

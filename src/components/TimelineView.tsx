@@ -1,32 +1,31 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useTasks, masarActions } from '@/hooks/use-masar';
 import { Button } from '@/components/ui/button';
-import { format, addHours, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, startOfDay, endOfDay, eachHourOfInterval, eachDayOfInterval } from 'date-fns';
+import { type Task } from '@/lib/supabase';
+import { format, addDays, subDays, addMonths, subMonths, eachDayOfInterval, eachHourOfInterval, addHours, endOfDay, addWeeks, subWeeks, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { type Task } from '@/lib/db';
 import { ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface TimelineViewProps {
-  projectId: number;
-  onTaskClick: (taskId: number) => void;
+  projectId: string | 'all';
+  onTaskClick: (taskId: string) => void;
 }
 
+const PIXELS_PER_UNIT = 80;
 const ROW_HEIGHT = 60;
 const HEADER_HEIGHT = 40;
-const PIXELS_PER_UNIT = 60; // 60px per hour or day depending on zoom
 
-export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
+export default function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
   const tasks = useTasks(projectId);
-  const [zoom, setZoom] = useState<'day' | 'week' | 'month'>('day');
   const [startDate, setStartDate] = useState(startOfDay(new Date()));
+  const [zoom, setZoom] = useState<'day' | 'week' | 'month'>('day');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Filter tasks to show (maybe only top level or all? let's show all for now but sorted)
   const sortedTasks = useMemo(() => {
     const result: Task[] = [];
-    const addChildren = (parentId?: number) => {
-      const children = tasks.filter(t => t.parentId === parentId).sort((a, b) => a.priority - b.priority);
+    const addChildren = (parentId?: string) => {
+      const children = tasks.filter(t => t.parent_id === parentId).sort((a, b) => a.priority - b.priority);
       for (const child of children) {
         result.push(child);
         addChildren(child.id);
@@ -37,9 +36,9 @@ export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
   }, [tasks]);
 
   const taskProgress = useMemo(() => {
-    const progress: Record<number, number> = {};
+    const progress: Record<string, number> = {};
     const calculateProgress = (task: Task): number => {
-      const children = tasks.filter(t => t.parentId === task.id);
+      const children = tasks.filter(t => t.parent_id === task.id);
       if (children.length === 0) {
         return task.status === 'Done' ? 100 : 0;
       }
@@ -47,7 +46,7 @@ export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
       return childProgressSum / children.length;
     };
     tasks.forEach(task => {
-      progress[task.id!] = calculateProgress(task);
+      progress[task.id] = calculateProgress(task);
     });
     return progress;
   }, [tasks]);
@@ -62,20 +61,22 @@ export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
     return eachDayOfInterval({ start: startDate, end: addMonths(startDate, 1) });
   }, [startDate, zoom]);
 
-  const getPosition = (date: Date) => {
-    const diff = date.getTime() - startDate.getTime();
+  const getPosition = (date: string) => {
+    const d = new Date(date);
+    const diff = d.getTime() - startDate.getTime();
     const unitTime = zoom === 'day' ? 1000 * 60 * 60 : 1000 * 60 * 60 * 24;
     return (diff / unitTime) * PIXELS_PER_UNIT;
   };
 
-  const getWidth = (start: Date, end?: Date) => {
-    const targetEnd = end || addHours(start, 2);
-    const diff = targetEnd.getTime() - start.getTime();
+  const getWidth = (start: string, end?: string) => {
+    const s = new Date(start);
+    const targetEnd = end ? new Date(end) : addHours(s, 2);
+    const diff = targetEnd.getTime() - s.getTime();
     const unitTime = zoom === 'day' ? 1000 * 60 * 60 : 1000 * 60 * 60 * 24;
     return Math.max((diff / unitTime) * PIXELS_PER_UNIT, 40);
   };
 
-  const handleDrag = (taskId: number, e: React.MouseEvent, type: 'start' | 'end' | 'move') => {
+  const handleDrag = (taskId: string, e: React.MouseEvent, type: 'start' | 'end' | 'move') => {
     const initialX = e.clientX;
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -88,11 +89,12 @@ export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
       const moveInHours = -unitsMoved * factor;
 
       if (type === 'start' || type === 'move') {
-        update.startedAt = addHours(task.startedAt, moveInHours);
+        const s = new Date(task.started_at);
+        update.started_at = addHours(s, moveInHours).toISOString();
       }
-      if (type === 'end' || (type === 'move' && task.finishedAt)) {
-        const baseEnd = task.finishedAt || new Date();
-        update.finishedAt = addHours(baseEnd, moveInHours);
+      if (type === 'end' || (type === 'move' && task.finished_at)) {
+        const baseEnd = task.finished_at ? new Date(task.finished_at) : new Date();
+        update.finished_at = addHours(baseEnd, moveInHours).toISOString();
       }
 
       if (Object.keys(update).length > 0) {
@@ -188,10 +190,10 @@ export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
           {/* Task Bars */}
           <div className="relative z-20">
             {sortedTasks.map((task, index) => {
-              const x = getPosition(task.startedAt);
-              const w = getWidth(task.startedAt, task.finishedAt);
+              const x = getPosition(task.started_at);
+              const w = getWidth(task.started_at, task.finished_at);
               const y = index * ROW_HEIGHT + HEADER_HEIGHT + 10;
-              const progress = taskProgress[task.id!] || 0;
+              const progress = taskProgress[task.id] || 0;
               const isSmall = w < 100;
 
               return (
@@ -224,7 +226,7 @@ export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
 
                   <div
                     className="absolute inset-0 flex items-center px-2 cursor-pointer"
-                    onClick={() => onTaskClick(task.id!)}
+                    onClick={() => onTaskClick(task.id)}
                   >
                     {isSmall ? (
                       <div className="absolute right-full mr-2 whitespace-nowrap text-xs font-bold text-foreground bg-background/80 px-1 rounded shadow-sm">
@@ -243,16 +245,16 @@ export function TimelineView({ projectId, onTaskClick }: TimelineViewProps) {
 
                   <div
                     className="absolute inset-x-4 inset-y-0 cursor-grab active:cursor-grabbing z-10"
-                    onMouseDown={(e) => handleDrag(task.id!, e, 'move')}
+                    onMouseDown={(e) => handleDrag(task.id, e, 'move')}
                   />
 
                   <div
                     className="absolute right-0 top-0 bottom-0 w-4 cursor-ew-resize group-hover:bg-primary/5 transition-colors z-20"
-                    onMouseDown={(e) => handleDrag(task.id!, e, 'start')}
+                    onMouseDown={(e) => handleDrag(task.id, e, 'start')}
                   />
                   <div
                     className="absolute left-0 top-0 bottom-0 w-4 cursor-ew-resize group-hover:bg-primary/5 transition-colors z-20"
-                    onMouseDown={(e) => handleDrag(task.id!, e, 'end')}
+                    onMouseDown={(e) => handleDrag(task.id, e, 'end')}
                   />
                 </motion.div>
               );

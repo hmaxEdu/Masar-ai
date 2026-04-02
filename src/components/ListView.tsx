@@ -1,26 +1,29 @@
-import { useState, Fragment, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
+import { useTasks, useProjects, useProjectMembers } from '@/hooks/use-masar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { useTasks, useProjects } from '@/hooks/use-masar';
-import { format, differenceInMinutes, differenceInHours, differenceInDays } from 'date-fns';
+import { type Task } from '@/lib/supabase';
+import { format, differenceInMinutes } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { type Task } from '@/lib/db';
-import { Search, AlertCircle, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
-import { Button } from './ui/button';
+import { ChevronDown, ChevronRight, ChevronUp, Search, AlertCircle, User } from 'lucide-react';
 
 interface ListViewProps {
-  projectId: number | 'all';
-  onTaskClick: (taskId: number) => void;
+  projectId: string | 'all';
+  onTaskClick: (taskId: string) => void;
 }
 
-function formatDuration(start: Date, end?: Date) {
-  const targetEnd = end || new Date();
-  const days = differenceInDays(targetEnd, start);
-  const hours = differenceInHours(targetEnd, start) % 24;
-  const mins = differenceInMinutes(targetEnd, start) % 60;
+function formatDuration(start: string, end?: string) {
+  const startDate = new Date(start);
+  const targetEnd = end ? new Date(end) : new Date();
+
+  const totalMinutes = Math.abs(differenceInMinutes(targetEnd, startDate));
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const mins = totalMinutes % 60;
 
   let result = '';
   if (days > 0) result += `${days}ي `;
@@ -37,16 +40,17 @@ const statusMap: Record<string, string> = {
   'Blocked': 'معطل'
 };
 
-export function ListView({ projectId, onTaskClick }: ListViewProps) {
-  const tasks = useTasks(projectId === 'all' ? undefined : projectId);
+export default function ListView({ projectId, onTaskClick }: ListViewProps) {
+  const tasks = useTasks(projectId);
   const projects = useProjects();
+  const members = useProjectMembers(projectId === 'all' ? undefined : projectId);
   const [sortField, setSortField] = useState<keyof Task>('priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [search, setSearch] = useState('');
   const [groupBy, setGroupBy] = useState<'none' | 'priority' | 'status'>('none');
-  const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
-  const toggleExpand = (e: React.MouseEvent, taskId: number) => {
+  const toggleExpand = (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation();
     const newExpanded = new Set(expandedTasks);
     if (newExpanded.has(taskId)) {
@@ -58,10 +62,10 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
   };
 
   const taskProgress = useMemo(() => {
-    const progress: Record<number, number> = {};
+    const progress: Record<string, number> = {};
 
     const calculateProgress = (task: Task): number => {
-      const children = tasks.filter(t => t.parentId === task.id);
+      const children = tasks.filter(t => t.parent_id === task.id);
       if (children.length === 0) {
         return task.status === 'Done' ? 100 : 0;
       }
@@ -70,7 +74,7 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
     };
 
     tasks.forEach(task => {
-      progress[task.id!] = calculateProgress(task);
+      progress[task.id] = calculateProgress(task);
     });
     return progress;
   }, [tasks]);
@@ -80,12 +84,12 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
     t.description.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getStatusVariant = (status: string): "success" | "info" | "error" | "secondary" => {
+  const getStatusVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
     switch (status) {
-      case 'Done': return 'success';
-      case 'Doing': return 'info';
-      case 'Blocked': return 'error';
-      default: return 'secondary';
+      case 'Done': return 'default';
+      case 'Doing': return 'secondary';
+      case 'Blocked': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -100,19 +104,20 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
     });
 
     return sorted.flatMap(task => {
-      const children = tasks.filter(t => t.parentId === task.id);
-      const isExpanded = expandedTasks.has(task.id!);
+      const children = tasks.filter(t => t.parent_id === task.id);
+      const isExpanded = expandedTasks.has(task.id);
+      const assignee = members.find(m => m.profiles.id === task.assignee_id);
 
       const row = (
         <TableRow
           key={task.id}
-          className="cursor-pointer border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-          onClick={() => onTaskClick(task.id!)}
+          className="cursor-pointer border-b transition-colors hover:bg-muted/50"
+          onClick={() => onTaskClick(task.id)}
         >
           <TableCell className="font-medium text-right py-4" style={{ paddingRight: `${depth * 2 + 1}rem` }}>
             <div className="flex items-center gap-2">
               {children.length > 0 ? (
-                <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={(e) => toggleExpand(e, task.id!)}>
+                <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={(e) => toggleExpand(e, task.id)}>
                   {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </Button>
               ) : (
@@ -123,7 +128,15 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
             </div>
           </TableCell>
           <TableCell className="text-right py-4">
-            <Badge variant="outline">أولوية {task.priority}</Badge>
+            <div className="flex items-center gap-2">
+               <Badge variant="outline">أولوية {task.priority}</Badge>
+               {assignee && (
+                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    <User className="h-2.5 w-2.5" />
+                    {assignee.profiles.email.split('@')[0]}
+                 </div>
+               )}
+            </div>
           </TableCell>
           <TableCell className="text-right py-4">
             <Badge variant={getStatusVariant(task.status)}>{statusMap[task.status] || task.status}</Badge>
@@ -131,20 +144,20 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
           <TableCell className="text-right w-[150px] py-4">
             <div className="flex flex-col gap-1">
               <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
-                <span>{Math.round(taskProgress[task.id!] || 0)}%</span>
+                <span>{Math.round(taskProgress[task.id] || 0)}%</span>
               </div>
-              <Progress value={taskProgress[task.id!] || 0} className="h-2" />
+              <Progress value={taskProgress[task.id] || 0} className="h-2" />
             </div>
           </TableCell>
           <TableCell className="text-muted-foreground text-right text-xs py-4">
-            {format(task.startedAt, 'MMM d, HH:mm', { locale: ar })}
+            {format(new Date(task.created_at), 'MMM d, HH:mm', { locale: ar })}
           </TableCell>
           <TableCell className="font-mono text-sm text-right py-4">
-            {formatDuration(task.startedAt, task.finishedAt)}
+            {formatDuration(task.started_at, task.finished_at)}
           </TableCell>
           {projectId === 'all' && (
             <TableCell className="text-right py-4">
-              <Badge variant="outline" className="bg-primary/5">{projects.find(p => p.id === task.projectId)?.name || 'غير معروف'}</Badge>
+              <Badge variant="outline" className="bg-primary/5">{projects.find(p => p.id === task.project_id)?.name || 'غير معروف'}</Badge>
             </TableCell>
           )}
         </TableRow>
@@ -163,7 +176,7 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
     }
   };
 
-  const topLevelFiltered = filteredTasks.filter(t => !t.parentId);
+  const topLevelFiltered = filteredTasks.filter(t => !t.parent_id);
 
   const groups = groupBy === 'none'
     ? { 'كل المهام': topLevelFiltered }
@@ -221,10 +234,10 @@ export function ListView({ projectId, onTaskClick }: ListViewProps) {
                 </div>
               </TableHead>
               <TableHead className="text-right font-bold h-12">الإنجاز</TableHead>
-              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('startedAt')}>
+              <TableHead className="cursor-pointer text-right font-bold h-12" onClick={() => handleSort('created_at')}>
                 <div className="flex items-center gap-1">
                   بدأ في
-                  {sortField === 'startedAt' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+                  {sortField === 'created_at' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
                 </div>
               </TableHead>
               {projectId === 'all' && <TableHead className="text-right font-bold h-12">المشروع</TableHead>}

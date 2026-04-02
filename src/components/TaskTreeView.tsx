@@ -3,12 +3,12 @@ import { useTasks, useProjects } from '@/hooks/use-masar';
 import { TreeView } from '@/components/ui/tree-view';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { type Task } from '@/lib/db';
+import { type Task } from '@/lib/supabase';
 import { AlertCircle } from 'lucide-react';
 
 interface TaskTreeViewProps {
-  projectId: number | 'all';
-  onTaskClick: (taskId: number) => void;
+  projectId: string | 'all';
+  onTaskClick: (taskId: string) => void;
 }
 
 const statusMap: Record<string, string> = {
@@ -18,31 +18,31 @@ const statusMap: Record<string, string> = {
   'Blocked': 'معطل'
 };
 
-const getStatusVariant = (status: string): "success" | "info" | "error" | "secondary" => {
+const getStatusVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
   switch (status) {
-    case 'Done': return 'success';
-    case 'Doing': return 'info';
-    case 'Blocked': return 'error';
-    default: return 'secondary';
+    case 'Done': return 'default';
+    case 'Doing': return 'secondary';
+    case 'Blocked': return 'destructive';
+    default: return 'outline';
   }
 };
 
 export function TaskTreeView({ projectId, onTaskClick }: TaskTreeViewProps) {
-  const tasks = useTasks(projectId === 'all' ? undefined : projectId);
+  const tasks = useTasks(projectId);
   const projects = useProjects();
 
   const treeData = useMemo(() => {
     return tasks.map(task => ({
       ...task,
-      name: task.title, // Map title to name for TreeView compatibility if needed
+      name: task.title,
     }));
   }, [tasks]);
 
   const taskProgress = useMemo(() => {
-    const progress: Record<number, number> = {};
+    const progress: Record<string, number> = {};
 
     const calculateProgress = (task: Task): number => {
-      const children = tasks.filter(t => t.parentId === task.id);
+      const children = tasks.filter(t => t.parent_id === task.id);
       if (children.length === 0) {
         return task.status === 'Done' ? 100 : 0;
       }
@@ -51,21 +51,21 @@ export function TaskTreeView({ projectId, onTaskClick }: TaskTreeViewProps) {
     };
 
     tasks.forEach(task => {
-      progress[task.id!] = calculateProgress(task);
+      progress[task.id] = calculateProgress(task);
     });
     return progress;
   }, [tasks]);
 
   const renderTaskItem = (item: any) => {
     const task = item as Task;
-    const progress = taskProgress[task.id!] || 0;
+    const progress = taskProgress[task.id] || 0;
 
     return (
       <div
         className="flex items-center gap-4 py-1"
         onClick={(e) => {
           e.stopPropagation();
-          onTaskClick(task.id!);
+          onTaskClick(task.id);
         }}
       >
         <div className="flex-1 flex items-center gap-2 min-w-0">
@@ -76,7 +76,7 @@ export function TaskTreeView({ projectId, onTaskClick }: TaskTreeViewProps) {
         <div className="flex items-center gap-3 shrink-0">
           {projectId === 'all' && (
             <Badge variant="outline" className="bg-primary/5 text-[10px] hidden md:flex">
-              {projects.find(p => p.id === task.projectId)?.name || 'غير معروف'}
+              {projects.find(p => p.id === task.project_id)?.name || 'غير معروف'}
             </Badge>
           )}
 
@@ -102,7 +102,7 @@ export function TaskTreeView({ projectId, onTaskClick }: TaskTreeViewProps) {
       <TreeView
         data={treeData}
         renderItem={renderTaskItem}
-        parentField="parentId"
+        parentField="parent_id"
         defaultExpanded={true}
         className="p-4"
       />

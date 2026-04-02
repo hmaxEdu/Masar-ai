@@ -10,7 +10,7 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
+export default function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -32,6 +32,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         <Button
           variant="ghost"
           size="sm"
+          type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={editor.isActive('bold') ? 'bg-muted' : ''}
         >
@@ -40,6 +41,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         <Button
           variant="ghost"
           size="sm"
+          type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={editor.isActive('italic') ? 'bg-muted' : ''}
         >
@@ -48,6 +50,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         <Button
           variant="ghost"
           size="sm"
+          type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={editor.isActive('bulletList') ? 'bg-muted' : ''}
         >
@@ -56,6 +59,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         <Button
           variant="ghost"
           size="sm"
+          type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           className={editor.isActive('orderedList') ? 'bg-muted' : ''}
         >

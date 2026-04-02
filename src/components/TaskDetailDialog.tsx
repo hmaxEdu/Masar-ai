@@ -1,34 +1,43 @@
-import { useState } from 'react';
-import { useTask, useChildTasks, useTasks, useDependencies, masarActions } from '@/hooks/use-masar';
+import { useState, useMemo } from 'react';
+import { useTask, useTasks, useDependencies, useProjectMembers, masarActions } from '@/hooks/use-masar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RichTextEditor } from '@/components/RichTextEditor';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { type Task, type TaskStatus } from '@/lib/supabase';
 import { format } from 'date-fns';
-import { type Task, type TaskStatus } from '@/lib/db';
-import { X, Plus, AlertCircle, Link as LinkIcon, Trash2, ChevronRight } from 'lucide-react';
+import { X, Plus, Trash2, AlertCircle, Link as LinkIcon, ChevronRight, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import RichTextEditor from './RichTextEditor';
 
 interface TaskDetailDialogProps {
-  taskId: number | null;
+  taskId: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogProps) {
-  const task = useTask(taskId || undefined);
-  const childTasks = useChildTasks(taskId || 0);
-  const allTasks = useTasks(task?.projectId);
-  const { blockingMe, iAmBlocking } = useDependencies(taskId || 0);
+export default function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogProps) {
+  const task = useTask(taskId);
+  const allTasks = useTasks(task?.project_id || 'all');
+  const members = useProjectMembers(task?.project_id);
+  const { blockingMe, iAmBlocking } = useDependencies(taskId || '');
   const [newChildTask, setNewChildTask] = useState('');
-  const [editingChildTaskId, setEditingChildTaskId] = useState<number | null>(null);
+  const [editingChildTaskId, setEditingChildTaskId] = useState<string | null>(null);
 
-  if (!task) return null;
+  const childTasks = useMemo(() =>
+    allTasks.filter(t => t.parent_id === taskId),
+  [allTasks, taskId]);
+
+  const completedChildren = childTasks.filter(t => t.status === 'Done').length;
+  const progress = childTasks.length > 0 ? (completedChildren / childTasks.length) * 100 : (task?.status === 'Done' ? 100 : 0);
+
+  const availableTasksToBlock = useMemo(() =>
+    allTasks.filter(t => t.id !== taskId && !blockingMe.some(d => d.blocking_task_id === t.id)),
+  [allTasks, taskId, blockingMe]);
 
   const handleUpdate = (changes: Partial<Task>) => {
     if (taskId) masarActions.updateTask(taskId, changes);
@@ -36,56 +45,75 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
 
   const handleAddChildTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newChildTask.trim() && taskId) {
-      await masarActions.addTask({
-        projectId: task.projectId,
-        parentId: taskId,
-        title: newChildTask,
-        description: '',
-        startedAt: new Date(),
-        priority: 3,
-        status: 'To Do'
-      });
-      setNewChildTask('');
-    }
+    if (!newChildTask.trim() || !task) return;
+    await masarActions.addTask({
+      project_id: task.project_id,
+      parent_id: task.id,
+      title: newChildTask,
+      description: '',
+      started_at: new Date().toISOString(),
+      priority: 3,
+      status: 'To Do'
+    });
+    setNewChildTask('');
   };
 
-  const completedChildren = childTasks.filter(t => t.status === 'Done').length;
-  const progress = childTasks.length > 0 ? (completedChildren / childTasks.length) * 100 : (task.status === 'Done' ? 100 : 0);
-
-  const availableTasksToBlock = allTasks.filter(t =>
-    t.id !== taskId &&
-    !blockingMe.some(dep => dep.blockingTaskId === t.id) &&
-    t.status !== 'Done'
-  );
+  if (!task) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto font-['ibm-ar']" dir="rtl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0" dir="rtl">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          className="flex-1 overflow-y-auto p-6"
         >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+          <DialogHeader className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="text-[10px]">مهمة #{task.id.slice(0, 8)}</Badge>
+                {task.status === 'Blocked' && (
+                  <Badge variant="destructive" className="flex gap-1 animate-pulse">
+                    <AlertCircle className="h-3 w-3" /> معطلة
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground">المسؤول:</Label>
+                <Select
+                  value={task.assignee_id || 'unassigned'}
+                  onValueChange={(v) => handleUpdate({ assignee_id: v === 'unassigned' ? undefined : v })}
+                >
+                  <SelectTrigger className="h-8 w-[150px] text-[10px]">
+                    <div className="flex items-center gap-2">
+                      <User className="h-3 w-3" />
+                      <SelectValue placeholder="غير معين" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">غير معين</SelectItem>
+                    {members.map(m => (
+                      <SelectItem key={m.profiles.id} value={m.profiles.id}>{m.profiles.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogTitle className="text-right">
               <Input
                 value={task.title}
                 onChange={(e) => handleUpdate({ title: e.target.value })}
-                className="text-xl font-bold border-none px-0 focus-visible:ring-0 text-right bg-transparent"
+                className="text-2xl font-bold border-none px-0 focus-visible:ring-0 h-auto text-right"
               />
-              {task.status === 'Blocked' && (
-                <Badge variant="destructive" className="flex gap-1 animate-pulse">
-                  <AlertCircle className="h-3 w-3" /> معطل
-                </Badge>
-              )}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-6">
               <div className="space-y-2 text-right">
-                <Label className="text-muted-foreground">الوصف</Label>
+                <Label className="text-muted-foreground flex items-center gap-2 justify-end">
+                  الوصف
+                </Label>
                 <RichTextEditor
                   content={task.description}
                   onChange={(content) => handleUpdate({ description: content })}
@@ -110,11 +138,11 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                       >
                         <Checkbox
                           checked={s.status === 'Done'}
-                          onCheckedChange={(checked) => masarActions.updateTask(s.id!, { status: checked ? 'Done' : 'To Do' })}
+                          onCheckedChange={(checked) => masarActions.updateTask(s.id, { status: checked ? 'Done' : 'To Do' })}
                         />
                         <span
                           className={`flex-1 cursor-pointer ${s.status === 'Done' ? 'line-through text-muted-foreground' : ''}`}
-                          onClick={() => setEditingChildTaskId(s.id!)}
+                          onClick={() => setEditingChildTaskId(s.id)}
                         >
                           {s.title}
                         </span>
@@ -123,7 +151,7 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 text-muted-foreground"
-                            onClick={() => setEditingChildTaskId(s.id!)}
+                            onClick={() => setEditingChildTaskId(s.id)}
                           >
                             <ChevronRight className="h-3 w-3" />
                           </Button>
@@ -131,7 +159,7 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 text-destructive"
-                            onClick={() => masarActions.deleteTask(s.id!)}
+                            onClick={() => masarActions.deleteTask(s.id)}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -203,8 +231,8 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                 <Label className="text-muted-foreground">بدأت في</Label>
                 <Input
                   type="datetime-local"
-                  value={format(task.startedAt, "yyyy-MM-dd'T'HH:mm")}
-                  onChange={(e) => handleUpdate({ startedAt: new Date(e.target.value) })}
+                  value={format(new Date(task.started_at), "yyyy-MM-dd'T'HH:mm")}
+                  onChange={(e) => handleUpdate({ started_at: new Date(e.target.value).toISOString() })}
                   className="text-right text-xs"
                 />
               </div>
@@ -213,8 +241,8 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                 <Label className="text-muted-foreground">انتهت في</Label>
                 <Input
                   type="datetime-local"
-                  value={task.finishedAt ? format(task.finishedAt, "yyyy-MM-dd'T'HH:mm") : ''}
-                  onChange={(e) => handleUpdate({ finishedAt: e.target.value ? new Date(e.target.value) : undefined })}
+                  value={task.finished_at ? format(new Date(task.finished_at), "yyyy-MM-dd'T'HH:mm") : ''}
+                  onChange={(e) => handleUpdate({ finished_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
                   className="text-right text-xs"
                 />
               </div>
@@ -223,17 +251,17 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                 <Label className="text-muted-foreground">معطلة بواسطة</Label>
                 <div className="space-y-1">
                   {blockingMe.map(dep => {
-                    const blocker = allTasks.find(t => t.id === dep.blockingTaskId);
+                    const blocker = allTasks.find(t => t.id === dep.blocking_task_id);
                     return (
                       <div key={dep.id} className="flex items-center justify-between text-xs bg-destructive/10 text-destructive p-2 rounded border border-destructive/20 group">
                         <span className="truncate font-medium">{blocker?.title || 'مهمة غير معروفة'}</span>
-                        <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground" onClick={() => masarActions.removeDependency(dep.id!)}>
+                        <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground" onClick={() => masarActions.removeDependency(dep.id)}>
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
                     );
                   })}
-                  <Select onValueChange={(v) => masarActions.addDependency(parseInt(v), taskId!)}>
+                  <Select onValueChange={(v) => masarActions.addDependency(v, taskId!)}>
                     <SelectTrigger className="h-8 text-[10px] text-right bg-muted/50">
                       <div className="flex items-center gap-1">
                         <LinkIcon className="h-3 w-3" />
@@ -242,7 +270,7 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                     </SelectTrigger>
                     <SelectContent>
                       {availableTasksToBlock.map(t => (
-                        <SelectItem key={t.id} value={t.id!.toString()}>{t.title}</SelectItem>
+                        <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -253,7 +281,7 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
                 <Label className="text-muted-foreground text-xs">تعطل هذه المهام</Label>
                 <div className="space-y-1">
                   {iAmBlocking.length > 0 ? iAmBlocking.map(dep => {
-                    const blocked = allTasks.find(t => t.id === dep.blockedTaskId);
+                    const blocked = allTasks.find(t => t.id === dep.blocked_task_id);
                     return (
                       <div key={dep.id} className="text-xs bg-muted p-2 rounded flex items-center gap-2">
                         <LinkIcon className="h-3 w-3 text-muted-foreground" />
@@ -276,7 +304,6 @@ export function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogPr
           </DialogFooter>
         </motion.div>
 
-        {/* Support for infinite nesting by opening another dialog for the child */}
         {editingChildTaskId !== null && (
           <TaskDetailDialog
             taskId={editingChildTaskId}

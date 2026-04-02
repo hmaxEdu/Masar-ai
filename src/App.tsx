@@ -1,33 +1,62 @@
 import { useState, useEffect } from 'react';
-import { useProjects, masarActions } from '@/hooks/use-masar';
-import { ListView } from '@/components/ListView';
-import { TimelineView } from '@/components/TimelineView';
-import { TaskTreeView } from '@/components/TaskTreeView';
-import { TaskDetailDialog } from '@/components/TaskDetailDialog';
-import { Button } from '@/components/ui/button';
-import { CreateTaskDialog } from '@/components/CreateTaskDialog';
-import { SettingsDialog } from '@/components/SettingsDialog';
-import { AIAssistant } from '@/components/AIAssistant';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Plus, LayoutList, Calendar, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph, Sparkles } from 'lucide-react';
+import { supabase } from './lib/supabase';
+import { useProjects, masarActions } from './hooks/use-masar';
+import ListView from './components/ListView';
+import TimelineView from './components/TimelineView';
+import { TaskTreeView } from './components/TaskTreeView';
+import TaskDetailDialog from './components/TaskDetailDialog';
+import CreateTaskDialog from './components/CreateTaskDialog';
+import { SettingsDialog } from './components/SettingsDialog';
+import CollaborationDialog from './components/CollaborationDialog';
+import Login from './components/Login';
+import { migrateFromDexie } from './lib/migration';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
+import { Button } from './components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './components/ui/dropdown-menu';
+import { LayoutList, Calendar, Plus, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph, LogOut, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from './assets/masar.png';
+import { type Session } from '@supabase/supabase-js';
+
 export default function App() {
-  const projects = useProjects();
-  const [activeProjectId, setActiveProjectId] = useState<number | 'all' | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const projects = useProjects(session?.user?.id);
+  const [activeProjectId, setActiveProjectId] = useState<string | 'all' | null>(null);
   const [view, setView] = useState<'list' | 'timeline' | 'tree'>('list');
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isAIOpen, setIsAIOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => { if (typeof window !== 'undefined') { return localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches); } return false; });
+  const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) migrateFromDexie();
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) migrateFromDexie();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (projects.length > 0 && activeProjectId === null) {
-      setActiveProjectId(projects[0].id!);
+      setActiveProjectId(projects[0].id);
     }
   }, [projects, activeProjectId]);
 
@@ -44,12 +73,12 @@ export default function App() {
   const handleCreateProject = async () => {
     const name = prompt('اسم المشروع:');
     if (name) {
-      const id = await masarActions.addProject(name);
-      setActiveProjectId(id as number);
+      const { data } = await masarActions.addProject(name);
+      if (data) setActiveProjectId(data.id);
     }
   };
 
-  const handleRenameProject = async (id: number) => {
+  const handleRenameProject = async (id: string) => {
     const project = projects.find(p => p.id === id);
     if (!project) return;
     const name = prompt('اسم المشروع الجديد:', project.name);
@@ -58,20 +87,23 @@ export default function App() {
     }
   };
 
-  const handleDeleteProject = async (id: number) => {
+  const handleDeleteProject = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المهام والتبعيات المرتبطة به.')) {
       await masarActions.deleteProject(id);
       if (activeProjectId === id) {
         const remaining = projects.filter(p => p.id !== id);
-        setActiveProjectId(remaining.length > 0 ? remaining[0].id! : null);
+        setActiveProjectId(remaining.length > 0 ? remaining[0].id : null);
       }
     }
   };
 
-  const handleTaskClick = (id: number) => {
+  const handleTaskClick = (id: string) => {
     setSelectedTaskId(id);
     setIsTaskDetailOpen(true);
   };
+
+  if (loading) return null;
+  if (!session) return <Login />;
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-['ibm-ar'] transition-colors duration-300 overflow-hidden h-screen" dir="rtl">
@@ -92,7 +124,7 @@ export default function App() {
           <div className="flex items-center gap-2 mr-4">
             <Select
               value={activeProjectId?.toString() || ''}
-              onValueChange={(v) => setActiveProjectId(v === 'all' ? 'all' : parseInt(v))}
+              onValueChange={(v) => setActiveProjectId(v)}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="اختر المشروع" />
@@ -100,7 +132,7 @@ export default function App() {
               <SelectContent>
                 <SelectItem value="all">كل المشاريع</SelectItem>
                 {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id!.toString()}>{p.name}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -115,7 +147,7 @@ export default function App() {
                   <Plus className="h-4 w-4" /> مشروع جديد
                 </DropdownMenuItem>
                 {activeProjectId && activeProjectId !== 'all' && (
-                  <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as number)} className="flex gap-2">
+                  <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as string)} className="flex gap-2">
                     <Settings className="h-4 w-4" /> إعادة تسمية المشروع
                   </DropdownMenuItem>
                 )}
@@ -123,7 +155,7 @@ export default function App() {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => handleDeleteProject(activeProjectId as number)}
+                      onClick={() => handleDeleteProject(activeProjectId as string)}
                       className="flex gap-2 text-destructive focus:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" /> حذف المشروع الحالي
@@ -150,20 +182,25 @@ export default function App() {
             </TabsList>
           </Tabs>
 
-          <Button
-            variant={isAIOpen ? "default" : "outline"}
-            size="icon"
-            onClick={() => setIsAIOpen(!isAIOpen)}
-            className={isAIOpen ? "" : "text-primary"}
-          >
-            <Sparkles className="h-4 w-4" />
-          </Button>
+          {activeProjectId && activeProjectId !== 'all' && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsCollaborationOpen(true)}
+              className="text-primary"
+            >
+              <Users className="h-4 w-4" />
+            </Button>
+          )}
 
           <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
             <Settings className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </motion.header>
@@ -198,11 +235,11 @@ export default function App() {
                   className="flex-1 overflow-hidden"
                 >
                   {view === 'list' ? (
-                    <ListView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+                    <ListView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
                   ) : view === 'tree' ? (
-                    <TaskTreeView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+                    <TaskTreeView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
                   ) : (
-                    <TimelineView projectId={activeProjectId as number} onTaskClick={handleTaskClick} />
+                    <TimelineView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
                   )}
                 </motion.div>
               </AnimatePresence>
@@ -225,18 +262,16 @@ export default function App() {
             </div>
           )}
         </motion.main>
-
-        <AnimatePresence>
-          {isAIOpen && (
-            <AIAssistant
-              projectId={activeProjectId}
-              onClose={() => setIsAIOpen(false)}
-            />
-          )}
-        </AnimatePresence>
       </div>
 
       <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      {activeProjectId && activeProjectId !== 'all' && (
+        <CollaborationDialog
+          projectId={activeProjectId as string}
+          isOpen={isCollaborationOpen}
+          onClose={() => setIsCollaborationOpen(false)}
+        />
+      )}
       <TaskDetailDialog
         taskId={selectedTaskId}
         isOpen={isTaskDetailOpen}
@@ -245,7 +280,7 @@ export default function App() {
 
       {activeProjectId && activeProjectId !== 'all' && (
         <CreateTaskDialog
-          projectId={activeProjectId as number}
+          projectId={activeProjectId as string}
           isOpen={isCreateTaskOpen}
           onClose={() => setIsCreateTaskOpen(false)}
         />
