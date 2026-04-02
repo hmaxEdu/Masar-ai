@@ -11,19 +11,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './components/ui/tooltip';
-import { Plus, Settings, Trash2, MoreVertical, Moon, Sun, LogOut, Users, Loader2 } from 'lucide-react';
+import { Plus, Settings, Trash2, MoreVertical, Moon, Sun, LogOut, Users, Loader2, Menu } from 'lucide-react';
 import { motion } from 'motion/react';
 import Logo from './assets/masar.png';
 import { type Session } from '@supabase/supabase-js';
+import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 
 // Lazy load heavy view components
 const ListView = lazy(() => import('./components/ListView'));
 
-export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const projects = useProjects(session?.user?.id);
-  const [activeProjectId, setActiveProjectId] = useState<string | 'all' | null>(null);
+function MainContent({ session }: { session: Session }) {
+  const navigate = useNavigate();
+  const { projectId } = useParams();
+  const projects = useProjects(session.user?.id);
+
+  const activeProjectId = projectId || 'all';
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -37,28 +39,10 @@ export default function App() {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) migrateFromDexie();
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) migrateFromDexie();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (projects.length > 0 && activeProjectId === null) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveProjectId(projects[0].id);
+    if (projects.length > 0 && !projectId) {
+      navigate(`/projects/${projects[0].id}`, { replace: true });
     }
-  }, [projects, activeProjectId]);
+  }, [projects, projectId, navigate]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -74,7 +58,7 @@ export default function App() {
     const name = prompt('اسم المشروع:');
     if (name) {
       const { data } = await masarActions.addProject(name);
-      if (data) setActiveProjectId(data.id);
+      if (data) navigate(`/projects/${data.id}`);
     }
   };
 
@@ -92,7 +76,7 @@ export default function App() {
       await masarActions.deleteProject(id);
       if (activeProjectId === id) {
         const remaining = projects.filter(p => p.id !== id);
-        setActiveProjectId(remaining.length > 0 ? remaining[0].id : null);
+        navigate(remaining.length > 0 ? `/projects/${remaining[0].id}` : '/projects/all');
       }
     }
   };
@@ -102,9 +86,6 @@ export default function App() {
     setIsTaskDetailOpen(true);
   };
 
-  if (loading) return null;
-  if (!session) return <Login />;
-
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background flex flex-col font-['ibm-ar'] transition-colors duration-300 overflow-hidden h-screen" dir="rtl">
@@ -112,22 +93,22 @@ export default function App() {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="border-b px-6 py-3 flex items-center justify-between bg-card shrink-0 z-10"
+          className="border-b px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between bg-card shrink-0 z-10"
         >
-          <div className="flex items-center gap-4">
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                className="w-10 h-10"
-              >
-                <img src={Logo} alt="Project Logo" />
-              </motion.div>
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-8 h-8 sm:w-10 sm:h-10 shrink-0"
+            >
+              <img src={Logo} alt="Project Logo" />
+            </motion.div>
 
-            <div className="flex items-center gap-2 mr-4">
+            <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
               <Select
-                value={activeProjectId?.toString() || ''}
-                onValueChange={(v) => setActiveProjectId(v)}
+                value={activeProjectId}
+                onValueChange={(v) => navigate(`/projects/${v}`)}
               >
-                <SelectTrigger className="w-[150px] sm:w-[200px]">
+                <SelectTrigger className="w-full max-w-[140px] sm:max-w-[200px] h-9 text-xs sm:text-sm truncate">
                   <SelectValue placeholder="اختر المشروع" />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,11 +118,12 @@ export default function App() {
                   ))}
                 </SelectContent>
               </Select>
+
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -173,49 +155,79 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            {activeProjectId && activeProjectId !== 'all' && (
+          <div className="flex items-center gap-1 sm:gap-2 ml-1">
+            <div className="hidden sm:flex items-center gap-2">
+              {activeProjectId && activeProjectId !== 'all' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsCollaborationOpen(true)}
+                      className="text-primary h-9 w-9"
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>أعضاء المشروع</TooltipContent>
+                </Tooltip>
+              )}
+
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsCollaborationOpen(true)}
-                    className="text-primary"
-                  >
-                    <Users className="h-4 w-4" />
+                  <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)} className="h-9 w-9">
+                    {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>أعضاء المشروع</TooltipContent>
+                <TooltipContent>{isDarkMode ? 'الوضع المضيء' : 'الوضع الليلي'}</TooltipContent>
               </Tooltip>
-            )}
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)} className="h-9 w-9">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>الإعدادات</TooltipContent>
+              </Tooltip>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="sm:hidden h-8 w-8">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {activeProjectId && activeProjectId !== 'all' && (
+                  <DropdownMenuItem onClick={() => setIsCollaborationOpen(true)} className="flex gap-2">
+                    <Users className="h-4 w-4" /> أعضاء المشروع
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => setIsDarkMode(!isDarkMode)} className="flex gap-2">
                   {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isDarkMode ? 'الوضع المضيء' : 'الوضع الليلي'}</TooltipContent>
-            </Tooltip>
+                  {isDarkMode ? 'الوضع المضيء' : 'الوضع الليلي'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="flex gap-2">
+                  <Settings className="h-4 w-4" /> الإعدادات
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="flex gap-2 text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4" /> تسجيل الخروج
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>الإعدادات</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>تسجيل الخروج</TooltipContent>
-            </Tooltip>
+            <div className="hidden sm:block">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()} className="h-9 w-9">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>تسجيل الخروج</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </motion.header>
 
@@ -226,9 +238,9 @@ export default function App() {
           >
             {activeProjectId ? (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between shrink-0">
                   <h2 className="text-lg sm:text-xl font-semibold truncate ml-2">
-                    {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name}`}
+                    {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name || ''}`}
                   </h2>
                   {activeProjectId !== 'all' && (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -245,7 +257,7 @@ export default function App() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   }>
-                    <ListView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
+                    <ListView projectId={activeProjectId} onTaskClick={handleTaskClick} />
                   </Suspense>
                 </div>
               </>
@@ -272,7 +284,7 @@ export default function App() {
         <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
         {activeProjectId && activeProjectId !== 'all' && (
           <CollaborationDialog
-            projectId={activeProjectId as string}
+            projectId={activeProjectId}
             isOpen={isCollaborationOpen}
             onClose={() => setIsCollaborationOpen(false)}
           />
@@ -285,12 +297,45 @@ export default function App() {
 
         {activeProjectId && activeProjectId !== 'all' && (
           <CreateTaskDialog
-            projectId={activeProjectId as string}
+            projectId={activeProjectId}
             isOpen={isCreateTaskOpen}
             onClose={() => setIsCreateTaskOpen(false)}
           />
         )}
       </div>
     </TooltipProvider>
+  );
+}
+
+export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) migrateFromDexie();
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) migrateFromDexie();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) return null;
+  if (!session) return <Login />;
+
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/projects/all" replace />} />
+      <Route path="/projects/:projectId" element={<MainContent session={session} />} />
+      <Route path="*" element={<Navigate to="/projects/all" replace />} />
+    </Routes>
   );
 }
