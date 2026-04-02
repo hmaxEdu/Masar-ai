@@ -74,14 +74,14 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               <div className="flex flex-col gap-3 text-right text-sm">
                 <div className="flex items-center gap-2">
                   <Info className="h-4 w-4 text-primary" />
-                  <span>الإصدار 1.1.0 (Supabase)</span>
+                  <span>الإصدار 1.2.0 (Supabase)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Github className="h-4 w-4 text-primary" />
                   <span>مفتوح المصدر على GitHub</span>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  مسار هو تطبيق بسيط لإدارة المهام والمشاريع مع دعم كامل للغة العربية والتبعيات والجدول الزمني والتعاون الفوري.
+                  مسار هو تطبيق بسيط لإدارة المهام والمشاريع مع دعم كامل للغة العربية والتبعيات والتعاون الفوري.
                 </p>
               </div>
             </div>

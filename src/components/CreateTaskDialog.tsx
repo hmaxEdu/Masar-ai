@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { masarActions } from '@/hooks/use-masar';
 import { motion, AnimatePresence } from 'motion/react';
+import { Loader2 } from 'lucide-react';
 
 interface CreateTaskDialogProps {
   projectId: string;
@@ -16,20 +17,26 @@ interface CreateTaskDialogProps {
 export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState('3');
+  const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
-    if (!title.trim()) return;
-    await masarActions.addTask({
-      project_id: projectId,
-      title,
-      description: '',
-      started_at: new Date().toISOString(),
-      priority: parseInt(priority),
-      status: 'To Do'
-    });
-    setTitle('');
-    setPriority('3');
-    onClose();
+    if (!title.trim() || loading) return;
+    setLoading(true);
+    try {
+      await masarActions.addTask({
+        project_id: projectId,
+        title,
+        description: '',
+        started_at: new Date().toISOString(),
+        priority: parseInt(priority),
+        status: 'To Do'
+      });
+      setTitle('');
+      setPriority('3');
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,11 +62,12 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateT
                     onChange={(e) => setTitle(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                     className="text-right"
+                    disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="priority" className="block text-right">الأولوية</Label>
-                  <Select value={priority} onValueChange={setPriority}>
+                  <Select value={priority} onValueChange={setPriority} disabled={loading}>
                     <SelectTrigger id="priority" className="text-right">
                       <SelectValue />
                     </SelectTrigger>
@@ -74,8 +82,11 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateT
                 </div>
               </div>
               <DialogFooter className="flex gap-2 sm:justify-start">
-                <Button onClick={handleCreate} disabled={!title.trim()}>إنشاء المهمة</Button>
-                <Button variant="outline" onClick={onClose}>إلغاء</Button>
+                <Button onClick={handleCreate} disabled={!title.trim() || loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                  إنشاء المهمة
+                </Button>
+                <Button variant="outline" onClick={onClose} disabled={loading}>إلغاء</Button>
               </DialogFooter>
             </motion.div>
           </DialogContent>

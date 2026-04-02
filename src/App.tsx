@@ -9,24 +9,21 @@ import Login from './components/Login';
 import { migrateFromDexie } from './lib/migration';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { Button } from './components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './components/ui/dropdown-menu';
-import { LayoutList, Calendar, Plus, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph, LogOut, Users, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './components/ui/tooltip';
+import { Plus, Settings, Trash2, MoreVertical, Moon, Sun, LogOut, Users, Loader2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import Logo from './assets/masar.png';
 import { type Session } from '@supabase/supabase-js';
 
 // Lazy load heavy view components
 const ListView = lazy(() => import('./components/ListView'));
-const TimelineView = lazy(() => import('./components/TimelineView'));
-const TaskTreeView = lazy(() => import('./components/TaskTreeView').then(module => ({ default: module.TaskTreeView })));
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const projects = useProjects(session?.user?.id);
   const [activeProjectId, setActiveProjectId] = useState<string | 'all' | null>(null);
-  const [view, setView] = useState<'list' | 'timeline' | 'tree'>('list');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -58,6 +55,7 @@ export default function App() {
 
   useEffect(() => {
     if (projects.length > 0 && activeProjectId === null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveProjectId(projects[0].id);
     }
   }, [projects, activeProjectId]);
@@ -108,191 +106,191 @@ export default function App() {
   if (!session) return <Login />;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-['ibm-ar'] transition-colors duration-300 overflow-hidden h-screen" dir="rtl">
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="border-b px-6 py-3 flex items-center justify-between bg-card shrink-0 z-10"
-      >
-        <div className="flex items-center gap-4">
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className="w-10 h-10"
-            >
-              <img src={Logo} alt="Project Logo" />
-            </motion.div>
-
-          <div className="flex items-center gap-2 mr-4">
-            <Select
-              value={activeProjectId?.toString() || ''}
-              onValueChange={(v) => setActiveProjectId(v)}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="اختر المشروع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">كل المشاريع</SelectItem>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={handleCreateProject} className="flex gap-2">
-                  <Plus className="h-4 w-4" /> مشروع جديد
-                </DropdownMenuItem>
-                {activeProjectId && activeProjectId !== 'all' && (
-                  <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as string)} className="flex gap-2">
-                    <Settings className="h-4 w-4" /> إعادة تسمية المشروع
-                  </DropdownMenuItem>
-                )}
-                {activeProjectId && activeProjectId !== 'all' && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => handleDeleteProject(activeProjectId as string)}
-                      className="flex gap-2 text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" /> حذف المشروع الحالي
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Tabs value={view} onValueChange={(v) => setView(v as 'list' | 'timeline' | 'tree')}>
-            <TabsList>
-              <TabsTrigger value="list" className="flex gap-2">
-                <LayoutList className="h-4 w-4" /> القائمة
-              </TabsTrigger>
-              <TabsTrigger value="tree" className="flex gap-2">
-                <GitGraph className="h-4 w-4" /> الشجرة
-              </TabsTrigger>
-              <TabsTrigger value="timeline" className="flex gap-2">
-                <Calendar className="h-4 w-4" /> الجدول الزمني
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {activeProjectId && activeProjectId !== 'all' && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsCollaborationOpen(true)}
-              className="text-primary"
-            >
-              <Users className="h-4 w-4" />
-            </Button>
-          )}
-
-          <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
-            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-      </motion.header>
-
-      <div className="flex flex-1 overflow-hidden relative">
-        <motion.main
-          layout
-          className="flex-1 p-6 overflow-hidden flex flex-col gap-4"
+    <TooltipProvider>
+      <div className="min-h-screen bg-background flex flex-col font-['ibm-ar'] transition-colors duration-300 overflow-hidden h-screen" dir="rtl">
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="border-b px-6 py-3 flex items-center justify-between bg-card shrink-0 z-10"
         >
-          {activeProjectId ? (
-            <>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                  {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name}`}
-                </h2>
-                {activeProjectId !== 'all' && (
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button onClick={() => setIsCreateTaskOpen(true)}>
-                      <Plus className="h-4 w-4 ml-2" /> إضافة مهمة
-                    </Button>
-                  </motion.div>
-                )}
-              </div>
+          <div className="flex items-center gap-4">
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="w-10 h-10"
+              >
+                <img src={Logo} alt="Project Logo" />
+              </motion.div>
 
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={view}
-                  initial={{ opacity: 0, x: view === 'list' ? 20 : -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: view === 'list' ? -20 : 20 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="flex-1 overflow-hidden"
-                >
+            <div className="flex items-center gap-2 mr-4">
+              <Select
+                value={activeProjectId?.toString() || ''}
+                onValueChange={(v) => setActiveProjectId(v)}
+              >
+                <SelectTrigger className="w-[150px] sm:w-[200px]">
+                  <SelectValue placeholder="اختر المشروع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل المشاريع</SelectItem>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>خيارات المشروع</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={handleCreateProject} className="flex gap-2">
+                    <Plus className="h-4 w-4" /> مشروع جديد
+                  </DropdownMenuItem>
+                  {activeProjectId && activeProjectId !== 'all' && (
+                    <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as string)} className="flex gap-2">
+                      <Settings className="h-4 w-4" /> إعادة تسمية المشروع
+                    </DropdownMenuItem>
+                  )}
+                  {activeProjectId && activeProjectId !== 'all' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteProject(activeProjectId as string)}
+                        className="flex gap-2 text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" /> حذف المشروع الحالي
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-4">
+            {activeProjectId && activeProjectId !== 'all' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsCollaborationOpen(true)}
+                    className="text-primary"
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>أعضاء المشروع</TooltipContent>
+              </Tooltip>
+            )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)}>
+                  {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isDarkMode ? 'الوضع المضيء' : 'الوضع الليلي'}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>الإعدادات</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>تسجيل الخروج</TooltipContent>
+            </Tooltip>
+          </div>
+        </motion.header>
+
+        <div className="flex flex-1 overflow-hidden relative">
+          <motion.main
+            layout
+            className="flex-1 p-4 sm:p-6 overflow-hidden flex flex-col gap-4"
+          >
+            {activeProjectId ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg sm:text-xl font-semibold truncate ml-2">
+                    {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name}`}
+                  </h2>
+                  {activeProjectId !== 'all' && (
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button onClick={() => setIsCreateTaskOpen(true)} size="sm" className="sm:size-default">
+                        <Plus className="h-4 w-4 sm:ml-2" /> <span className="hidden sm:inline">إضافة مهمة</span>
+                      </Button>
+                    </motion.div>
+                  )}
+                </div>
+
+                <div className="flex-1 overflow-hidden">
                   <Suspense fallback={
                     <div className="flex h-full items-center justify-center">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   }>
-                    {view === 'list' ? (
-                      <ListView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
-                    ) : view === 'tree' ? (
-                      <TaskTreeView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
-                    ) : (
-                      <TimelineView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
-                    )}
+                    <ListView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
                   </Suspense>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                  className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"
+                >
+                  <Plus className="h-8 w-8 text-muted-foreground" />
                 </motion.div>
-              </AnimatePresence>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"
-              >
-                <Plus className="h-8 w-8 text-muted-foreground" />
-              </motion.div>
-              <h2 className="text-2xl font-semibold">مرحباً بك في مسار</h2>
-              <p className="text-muted-foreground max-w-md">
-                أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع التبعيات.
-              </p>
-              <Button onClick={handleCreateProject}>أنشئ مشروعك الأول</Button>
-            </div>
-          )}
-        </motion.main>
+                <h2 className="text-2xl font-semibold">مرحباً بك في مسار</h2>
+                <p className="text-muted-foreground max-w-md">
+                  أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع التبعيات.
+                </p>
+                <Button onClick={handleCreateProject}>أنشئ مشروعك الأول</Button>
+              </div>
+            )}
+          </motion.main>
+        </div>
+
+        <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+        {activeProjectId && activeProjectId !== 'all' && (
+          <CollaborationDialog
+            projectId={activeProjectId as string}
+            isOpen={isCollaborationOpen}
+            onClose={() => setIsCollaborationOpen(false)}
+          />
+        )}
+        <TaskDetailDialog
+          taskId={selectedTaskId}
+          isOpen={isTaskDetailOpen}
+          onClose={() => setIsTaskDetailOpen(false)}
+        />
+
+        {activeProjectId && activeProjectId !== 'all' && (
+          <CreateTaskDialog
+            projectId={activeProjectId as string}
+            isOpen={isCreateTaskOpen}
+            onClose={() => setIsCreateTaskOpen(false)}
+          />
+        )}
       </div>
-
-      <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      {activeProjectId && activeProjectId !== 'all' && (
-        <CollaborationDialog
-          projectId={activeProjectId as string}
-          isOpen={isCollaborationOpen}
-          onClose={() => setIsCollaborationOpen(false)}
-        />
-      )}
-      <TaskDetailDialog
-        taskId={selectedTaskId}
-        isOpen={isTaskDetailOpen}
-        onClose={() => setIsTaskDetailOpen(false)}
-      />
-
-      {activeProjectId && activeProjectId !== 'all' && (
-        <CreateTaskDialog
-          projectId={activeProjectId as string}
-          isOpen={isCreateTaskOpen}
-          onClose={() => setIsCreateTaskOpen(false)}
-        />
-      )}
-    </div>
+    </TooltipProvider>
   );
 }
