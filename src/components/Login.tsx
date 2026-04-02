@@ -33,7 +33,8 @@ export default function Login() {
       options: {
         data: {
           full_name: email.split('@')[0],
-        }
+        },
+        emailRedirectTo: window.location.origin
       }
     });
     if (error) setError(error.message);
@@ -44,6 +45,9 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
     });
     if (error) setError(error.message);
   };

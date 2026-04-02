@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { useProjects, masarActions } from './hooks/use-masar';
-import ListView from './components/ListView';
-import TimelineView from './components/TimelineView';
-import { TaskTreeView } from './components/TaskTreeView';
 import TaskDetailDialog from './components/TaskDetailDialog';
 import CreateTaskDialog from './components/CreateTaskDialog';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -14,10 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from './components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './components/ui/dropdown-menu';
-import { LayoutList, Calendar, Plus, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph, LogOut, Users } from 'lucide-react';
+import { LayoutList, Calendar, Plus, Settings, Trash2, MoreVertical, Moon, Sun, GitGraph, LogOut, Users, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from './assets/masar.png';
 import { type Session } from '@supabase/supabase-js';
+
+// Lazy load heavy view components
+const ListView = lazy(() => import('./components/ListView'));
+const TimelineView = lazy(() => import('./components/TimelineView'));
+const TaskTreeView = lazy(() => import('./components/TaskTreeView').then(module => ({ default: module.TaskTreeView })));
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -234,13 +236,19 @@ export default function App() {
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   className="flex-1 overflow-hidden"
                 >
-                  {view === 'list' ? (
-                    <ListView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
-                  ) : view === 'tree' ? (
-                    <TaskTreeView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
-                  ) : (
-                    <TimelineView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
-                  )}
+                  <Suspense fallback={
+                    <div className="flex h-full items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  }>
+                    {view === 'list' ? (
+                      <ListView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
+                    ) : view === 'tree' ? (
+                      <TaskTreeView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
+                    ) : (
+                      <TimelineView projectId={activeProjectId as string} onTaskClick={handleTaskClick} />
+                    )}
+                  </Suspense>
                 </motion.div>
               </AnimatePresence>
             </>
