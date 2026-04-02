@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from './lib/supabase';
-import { useProjects, masarActions } from './hooks/use-masar';
+import { useProjects, masarActions, useProjectMembers } from './hooks/use-masar';
 import TaskDetailDialog from './components/TaskDetailDialog';
 import CreateTaskDialog from './components/CreateTaskDialog';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './components/ui/tooltip';
-import { Plus, Settings, Trash2, MoreVertical, Moon, Sun, LogOut, Users, Loader2, Menu } from 'lucide-react';
+import { Plus, Settings, Trash2, MoreVertical, Moon, Sun, LogOut, Users, Loader2, Menu, UserPlus } from 'lucide-react';
 import { motion } from 'motion/react';
 import Logo from './assets/masar.png';
 import { type Session } from '@supabase/supabase-js';
@@ -19,6 +19,31 @@ import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-do
 
 // Lazy load heavy view components
 const ListView = lazy(() => import('./components/ListView'));
+
+function ProjectMembersAvatars({ projectId }: { projectId: string }) {
+  const members = useProjectMembers(projectId);
+  if (members.length === 0) return null;
+
+  return (
+    <div className="flex -space-x-2 overflow-hidden rtl:space-x-reverse ml-2">
+      {members.slice(0, 3).map((m) => (
+        <Tooltip key={m.id}>
+          <TooltipTrigger asChild>
+            <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary cursor-default">
+              {m.profiles?.email?.[0].toUpperCase()}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>{m.profiles?.email}</TooltipContent>
+        </Tooltip>
+      ))}
+      {members.length > 3 && (
+        <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+          +{members.length - 3}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function MainContent({ session }: { session: Session }) {
   const navigate = useNavigate();
@@ -135,12 +160,13 @@ function MainContent({ session }: { session: Session }) {
                     <Plus className="h-4 w-4" /> مشروع جديد
                   </DropdownMenuItem>
                   {activeProjectId && activeProjectId !== 'all' && (
-                    <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as string)} className="flex gap-2">
-                      <Settings className="h-4 w-4" /> إعادة تسمية المشروع
-                    </DropdownMenuItem>
-                  )}
-                  {activeProjectId && activeProjectId !== 'all' && (
                     <>
+                      <DropdownMenuItem onClick={() => setIsCollaborationOpen(true)} className="flex gap-2">
+                        <UserPlus className="h-4 w-4" /> إدارة فريق العمل
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as string)} className="flex gap-2">
+                        <Settings className="h-4 w-4" /> إعادة تسمية المشروع
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleDeleteProject(activeProjectId as string)}
@@ -152,6 +178,8 @@ function MainContent({ session }: { session: Session }) {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {activeProjectId !== 'all' && <ProjectMembersAvatars projectId={activeProjectId} />}
             </div>
           </div>
 
