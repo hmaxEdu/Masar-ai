@@ -25,7 +25,7 @@ const statusMap: Record<string, string> = {
   'Blocked': 'متوقف'
 };
 
-const formatDuration = (start: string | null, end: string | null) => {
+const formatDuration = (start: string | null | undefined, end: string | null | undefined) => {
   if (!start || !end) return '-';
   const diff = new Date(end).getTime() - new Date(start).getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
