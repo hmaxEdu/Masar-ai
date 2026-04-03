@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase, type Project, type Task, type Dependency, type ProjectMember, type Profile, type ProjectRole, type ProjectVisibility } from '@/lib/supabase';
 
 const getChannelName = (base: string) => `${base}-${Math.random().toString(36).substring(2, 9)}`;
@@ -78,7 +78,7 @@ export function useTasks(projectId?: string | 'all') {
       }
 
       const { data } = await query.order('priority', { ascending: true });
-      if (data) setTasks(data);
+      if (data) setTasks(data as Task[]);
     };
 
     fetchTasks();
@@ -93,7 +93,33 @@ export function useTasks(projectId?: string | 'all') {
     };
   }, [projectId]);
 
-  return tasks;
+  const taskProgress = useMemo(() => {
+    const progress: Record<string, number> = {};
+
+    const calculateTaskProgress = (taskId: string): number => {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return 0;
+
+      const children = tasks.filter(t => t.parent_id === taskId);
+      if (children.length === 0) {
+        return task.status === 'Done' ? 100 : 0;
+      }
+
+      const totalProgress = children.reduce((acc, child) => {
+        return acc + calculateTaskProgress(child.id);
+      }, 0);
+
+      return totalProgress / children.length;
+    };
+
+    tasks.forEach(task => {
+      progress[task.id] = calculateTaskProgress(task.id);
+    });
+
+    return progress;
+  }, [tasks]);
+
+  return { tasks, taskProgress };
 }
 
 export function useTopLevelTasks(projectId?: string | 'all') {
@@ -107,7 +133,7 @@ export function useTopLevelTasks(projectId?: string | 'all') {
       }
 
       const { data } = await query.order('priority', { ascending: true });
-      if (data) setTasks(data);
+      if (data) setTasks(data as Task[]);
     };
 
     fetchTasks();
@@ -138,7 +164,7 @@ export function useChildTasks(parentId: string) {
         .eq('parent_id', parentId)
         .order('priority', { ascending: true });
 
-      if (data) setTasks(data);
+      if (data) setTasks(data as Task[]);
     };
 
     fetchTasks();
@@ -172,7 +198,7 @@ export function useTask(taskId?: string | null) {
         .eq('id', taskId)
         .single();
 
-      if (data) setTask(data);
+      if (data) setTask(data as Task);
     };
 
     fetchTask();
@@ -200,8 +226,8 @@ export function useDependencies(taskId: string) {
     const fetchDeps = async () => {
       const { data: bMe } = await supabase.from('dependencies').select('*').eq('blocked_task_id', taskId);
       const { data: iAB } = await supabase.from('dependencies').select('*').eq('blocking_task_id', taskId);
-      if (bMe) setBlockingMe(bMe);
-      if (iAB) setIAmBlocking(iAB);
+      if (bMe) setBlockingMe(bMe as Dependency[]);
+      if (iAB) setIAmBlocking(iAB as Dependency[]);
     };
 
     fetchDeps();

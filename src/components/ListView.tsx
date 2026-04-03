@@ -1,21 +1,23 @@
-import { useState, useMemo, Fragment } from 'react';
+import { useState, Fragment } from 'react';
 import { useTasks, useProjectMembers, useProjects } from '@/hooks/use-masar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { ChevronRight, ChevronDown, AlertCircle, User, Search, ChevronUp } from 'lucide-react';
+import { ChevronRight, ChevronDown, AlertCircle, Search, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { type Task } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ListViewProps {
   projectId: string;
   onTaskClick: (taskId: string) => void;
+  userId?: string;
 }
 
 const statusMap: Record<string, string> = {
@@ -28,53 +30,32 @@ const statusMap: Record<string, string> = {
 const formatDuration = (start: string | null | undefined, end: string | null | undefined) => {
   if (!start || !end) return '-';
   const diff = new Date(end).getTime() - new Date(start).getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
   return `${hours}س ${minutes}د`;
 };
 
-export default function ListView({ projectId, onTaskClick }: ListViewProps) {
-  const tasks = useTasks(projectId);
-  const projects = useProjects();
-  const members = useProjectMembers(projectId === 'all' ? undefined : projectId);
-  const [sortField, setSortField] = useState<keyof Task>('priority');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+export default function ListView({ projectId, onTaskClick, userId }: ListViewProps) {
+  const { tasks, taskProgress } = useTasks(projectId);
+  const members = useProjectMembers(projectId);
+  const projects = useProjects(userId);
   const [search, setSearch] = useState('');
-  const [groupBy, setGroupBy] = useState<'none' | 'priority' | 'status'>('none');
+  const [groupBy, setGroupBy] = useState<"none" | "priority" | "status">("none");
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<keyof Task>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const toggleExpand = (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation();
     const newExpanded = new Set(expandedTasks);
-    if (newExpanded.has(taskId)) {
-      newExpanded.delete(taskId);
-    } else {
-      newExpanded.add(taskId);
-    }
+    if (newExpanded.has(taskId)) newExpanded.delete(taskId);
+    else newExpanded.add(taskId);
     setExpandedTasks(newExpanded);
   };
 
-  const taskProgress = useMemo(() => {
-    const progress: Record<string, number> = {};
-
-    const calculateProgress = (task: Task): number => {
-      const children = tasks.filter(t => t.parent_id === task.id);
-      if (children.length === 0) {
-        return task.status === 'Done' ? 100 : 0;
-      }
-      const childProgressSum = children.reduce((sum, child) => sum + calculateProgress(child), 0);
-      return childProgressSum / children.length;
-    };
-
-    tasks.forEach(task => {
-      progress[task.id] = calculateProgress(task);
-    });
-    return progress;
-  }, [tasks]);
-
-  const filteredTasks = tasks.filter(t =>
+  const filteredTasks = tasks.filter((t: Task) =>
     t.title.toLowerCase().includes(search.toLowerCase()) ||
-    t.description.toLowerCase().includes(search.toLowerCase())
+    (t.description?.toLowerCase().includes(search.toLowerCase()) ?? false)
   );
 
   const getStatusVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
@@ -97,7 +78,7 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
     });
 
     return sorted.flatMap(task => {
-      const children = tasks.filter(t => t.parent_id === task.id);
+      const children = tasks.filter((t: Task) => t.parent_id === task.id);
       const isExpanded = expandedTasks.has(task.id);
       const assignee = members.find(m => m.profiles.id === task.assignee_id);
 
@@ -116,8 +97,8 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
               {children.length > 0 ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={(e) => toggleExpand(e, task.id)}>
-                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    <Button variant="ghost" size="icon" className="h-4 w-4 p-0 hover:bg-transparent" onClick={(e) => toggleExpand(e, task.id)}>
+                      {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>{isExpanded ? 'طي المهام الفرعية' : 'عرض المهام الفرعية'}</TooltipContent>
@@ -130,25 +111,35 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
             </div>
           </TableCell>
           <TableCell className="text-right py-3 sm:py-4">
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
-               <Badge variant="outline" className="text-[10px] sm:text-xs">أولوية {task.priority}</Badge>
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3">
+               <Badge variant="outline" className="text-[10px] sm:text-[11px] font-normal px-2 py-0 border-muted-foreground/20">أولوية {task.priority}</Badge>
                {assignee && (
-                 <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground bg-muted px-1.5 sm:px-2 py-0.5 rounded-full">
-                    <User className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
-                    {assignee.profiles.email.split('@')[0]}
-                 </div>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] text-muted-foreground bg-muted/50 px-1.5 sm:px-2 py-0.5 rounded-full border border-muted-foreground/10 hover:bg-muted transition-colors">
+                        <Avatar className="size-3.5 sm:size-4 border shadow-sm">
+                          <AvatarImage src={assignee.profiles.avatar_url} />
+                          <AvatarFallback className="text-[6px] sm:text-[8px] bg-primary/10 text-primary font-bold">
+                            {assignee.profiles.email?.[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="max-w-[60px] truncate">{assignee.profiles.email.split('@')[0]}</span>
+                     </div>
+                   </TooltipTrigger>
+                   <TooltipContent>{assignee.profiles.email}</TooltipContent>
+                 </Tooltip>
                )}
             </div>
           </TableCell>
           <TableCell className="text-right py-3 sm:py-4">
-            <Badge variant={getStatusVariant(task.status)} className="text-[10px] sm:text-xs">{statusMap[task.status] || task.status}</Badge>
+            <Badge variant={getStatusVariant(task.status)} className="text-[10px] sm:text-xs font-medium px-2.5">{statusMap[task.status] || task.status}</Badge>
           </TableCell>
           <TableCell className="text-right w-[80px] sm:w-[150px] py-3 sm:py-4">
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground font-bold">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground font-semibold">
                 <span>{Math.round(taskProgress[task.id] || 0)}%</span>
               </div>
-              <Progress value={taskProgress[task.id] || 0} className="h-1.5 sm:h-2" />
+              <Progress value={taskProgress[task.id] || 0} className="h-1 sm:h-1.5" />
             </div>
           </TableCell>
           <TableCell className="text-muted-foreground text-right text-[10px] sm:text-xs py-3 sm:py-4 hidden md:table-cell">
@@ -159,7 +150,7 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
           </TableCell>
           {projectId === 'all' && (
             <TableCell className="text-right py-3 sm:py-4 hidden xl:table-cell">
-              <Badge variant="outline" className="bg-primary/5">{projects.find(p => p.id === task.project_id)?.name || 'غير معروف'}</Badge>
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px]">{projects.find((p: any) => p.id === task.project_id)?.name || 'غير معروف'}</Badge>
             </TableCell>
           )}
         </motion.tr>
@@ -178,11 +169,11 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
     }
   };
 
-  const topLevelFiltered = filteredTasks.filter(t => !t.parent_id);
+  const topLevelFiltered = filteredTasks.filter((t: Task) => !t.parent_id);
 
   const groups = groupBy === 'none'
     ? { 'كل المهام': topLevelFiltered }
-    : topLevelFiltered.reduce((acc, task) => {
+    : topLevelFiltered.reduce((acc: Record<string, Task[]>, task: Task) => {
         const key = groupBy === 'priority' ? `أولوية ${task.priority}` : (statusMap[task.status] || task.status);
         if (!acc[key]) acc[key] = [];
         acc[key].push(task);
@@ -192,17 +183,17 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
   return (
     <div className="space-y-4 flex flex-col h-full overflow-hidden">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 shrink-0">
-        <div className="relative flex-1">
-          <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex-1 group">
+          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
             placeholder="ابحث عن المهام..."
-            className="pr-8 text-right h-10"
+            className="pr-10 text-right h-10 shadow-sm focus:shadow-md transition-shadow"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Select value={groupBy} onValueChange={(v) => setGroupBy(v as "none" | "priority" | "status")}>
-          <SelectTrigger className="w-full sm:w-[180px] text-right h-10">
+          <SelectTrigger className="w-full sm:w-[180px] text-right h-10 shadow-sm">
             <SelectValue placeholder="تجميع حسب" />
           </SelectTrigger>
           <SelectContent>
@@ -213,37 +204,37 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
         </Select>
       </div>
 
-      <div className="rounded-md border bg-card shadow-sm overflow-auto flex-1">
+      <div className="rounded-xl border bg-card shadow-sm overflow-auto flex-1 custom-scrollbar">
         <Table>
-          <TableHeader className="sticky top-0 bg-card z-10">
-            <TableRow className="hover:bg-transparent">
+          <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
+            <TableRow className="hover:bg-transparent border-b">
               <TableHead className="cursor-pointer text-right font-bold h-10 sm:h-12" onClick={() => handleSort('title')}>
-                <div className="flex items-center gap-1 text-xs sm:text-sm">
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">
                   العنوان
                   {sortField === 'title' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
                 </div>
               </TableHead>
               <TableHead className="cursor-pointer text-right font-bold h-10 sm:h-12" onClick={() => handleSort('priority')}>
-                <div className="flex items-center gap-1 text-xs sm:text-sm">
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">
                   الأولوية
                   {sortField === 'priority' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
                 </div>
               </TableHead>
               <TableHead className="cursor-pointer text-right font-bold h-10 sm:h-12" onClick={() => handleSort('status')}>
-                <div className="flex items-center gap-1 text-xs sm:text-sm">
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">
                   الحالة
                   {sortField === 'status' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
                 </div>
               </TableHead>
-              <TableHead className="text-right font-bold h-10 sm:h-12 text-xs sm:text-sm">الإنجاز</TableHead>
+              <TableHead className="text-right font-bold h-10 sm:h-12 text-xs sm:text-sm text-muted-foreground">الإنجاز</TableHead>
               <TableHead className="cursor-pointer text-right font-bold h-10 sm:h-12 text-xs sm:text-sm hidden md:table-cell" onClick={() => handleSort('created_at')}>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
                   بدأ في
                   {sortField === 'created_at' && (sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
                 </div>
               </TableHead>
-              {projectId === 'all' && <TableHead className="text-right font-bold h-10 sm:h-12 text-xs sm:text-sm hidden xl:table-cell">المشروع</TableHead>}
-              <TableHead className="text-right font-bold h-10 sm:h-12 text-xs sm:text-sm hidden lg:table-cell">المدة</TableHead>
+              {projectId === 'all' && <TableHead className="text-right font-bold h-10 sm:h-12 text-xs sm:text-sm hidden xl:table-cell text-muted-foreground">المشروع</TableHead>}
+              <TableHead className="text-right font-bold h-10 sm:h-12 text-xs sm:text-sm hidden lg:table-cell text-muted-foreground">المدة</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -258,13 +249,13 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                 Object.entries(groups).map(([groupName, groupTasks]) => (
                   <Fragment key={groupName}>
                     {groupBy !== 'none' && (
-                      <TableRow className="bg-muted/40 hover:bg-muted/40 transition-none">
-                        <TableCell colSpan={7} className="py-2 sm:py-2.5 font-bold text-[10px] sm:text-xs uppercase tracking-wider text-right text-primary px-4">
-                          {groupName} ({groupTasks.length})
+                      <TableRow className="bg-muted/40 hover:bg-muted/40 transition-none border-b-2">
+                        <TableCell colSpan={7} className="py-2 sm:py-3 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider text-right text-primary px-4">
+                          {groupName} ({(groupTasks as Task[]).length})
                         </TableCell>
                       </TableRow>
                     )}
-                    {renderTaskRows(groupTasks)}
+                    {renderTaskRows(groupTasks as Task[])}
                   </Fragment>
                 ))
               )}
