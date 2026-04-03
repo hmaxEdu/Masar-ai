@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion } from 'motion/react';
 import Login from '@/components/Login';
 import { SettingsDialog } from '@/components/SettingsDialog';
@@ -32,8 +33,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { type Session } from '@supabase/supabase-js';
 import { migrateFromDexie } from '@/lib/migration';
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
-import { Avatar, AvatarFallback, AvatarImage, AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 
 const ListView = lazy(() => import('./components/ListView'));
 
@@ -42,26 +41,23 @@ function ProjectMembersAvatars({ projectId }: { projectId: string }) {
   if (members.length === 0) return null;
 
   return (
-    <AvatarGroup className="mr-2 rtl:mr-0 rtl:ml-2" dir="ltr">
+    <div className="flex -space-x-2 overflow-hidden rtl:space-x-reverse ml-2">
       {members.slice(0, 3).map((m) => (
         <Tooltip key={m.id}>
           <TooltipTrigger asChild>
-            <Avatar size="sm" className="ring-2 ring-background border-none">
-              <AvatarImage src={m.profiles?.avatar_url} />
-              <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                {m.profiles?.email?.[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary cursor-default">
+              {m.profiles?.email?.[0].toUpperCase()}
+            </div>
           </TooltipTrigger>
           <TooltipContent>{m.profiles?.email}</TooltipContent>
         </Tooltip>
       ))}
       {members.length > 3 && (
-        <AvatarGroupCount className="ring-2 ring-background size-6 text-[10px]">
+        <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground">
           +{members.length - 3}
-        </AvatarGroupCount>
+        </div>
       )}
-    </AvatarGroup>
+    </div>
   );
 }
 
@@ -72,10 +68,8 @@ function MainContent({ session }: { session: Session }) {
   const myRole = useMyRole(activeProjectId);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
-
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -83,38 +77,30 @@ function MainContent({ session }: { session: Session }) {
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   const handleCreateProject = async () => {
     const name = prompt('اسم المشروع الجديد:');
     if (name) {
-      const { data, error } = await masarActions.addProject(name);
-      if (error) alert('خطأ في إنشاء المشروع');
-      else if (data) navigate(`/projects/${data.id}`);
-    }
-  };
-
-  const handleDeleteProject = async (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا المشروع وجميع مهامه؟')) {
-      const { error } = await masarActions.deleteProject(id);
-      if (error) alert('خطأ في حذف المشروع');
-      else navigate('/projects/all');
+      const { data } = await masarActions.addProject(name);
+      if (data) navigate(`/projects/${data.id}`);
     }
   };
 
   const handleRenameProject = async (id: string) => {
     const project = projects.find(p => p.id === id);
-    const newName = prompt('الاسم الجديد للمشروع:', project?.name);
+    const newName = prompt('اسم المشروع الجديد:', project?.name);
     if (newName && newName !== project?.name) {
-      const { error } = await masarActions.updateProject(id, { name: newName });
-      if (error) alert('خطأ في تحديث المشروع');
+      await masarActions.updateProject(id, { name: newName });
+    }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    if (confirm('هل أنت متأكد من حذف هذا المشروع؟')) {
+      await masarActions.deleteProject(id);
+      navigate('/projects/all');
     }
   };
 
@@ -126,58 +112,68 @@ function MainContent({ session }: { session: Session }) {
   const canManage = myRole === 'owner' || myRole === 'admin';
 
   return (
-    <TooltipProvider delayDuration={300}>
+    <TooltipProvider>
       <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-['ibm-ar']" dir="rtl">
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b bg-background/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm shadow-black/5"
+          className="h-14 sm:h-16 border-b border-border px-4 sm:px-6 flex items-center justify-between shrink-0 bg-card/50 backdrop-blur-md sticky top-0 z-50"
         >
-          <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
-            <motion.h1
-              whileHover={{ scale: 1.02 }}
-              className="text-xl sm:text-2xl font-black text-primary shrink-0 flex items-center gap-2 cursor-pointer"
+          <div className="flex items-center gap-2 sm:gap-4 flex-1">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 cursor-pointer"
               onClick={() => navigate('/projects/all')}
             >
-              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/25">
-                م
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                <img src="/masar.png" className="w-5 h-5 sm:w-6 sm:h-6 brightness-0 invert" alt="Masar" />
               </div>
-              <span className="hidden sm:inline tracking-tighter uppercase italic">Masar</span>
-            </motion.h1>
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight hidden xs:block">مسار</h1>
+            </motion.div>
 
-            <Separator orientation="vertical" className="h-6 mx-1 hidden sm:block opacity-50" />
+            <div className="h-6 w-[1px] bg-border hidden sm:block mx-2" />
 
-            <div className="flex items-center gap-2 overflow-hidden">
+            <div className="flex items-center gap-1 sm:gap-2 max-w-[140px] sm:max-w-none">
+              <Select
+                value={activeProjectId || 'all'}
+                onValueChange={(v) => navigate(`/projects/${v}`)}
+              >
+                <SelectTrigger className="w-full max-w-[140px] sm:max-w-[200px] h-9 text-xs sm:text-sm truncate">
+                  <SelectValue placeholder="اختر المشروع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل المشاريع</SelectItem>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="flex items-center gap-2 cursor-pointer hover:bg-muted/80 px-2.5 py-1.5 rounded-xl transition-all overflow-hidden group border border-transparent hover:border-border">
-                    <span className="font-bold text-sm sm:text-base truncate max-w-[100px] sm:max-w-[220px] group-hover:text-primary transition-colors">
-                      {activeProjectId === 'all' ? 'جميع المشاريع' : (projects.find(p => p.id === activeProjectId)?.name || 'تحميل...')}
-                    </span>
-                    <MoreVertical className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  <div className="flex items-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>خيارات المشروع</TooltipContent>
+                    </Tooltip>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuItem onClick={handleCreateProject} className="flex gap-2 py-2.5">
-                    <div className="p-1 bg-primary/10 rounded-md text-primary">
-                      <Plus className="h-3.5 w-3.5" />
-                    </div>
-                    <span>مشروع جديد</span>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={handleCreateProject} className="flex gap-2">
+                    <Plus className="h-4 w-4" /> مشروع جديد
                   </DropdownMenuItem>
                   {activeProjectId && activeProjectId !== 'all' && canManage && (
-                    <DropdownMenuItem onClick={() => navigate(`/projects/${activeProjectId}/settings`)} className="flex gap-2 py-2.5">
-                      <div className="p-1 bg-muted rounded-md">
-                        <Settings className="h-3.5 w-3.5" />
-                      </div>
-                      <span>إعدادات المشروع</span>
+                    <DropdownMenuItem onClick={() => navigate(`/projects/${activeProjectId}/settings`)} className="flex gap-2">
+                      <Settings className="h-4 w-4" /> إعدادات المشروع
                     </DropdownMenuItem>
                   )}
                   {activeProjectId && activeProjectId !== 'all' && !canManage && (
-                    <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as string)} className="flex gap-2 py-2.5">
-                       <div className="p-1 bg-muted rounded-md">
-                        <Settings className="h-3.5 w-3.5" />
-                      </div>
-                      <span>إعادة تسمية المشروع</span>
+                    <DropdownMenuItem onClick={() => handleRenameProject(activeProjectId as string)} className="flex gap-2">
+                      <Settings className="h-4 w-4" /> إعادة تسمية المشروع
                     </DropdownMenuItem>
                   )}
                   {activeProjectId && activeProjectId !== 'all' && myRole === 'owner' && (
@@ -185,12 +181,9 @@ function MainContent({ session }: { session: Session }) {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleDeleteProject(activeProjectId as string)}
-                        className="flex gap-2 text-destructive focus:text-destructive py-2.5"
+                        className="flex gap-2 text-destructive focus:text-destructive"
                       >
-                         <div className="p-1 bg-destructive/10 rounded-md">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </div>
-                        <span>حذف المشروع الحالي</span>
+                        <Trash2 className="h-4 w-4" /> حذف المشروع الحالي
                       </DropdownMenuItem>
                     </>
                   )}
@@ -201,18 +194,18 @@ function MainContent({ session }: { session: Session }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 ml-1">
-            <div className="hidden sm:flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-2 ml-1">
+            <div className="hidden sm:flex items-center gap-2">
               {activeProjectId && activeProjectId !== 'all' && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="icon"
                       onClick={() => setIsCollaborationOpen(true)}
-                      className="text-muted-foreground hover:text-primary h-9 w-9 hover:bg-primary/5 transition-colors"
+                      className="text-primary h-9 w-9"
                     >
-                      <Users className="h-[18px] w-[18px]" />
+                      <Users className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>أعضاء المشروع</TooltipContent>
@@ -221,8 +214,8 @@ function MainContent({ session }: { session: Session }) {
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => setIsDarkMode(!isDarkMode)} className="h-9 w-9 text-muted-foreground hover:text-foreground">
-                    {isDarkMode ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+                  <Button variant="outline" size="icon" onClick={() => setIsDarkMode(!isDarkMode)} className="h-9 w-9">
+                    {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{isDarkMode ? 'الوضع المضيء' : 'الوضع الليلي'}</TooltipContent>
@@ -230,37 +223,35 @@ function MainContent({ session }: { session: Session }) {
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)} className="h-9 w-9 text-muted-foreground hover:text-foreground">
-                    <Settings className="h-[18px] w-[18px]" />
+                  <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)} className="h-9 w-9">
+                    <Settings className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>الإعدادات العامة</TooltipContent>
               </Tooltip>
             </div>
 
-            <Separator orientation="vertical" className="h-6 mx-1 hidden sm:block opacity-50" />
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="sm:hidden h-9 w-9 rounded-xl">
-                  <Menu className="h-5 w-5" />
+                <Button variant="outline" size="icon" className="sm:hidden h-8 w-8">
+                  <Menu className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end">
                 {activeProjectId && activeProjectId !== 'all' && (
-                  <DropdownMenuItem onClick={() => setIsCollaborationOpen(true)} className="flex gap-2 py-2.5">
+                  <DropdownMenuItem onClick={() => setIsCollaborationOpen(true)} className="flex gap-2">
                     <Users className="h-4 w-4" /> أعضاء المشروع
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => setIsDarkMode(!isDarkMode)} className="flex gap-2 py-2.5">
+                <DropdownMenuItem onClick={() => setIsDarkMode(!isDarkMode)} className="flex gap-2">
                   {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   {isDarkMode ? 'الوضع المضيء' : 'الوضع الليلي'}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="flex gap-2 py-2.5">
+                <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="flex gap-2">
                   <Settings className="h-4 w-4" /> الإعدادات العامة
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="flex gap-2 text-destructive focus:text-destructive py-2.5">
+                <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="flex gap-2 text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4" /> تسجيل الخروج
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -269,8 +260,8 @@ function MainContent({ session }: { session: Session }) {
             <div className="hidden sm:block">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => supabase.auth.signOut()} className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all rounded-xl">
-                    <LogOut className="h-[18px] w-[18px]" />
+                  <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()} className="h-9 w-9">
+                    <LogOut className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>تسجيل الخروج</TooltipContent>
@@ -289,17 +280,14 @@ function MainContent({ session }: { session: Session }) {
               <Route path="/" element={
                 activeProjectId ? (
                   <>
-                    <div className="flex items-center justify-between shrink-0 mb-2">
-                      <div className="flex items-center gap-2">
-                         <div className="w-2 h-8 bg-primary rounded-full hidden sm:block" />
-                         <h2 className="text-xl sm:text-2xl font-black truncate text-foreground tracking-tight">
-                          {activeProjectId === 'all' ? 'جميع المهام' : `${projects.find(p => p.id === activeProjectId)?.name || ''}`}
-                        </h2>
-                      </div>
+                    <div className="flex items-center justify-between shrink-0">
+                      <h2 className="text-lg sm:text-xl font-semibold truncate ml-2">
+                        {activeProjectId === 'all' ? 'جميع المهام' : `مهام ${projects.find(p => p.id === activeProjectId)?.name || ''}`}
+                      </h2>
                       {activeProjectId !== 'all' && (
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Button onClick={() => setIsCreateTaskOpen(true)} className="shadow-lg shadow-primary/20 rounded-xl px-4 sm:px-6 h-10 font-bold">
-                            <Plus className="h-5 w-5 sm:ml-2" /> <span className="hidden sm:inline">إضافة مهمة</span>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button onClick={() => setIsCreateTaskOpen(true)} size="sm" className="sm:size-default">
+                            <Plus className="h-4 w-4 sm:ml-2" /> <span className="hidden sm:inline">إضافة مهمة</span>
                           </Button>
                         </motion.div>
                       )}
@@ -311,7 +299,7 @@ function MainContent({ session }: { session: Session }) {
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                       }>
-                        <ListView projectId={activeProjectId} onTaskClick={handleTaskClick} userId={session.user.id} />
+                        <ListView projectId={activeProjectId} onTaskClick={handleTaskClick} />
                       </Suspense>
                     </div>
                   </>
@@ -321,15 +309,15 @@ function MainContent({ session }: { session: Session }) {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                      className="w-20 h-20 bg-primary/5 rounded-3xl flex items-center justify-center mb-6 shadow-inner"
+                      className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"
                     >
-                      <Plus className="h-10 w-10 text-primary" />
+                      <Plus className="h-8 w-8 text-muted-foreground" />
                     </motion.div>
-                    <h2 className="text-3xl font-black tracking-tight text-foreground">مرحباً بك في مسار</h2>
-                    <p className="text-muted-foreground max-w-md text-lg leading-relaxed">
-                      أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع التبعيات بشكل احترافي.
+                    <h2 className="text-2xl font-semibold">مرحباً بك في مسار</h2>
+                    <p className="text-muted-foreground max-w-md">
+                      أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع التبعيات.
                     </p>
-                    <Button onClick={handleCreateProject} size="lg" className="rounded-xl px-8 h-12 font-bold shadow-xl shadow-primary/20">أنشئ مشروعك الأول</Button>
+                    <Button onClick={handleCreateProject}>أنشئ مشروعك الأول</Button>
                   </div>
                 )
               } />
