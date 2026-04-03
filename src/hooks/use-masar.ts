@@ -5,6 +5,7 @@ const getChannelName = (base: string) => `${base}-${Math.random().toString(36).s
 
 export function useProjects(userId?: string) {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
@@ -16,8 +17,10 @@ export function useProjects(userId?: string) {
         .order('created_at', { ascending: false });
 
       if (data) setProjects(data as Project[]);
+      setLoading(false);
     };
 
+    setLoading(true);
     fetchProjects();
 
     const channel = supabase
@@ -30,15 +33,17 @@ export function useProjects(userId?: string) {
     };
   }, [userId]);
 
-  return projects;
+  return { projects, loading };
 }
 
 export function useProject(projectId?: string) {
   const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!projectId || projectId === 'all') {
       setProject(null);
+      setLoading(false);
       return;
     }
 
@@ -50,8 +55,10 @@ export function useProject(projectId?: string) {
         .single();
 
       if (data) setProject(data as Project);
+      setLoading(false);
     };
 
+    setLoading(true);
     fetchProject();
 
     const channel = supabase
@@ -64,11 +71,12 @@ export function useProject(projectId?: string) {
     };
   }, [projectId]);
 
-  return project;
+  return { project, loading };
 }
 
 export function useTasks(projectId?: string | 'all') {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -79,8 +87,10 @@ export function useTasks(projectId?: string | 'all') {
 
       const { data } = await query.order('priority', { ascending: true });
       if (data) setTasks(data);
+      setLoading(false);
     };
 
+    setLoading(true);
     fetchTasks();
 
     const channel = supabase
@@ -93,11 +103,12 @@ export function useTasks(projectId?: string | 'all') {
     };
   }, [projectId]);
 
-  return tasks;
+  return { tasks, loading };
 }
 
 export function useTopLevelTasks(projectId?: string | 'all') {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -108,8 +119,10 @@ export function useTopLevelTasks(projectId?: string | 'all') {
 
       const { data } = await query.order('priority', { ascending: true });
       if (data) setTasks(data);
+      setLoading(false);
     };
 
+    setLoading(true);
     fetchTasks();
 
     const channel = supabase
@@ -122,14 +135,19 @@ export function useTopLevelTasks(projectId?: string | 'all') {
     };
   }, [projectId]);
 
-  return tasks;
+  return { tasks, loading };
 }
 
 export function useChildTasks(parentId: string) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!parentId) return;
+    if (!parentId) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
 
     const fetchTasks = async () => {
       const { data } = await supabase
@@ -139,8 +157,10 @@ export function useChildTasks(parentId: string) {
         .order('priority', { ascending: true });
 
       if (data) setTasks(data);
+      setLoading(false);
     };
 
+    setLoading(true);
     fetchTasks();
 
     const channel = supabase
@@ -153,15 +173,17 @@ export function useChildTasks(parentId: string) {
     };
   }, [parentId]);
 
-  return tasks;
+  return { tasks, loading };
 }
 
 export function useTask(taskId?: string | null) {
   const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!taskId) {
       setTask(null);
+      setLoading(false);
       return;
     }
 
@@ -173,8 +195,10 @@ export function useTask(taskId?: string | null) {
         .single();
 
       if (data) setTask(data);
+      setLoading(false);
     };
 
+    setLoading(true);
     fetchTask();
 
     const channel = supabase
@@ -187,7 +211,7 @@ export function useTask(taskId?: string | null) {
     };
   }, [taskId]);
 
-  return task;
+  return { task, loading };
 }
 
 export function useDependencies(taskId: string) {

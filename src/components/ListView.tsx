@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from "@/components/ui/skeleton";
 import { type Task } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -34,10 +35,50 @@ const formatDuration = (start: string | null | undefined, end: string | null | u
   return `${hours}س ${minutes}د`;
 };
 
+
+const TaskRowSkeleton = ({ projectId }: { projectId: string }) => (
+  <TableRow>
+    <TableCell className="py-3 sm:py-4">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-4 w-4 rounded" />
+        <Skeleton className="h-5 w-[140px] sm:w-[200px]" />
+      </div>
+    </TableCell>
+    <TableCell className="py-3 sm:py-4">
+      <div className="flex items-center gap-2 justify-end">
+        <Skeleton className="h-5 w-16 rounded-full" />
+        <Skeleton className="h-5 w-5 rounded-full" />
+      </div>
+    </TableCell>
+    <TableCell className="py-3 sm:py-4 text-right">
+      <Skeleton className="h-5 w-16 rounded-full inline-block" />
+    </TableCell>
+    <TableCell className="py-3 sm:py-4">
+      <div className="space-y-1">
+        <Skeleton className="h-2 w-full" />
+        <Skeleton className="h-2 w-10" />
+      </div>
+    </TableCell>
+    <TableCell className="py-3 sm:py-4 hidden md:table-cell text-right">
+      <Skeleton className="h-4 w-24 inline-block" />
+    </TableCell>
+    {projectId === 'all' && (
+      <TableCell className="py-3 sm:py-4 hidden xl:table-cell text-right">
+        <Skeleton className="h-5 w-20 rounded-full inline-block" />
+      </TableCell>
+    )}
+    <TableCell className="py-3 sm:py-4 hidden lg:table-cell text-right">
+      <Skeleton className="h-4 w-12 inline-block" />
+    </TableCell>
+  </TableRow>
+);
+
 export default function ListView({ projectId, onTaskClick }: ListViewProps) {
-  const tasks = useTasks(projectId);
-  const projects = useProjects();
+  const { tasks, loading: tasksLoading } = useTasks(projectId);
+  const { projects, loading: projectsLoading } = useProjects();
   const members = useProjectMembers(projectId === 'all' ? undefined : projectId);
+  void projectsLoading;
+
   const [sortField, setSortField] = useState<keyof Task>('priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [search, setSearch] = useState('');
@@ -254,7 +295,11 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
           </TableHeader>
           <TableBody>
             <AnimatePresence mode="popLayout" initial={false}>
-              {Object.keys(groups).length === 0 || topLevelFiltered.length === 0 ? (
+              {tasksLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TaskRowSkeleton key={i} projectId={projectId} />
+                ))
+              ) : Object.keys(groups).length === 0 || topLevelFiltered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic">
                     لم يتم العثور على مهام.

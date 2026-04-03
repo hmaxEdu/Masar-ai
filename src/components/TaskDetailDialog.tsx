@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTask, useTasks, useDependencies, useProjectMembers, masarActions } from '@/hooks/use-masar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -21,10 +22,13 @@ interface TaskDetailDialogProps {
 }
 
 export default function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetailDialogProps) {
-  const task = useTask(taskId);
-  const allTasks = useTasks(task?.project_id || 'all');
+  const { task: task, loading: taskLoading } = useTask(taskId);
+  const { tasks: allTasks, loading: allTasksLoading } = useTasks(task?.project_id || 'all');
+
+  void allTasksLoading;
   const members = useProjectMembers(task?.project_id);
   const { blockingMe, iAmBlocking } = useDependencies(taskId || '');
+  void allTasksLoading;
   const [newChildTask, setNewChildTask] = useState('');
   const [editingChildTaskId, setEditingChildTaskId] = useState<string | null>(null);
 
@@ -58,6 +62,50 @@ export default function TaskDetailDialog({ taskId, isOpen, onClose }: TaskDetail
     setNewChildTask('');
   };
 
+  if (taskLoading || !isOpen) {
+    if (!isOpen) return null;
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="font-['ibm-ar'] min-w-[90%] sm:min-w-[700px] h-[90vh] sm:h-[80vh] flex flex-col p-0 overflow-hidden" dir="rtl">
+          <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-4 w-1/4" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[1fr,250px] gap-8">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-[200px] w-full rounded-md" />
+                </div>
+                <div className="space-y-3 p-4 border rounded-lg">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-10" />
+                  </div>
+                  <Skeleton className="h-2 w-full" />
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-6">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
   if (!task) return null;
 
   return (

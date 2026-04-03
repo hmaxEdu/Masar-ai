@@ -98,7 +98,7 @@ function ProjectMembersAvatars({ projectId }: { projectId: string }) {
 function MainContent({ session }: { session: Session }) {
   const { projectId: activeProjectId } = useParams();
   const navigate = useNavigate();
-  const projects = useProjects(session.user.id);
+  const { projects, loading: projectsLoading } = useProjects(session.user.id);
   const myRole = useMyRole(activeProjectId);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem("theme");
@@ -107,6 +107,7 @@ function MainContent({ session }: { session: Session }) {
       (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
     );
   });
+  void projectsLoading;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
