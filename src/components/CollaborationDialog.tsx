@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, UserX, Shield, ShieldAlert, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { type ProjectRole } from '@/lib/supabase';
 
 interface CollaborationDialogProps {
@@ -108,9 +109,10 @@ export default function CollaborationDialog({ projectId, isOpen, onClose }: Coll
                     className="flex items-center justify-between p-3 rounded-lg border bg-card/50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                        {m.profiles?.email?.[0].toUpperCase() || '?'}
-                      </div>
+                      <Avatar size="sm">
+                        <AvatarImage src={m.profiles?.avatar_url} alt={m.profiles?.email} />
+                        <AvatarFallback>{m.profiles?.email?.[0].toUpperCase() || '?'}</AvatarFallback>
+                      </Avatar>
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">{m.profiles?.email}</span>
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
