@@ -12,7 +12,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useProjects, useMyRole, masarActions } from '@/hooks/use-masar';
+import { useProjects, useMyRole, useProjectMembers, masarActions } from '@/hooks/use-masar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -150,16 +150,18 @@ function MainContent({ session }: { session: Session }) {
               </Select>
 
               <DropdownMenu>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>خيارات المشروع</TooltipContent>
-                </Tooltip>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>خيارات المشروع</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem onClick={handleCreateProject} className="flex gap-2">
                     <Plus className="h-4 w-4" /> مشروع جديد
@@ -188,7 +190,7 @@ function MainContent({ session }: { session: Session }) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {activeProjectId !== 'all' && <ProjectMembersAvatars projectId={activeProjectId} />}
+              {activeProjectId && activeProjectId !== 'all' && <ProjectMembersAvatars projectId={activeProjectId} />}
             </div>
           </div>
 

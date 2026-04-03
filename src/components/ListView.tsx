@@ -247,7 +247,7 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="popLayout" initial={false}>
               {Object.keys(groups).length === 0 || topLevelFiltered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic">
