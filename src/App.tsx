@@ -36,6 +36,31 @@ import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-do
 
 const ListView = lazy(() => import('./components/ListView'));
 
+function ProjectMembersAvatars({ projectId }: { projectId: string }) {
+  const members = useProjectMembers(projectId);
+  if (members.length === 0) return null;
+
+  return (
+    <div className="flex -space-x-2 overflow-hidden rtl:space-x-reverse ml-2">
+      {members.slice(0, 3).map((m) => (
+        <Tooltip key={m.id}>
+          <TooltipTrigger asChild>
+            <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary cursor-default">
+              {m.profiles?.email?.[0].toUpperCase()}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>{m.profiles?.email}</TooltipContent>
+        </Tooltip>
+      ))}
+      {members.length > 3 && (
+        <div className="inline-block h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+          +{members.length - 3}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MainContent({ session }: { session: Session }) {
   const { projectId: activeProjectId } = useParams();
   const navigate = useNavigate();
@@ -162,6 +187,8 @@ function MainContent({ session }: { session: Session }) {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {activeProjectId !== 'all' && <ProjectMembersAvatars projectId={activeProjectId} />}
             </div>
           </div>
 
