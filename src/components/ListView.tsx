@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { ChevronRight, ChevronDown, AlertCircle, User, Search, ChevronUp } from 'lucide-react';
+import { ChevronRight, ChevronDown, AlertCircle, Search, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { type Task } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -133,8 +134,13 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
                <Badge variant="outline" className="text-[10px] sm:text-xs">أولوية {task.priority}</Badge>
                {assignee && (
-                 <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground bg-muted px-1.5 sm:px-2 py-0.5 rounded-full">
-                    <User className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
+                 <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-muted-foreground bg-muted pr-1 sm:pr-1.5 pl-1.5 sm:pl-2 py-0.5 rounded-full">
+                    <Avatar className="size-4 sm:size-5">
+                      <AvatarImage src={assignee.profiles.avatar_url} alt={assignee.profiles.email} />
+                      <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
+                        {assignee.profiles.email[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     {assignee.profiles.email.split('@')[0]}
                  </div>
                )}

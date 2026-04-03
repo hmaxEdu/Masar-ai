@@ -27,6 +27,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { type ProjectRole, type ProjectVisibility, type Profile } from '@/lib/supabase';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -219,9 +220,10 @@ export default function ProjectSettings() {
                     {searchResults.map((user) => (
                       <div key={user.id} className="flex items-center justify-between p-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
-                            {user.email[0].toUpperCase()}
-                          </div>
+                          <Avatar size="sm">
+                            <AvatarImage src={user.avatar_url} alt={user.email} />
+                            <AvatarFallback>{user.email[0].toUpperCase()}</AvatarFallback>
+                          </Avatar>
                           <span className="text-sm">{user.email}</span>
                         </div>
                         <Button size="sm" onClick={() => handleAddMember(user)} className="gap-2">
@@ -250,9 +252,10 @@ export default function ProjectSettings() {
                     className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-muted/10 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {m.profiles?.email?.[0].toUpperCase() || '?'}
-                      </div>
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={m.profiles?.avatar_url} alt={m.profiles?.email} />
+                        <AvatarFallback className="font-bold">{m.profiles?.email?.[0].toUpperCase() || '?'}</AvatarFallback>
+                      </Avatar>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{m.profiles?.email}</span>
