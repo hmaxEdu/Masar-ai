@@ -11,7 +11,7 @@ import {
   Menu,
   Loader2,
 } from 'lucide-react';
-import { supabase,   } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useProjects, useMyRole, masarActions } from '@/hooks/use-masar';
 import { Button } from '@/components/ui/button';
 import {
@@ -247,8 +247,8 @@ function MainContent({ session }: { session: Session }) {
             className="flex-1 p-4 sm:p-6 overflow-hidden flex flex-col gap-4"
           >
             <Routes>
-              <Route path="/:projectId/settings" element={<ProjectSettings />} />
-              <Route path="/:projectId" element={
+              <Route path="settings" element={<ProjectSettings />} />
+              <Route path="/" element={
                 activeProjectId ? (
                   <>
                     <div className="flex items-center justify-between shrink-0">
@@ -349,7 +349,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/projects/all" replace />} />
-      <Route path="/projects/*" element={<MainContent session={session} />} />
+      <Route path="/projects/:projectId/*" element={<MainContent session={session} />} />
       <Route path="*" element={<Navigate to="/projects/all" replace />} />
     </Routes>
   );
