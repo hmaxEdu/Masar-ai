@@ -5,7 +5,8 @@ const supabaseAnonKey = 'sb_publishable_ybLXkDzc9Z0UYZDkUXWw2w_vBCFUOEb';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export type ProjectRole = 'owner' | 'editor' | 'viewer';
+export type ProjectRole = 'owner' | 'admin' | 'editor' | 'viewer';
+export type ProjectVisibility = 'private' | 'public';
 export type TaskStatus = 'To Do' | 'Doing' | 'Done' | 'Blocked';
 
 export interface Profile {
@@ -20,6 +21,7 @@ export interface Project {
   name: string;
   created_at: string;
   owner_id: string;
+  visibility: ProjectVisibility;
 }
 
 export interface ProjectMember {

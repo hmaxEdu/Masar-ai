@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, type Project, type Task, type Dependency, type ProjectMember, type Profile, type ProjectRole } from '@/lib/supabase';
+import { supabase, type Project, type Task, type Dependency, type ProjectMember, type Profile, type ProjectRole, type ProjectVisibility } from '@/lib/supabase';
 
 const getChannelName = (base: string) => `${base}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -15,7 +15,7 @@ export function useProjects(userId?: string) {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (data) setProjects(data);
+      if (data) setProjects(data as Project[]);
     };
 
     fetchProjects();
@@ -31,6 +31,40 @@ export function useProjects(userId?: string) {
   }, [userId]);
 
   return projects;
+}
+
+export function useProject(projectId?: string) {
+  const [project, setProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    if (!projectId || projectId === 'all') {
+      setProject(null);
+      return;
+    }
+
+    const fetchProject = async () => {
+      const { data } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+
+      if (data) setProject(data as Project);
+    };
+
+    fetchProject();
+
+    const channel = supabase
+      .channel(getChannelName(`project-${projectId}`))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `id=eq.${projectId}` }, fetchProject)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId]);
+
+  return project;
 }
 
 export function useTasks(projectId?: string | 'all') {
@@ -127,7 +161,6 @@ export function useTask(taskId?: string | null) {
 
   useEffect(() => {
     if (!taskId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTask(null);
       return;
     }
@@ -232,15 +265,15 @@ export async function onTaskStatusChange(taskId: string) {
 
 export const masarActions = {
   async addProject(name: string) {
-    return await supabase.from('projects').insert({ name }).select().single();
+    return await supabase.from('projects').insert({ name, visibility: 'private' }).select().single();
   },
 
-  async updateProject(id: string, changes: Partial<{name: string}>) {
-    await supabase.from('projects').update(changes).eq('id', id);
+  async updateProject(id: string, changes: Partial<{name: string, visibility: ProjectVisibility}>) {
+    return await supabase.from('projects').update(changes).eq('id', id);
   },
 
   async deleteProject(id: string) {
-    await supabase.from('projects').delete().eq('id', id);
+    return await supabase.from('projects').delete().eq('id', id);
   },
 
   async addTask(task: Omit<Task, 'id' | 'created_at'>) {
@@ -296,7 +329,6 @@ export function useProjectMembers(projectId?: string) {
 
   useEffect(() => {
     if (!projectId || projectId === 'all') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMembers([]);
       return;
     }
@@ -325,14 +357,71 @@ export function useProjectMembers(projectId?: string) {
   return members;
 }
 
+export function useMyRole(projectId?: string) {
+  const [role, setRole] = useState<ProjectRole | null>(null);
+
+  useEffect(() => {
+    if (!projectId || projectId === 'all') {
+      setRole(null);
+      return;
+    }
+
+    const fetchRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('project_members')
+        .select('role')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (data) setRole(data.role as ProjectRole);
+      else {
+        // Check if I am the owner in projects table (for fallback)
+        const { data: proj } = await supabase.from('projects').select('owner_id').eq('id', projectId).single();
+        if (proj?.owner_id === user.id) setRole('owner');
+      }
+    };
+
+    fetchRole();
+
+    const channel = supabase
+      .channel(getChannelName(`my-role-${projectId}`))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'project_members' }, fetchRole)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId]);
+
+  return role;
+}
+
 export const collaborationActions = {
-  async addMember(projectId: string, email: string, role: ProjectRole = 'viewer') {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('email', email).single();
-    if (!profile) throw new Error('المستخدم غير موجود');
+  async searchUsers(query: string) {
+    if (!query || query.length < 2) return [];
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .ilike('email', `%${query}%`)
+      .limit(5);
+    return (data || []) as Profile[];
+  },
+
+  async addMember(projectId: string, emailOrId: string, role: ProjectRole = 'viewer') {
+    let userId = emailOrId;
+    if (emailOrId.includes('@')) {
+      const { data: profile } = await supabase.from('profiles').select('id').eq('email', emailOrId).single();
+      if (!profile) throw new Error('المستخدم غير موجود');
+      userId = profile.id;
+    }
 
     return await supabase.from('project_members').insert({
       project_id: projectId,
-      user_id: profile.id,
+      user_id: userId,
       role
     });
   },
