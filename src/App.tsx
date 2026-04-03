@@ -33,7 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { type Session } from '@supabase/supabase-js';
 import { migrateFromDexie } from '@/lib/migration';
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
-
+import Logo from '@/assets/masar.png';
 const ListView = lazy(() => import('./components/ListView'));
 
 function ProjectMembersAvatars({ projectId }: { projectId: string }) {
@@ -126,7 +126,7 @@ function MainContent({ session }: { session: Session }) {
               onClick={() => navigate('/projects/all')}
             >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                <img src="/masar.png" className="w-5 h-5 sm:w-6 sm:h-6 brightness-0 invert" alt="Masar" />
+                <img src={Logo} className="w-6 h-6 sm:w-6 sm:h-6 brightness-0 invert" alt="Masar" />
               </div>
               <h1 className="text-lg sm:text-xl font-bold tracking-tight hidden xs:block">مسار</h1>
             </motion.div>
