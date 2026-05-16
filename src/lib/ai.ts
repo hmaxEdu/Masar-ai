@@ -48,3 +48,96 @@ export async function generateSubtasks(taskTitle: string, taskDescription: strin
     throw new Error(`AI returned an invalid format.\n\nAI said: "${snippet}..."`);
   }
 }
+
+export async function getProjectInsights(tasks: any[]): Promise<string> {
+  // Strip down the task data so we don't send massive payloads to the AI
+  const simplifiedTasks = tasks.map(t => ({
+    title: t.title,
+    status: t.status,
+    priority: t.priority
+  }));
+
+  const { data, error } = await supabase.functions.invoke('analyze-project', {
+    body: { tasksData: JSON.stringify(simplifiedTasks) }
+  });
+
+  if (error) {
+    let exactError = error.message;
+    if (error.context && typeof error.context.json === 'function') {
+       const errBody = await error.context.json().catch(() => ({}));
+       if (errBody.error) exactError = errBody.error;
+    }
+    throw new Error(exactError);
+  }
+
+  return data.message.content;
+}
+
+export async function sendProjectChatMessage(messages: any[], projectContext: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('project-chat', {
+    body: { messages, projectContext }
+  });
+
+  if (error) {
+    let exactError = error.message;
+    if (error.context && typeof error.context.json === 'function') {
+       const errBody = await error.context.json().catch(() => ({}));
+       if (errBody.error) exactError = errBody.error;
+    }
+    throw new Error(exactError);
+  }
+
+  return data.message.content;
+}
+
+export interface GeneratedTask {
+  title: string;
+  description: string;
+  priority: number;
+}
+
+export async function generateProjectPlan(goal: string, projectContext: string): Promise<GeneratedTask[]> {
+  const { data, error } = await supabase.functions.invoke('ai-planner', {
+    body: { goal, projectContext }
+  });
+
+  if (error) {
+    let exactError = error.message;
+    if (error.context && typeof error.context.json === 'function') {
+       const errBody = await error.context.json().catch(() => ({}));
+       if (errBody.error) exactError = errBody.error;
+    }
+    throw new Error(exactError);
+  }
+
+  try {
+    let aiContent = data.message?.content || "";
+    aiContent = aiContent.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const firstBrace = aiContent.indexOf('{');
+    const lastBrace = aiContent.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      aiContent = aiContent.substring(firstBrace, lastBrace + 1);
+    }
+    const parsed = JSON.parse(aiContent);
+    return parsed.tasks || [];
+  } catch (e) {
+    throw new Error("AI returned an invalid plan format");
+  }
+}
+
+export async function sendAgentTurn(messages: any[], tools: any[] = []) {
+  const { data, error } = await supabase.functions.invoke('agent-chat', {
+    body: { messages, tools }
+  });
+
+  if (error) {
+    let exactError = error.message;
+    if (error.context && typeof error.context.json === 'function') {
+       const errBody = await error.context.json().catch(() => ({}));
+       if (errBody.error) exactError = errBody.error;
+    }
+    throw new Error(exactError);
+  }
+
+  return data.message; // Returns { role: 'assistant', content: '...', tool_calls?: [...] }
+}

@@ -10,6 +10,8 @@ import {
   Trash2,
   Menu,
   Loader2,
+  Sparkles,
+  ListTodo,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -62,6 +64,10 @@ import {
   AvatarGroup,
   AvatarImage,
 } from "@/components/ui/avatar";
+import ProjectInsightsDialog from "@/components/ProjectInsightsDialog";
+import AIAgent from "@/components/AIAgent";
+import { LayoutList, KanbanSquare } from "lucide-react";
+import BoardView from "@/components/BoardView";
 const ListView = lazy(() => import("./components/ListView"));
 
 function ProjectMembersAvatars({ projectId }: { projectId: string }) {
@@ -113,7 +119,8 @@ function MainContent({ session }: { session: Session }) {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
-
+  const [isInsightsOpen, setIsInsightsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "board">("board");
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
@@ -353,14 +360,14 @@ function MainContent({ session }: { session: Session }) {
                   onClick={() => setIsSettingsOpen(true)}
                   className="flex gap-2"
                 >
-                  <Settings className="h-4 w-4" />  General settings
+                  <Settings className="h-4 w-4" /> General settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => supabase.auth.signOut()}
                   className="flex gap-2 text-destructive focus:text-destructive"
                 >
-                  <LogOut className="h-4 w-4" />  Sign out
+                  <LogOut className="h-4 w-4" /> Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -402,21 +409,64 @@ function MainContent({ session }: { session: Session }) {
                             : `tasks ${projects.find((p) => p.id === activeProjectId)?.name || ""}`}
                         </h2>
                         {activeProjectId !== "all" && (
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Button
-                              onClick={() => setIsCreateTaskOpen(true)}
-                              size="sm"
-                              className="sm:size-default"
+                          <div className="flex items-center gap-2">
+                            {/* View Toggle */}
+                            <div className="flex items-center bg-muted p-1 rounded-md border border-border mr-2">
+                              <Button
+                                variant={
+                                  viewMode === "list" ? "secondary" : "ghost"
+                                }
+                                size="sm"
+                                className="h-7 px-2 shadow-none"
+                                onClick={() => setViewMode("list")}
+                              >
+                                <LayoutList className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant={
+                                  viewMode === "board" ? "secondary" : "ghost"
+                                }
+                                size="sm"
+                                className="h-7 px-2 shadow-none"
+                                onClick={() => setViewMode("board")}
+                              >
+                                <KanbanSquare className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            {/* NEW AI INSIGHTS BUTTON */}
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                             >
-                              <Plus className="h-4 w-4 sm:ml-2" />{" "}
-                              <span className="hidden sm:inline">
-                                 Create new task
-                              </span>
-                            </Button>
-                          </motion.div>
+                              <Button
+                                onClick={() => setIsInsightsOpen(true)}
+                                size="sm"
+                                variant="secondary"
+                                className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
+                              >
+                                <Sparkles className="h-4 w-4 sm:mr-2" />{" "}
+                                <span className="hidden sm:inline">
+                                  AI Insights
+                                </span>
+                              </Button>
+                            </motion.div>
+
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <Button
+                                onClick={() => setIsCreateTaskOpen(true)}
+                                size="sm"
+                                className="sm:size-default"
+                              >
+                                <Plus className="h-4 w-4 sm:ml-2" />{" "}
+                                <span className="hidden sm:inline">
+                                  Create new task
+                                </span>
+                              </Button>
+                            </motion.div>
+                          </div>
                         )}
                       </div>
 
@@ -428,10 +478,17 @@ function MainContent({ session }: { session: Session }) {
                             </div>
                           }
                         >
-                          <ListView
-                            projectId={activeProjectId}
-                            onTaskClick={handleTaskClick}
-                          />
+                          {viewMode === "list" ? (
+                            <ListView
+                              projectId={activeProjectId}
+                              onTaskClick={handleTaskClick}
+                            />
+                          ) : (
+                            <BoardView
+                              projectId={activeProjectId}
+                              onTaskClick={handleTaskClick}
+                            />
+                          )}
                         </Suspense>
                       </div>
                     </>
@@ -490,6 +547,16 @@ function MainContent({ session }: { session: Session }) {
             isOpen={isCreateTaskOpen}
             onClose={() => setIsCreateTaskOpen(false)}
           />
+        )}
+        {activeProjectId && activeProjectId !== "all" && (
+          <ProjectInsightsDialog
+            projectId={activeProjectId}
+            isOpen={isInsightsOpen}
+            onClose={() => setIsInsightsOpen(false)}
+          />
+        )}
+        {activeProjectId && activeProjectId !== "all" && (
+          <AIAgent projectId={activeProjectId} />
         )}
       </div>
     </TooltipProvider>

@@ -14,7 +14,9 @@
     "ui",
     "bulk-editor",
     "Reports",
-    "DOCS"
+    "DOCS",
+    "tests",
+    "test-results"
   ],
   "exclude_files": ["*.lock", "package-lock.json", "pnpm-lock.yaml", "dev-app-update.yml"]
 }

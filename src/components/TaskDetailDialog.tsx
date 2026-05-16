@@ -53,8 +53,10 @@ export default function TaskDetailDialog({
   isOpen,
   onClose,
 }: TaskDetailDialogProps) {
-  const { task, loading: taskLoading } = useTask(taskId);
-  const { tasks: allTasks } = useTasks(task?.project_id || "all");
+  const { task, loading: taskLoading, setTask } = useTask(taskId);
+  const { tasks: allTasks, setTasks: setAllTasks } = useTasks(
+    task?.project_id || "all",
+  );
   const members = useProjectMembers(task?.project_id);
   const { blockingMe, iAmBlocking } = useDependencies(taskId || "");
 
@@ -88,8 +90,20 @@ export default function TaskDetailDialog({
     [allTasks, taskId, blockingMe],
   );
 
-  const handleUpdate = (changes: Partial<Task>) => {
-    if (taskId) masarActions.updateTask(taskId, changes);
+  const handleUpdate = async (changes: Partial<Task>) => {
+    if (!taskId || !task) return;
+
+    // Optimistic Update for the active task
+    const oldTask = { ...task };
+    setTask({ ...task, ...changes } as Task);
+
+    try {
+      await masarActions.updateTask(taskId, changes);
+    } catch (error) {
+      // Rollback on failure
+      setTask(oldTask);
+      console.log(error);
+    }
   };
 
   const handleAddChildTask = async (e: React.FormEvent) => {
@@ -254,20 +268,28 @@ export default function TaskDetailDialog({
 
               <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <Label>Sub-tasks ({completedChildren}/{childTasks.length})</Label>
+                  <Label>
+                    Sub-tasks ({completedChildren}/{childTasks.length})
+                  </Label>
                   <div className="flex items-center gap-2">
-                    <Button 
+                    <Button
                       type="button"
-                      variant="outline" 
-                      size="sm" 
+                      variant="outline"
+                      size="sm"
                       className="h-6 text-[10px] gap-1 px-2 border-primary/20 hover:bg-primary/10 text-primary shadow-sm transition-all"
                       onClick={handleAIBreakdown}
                       disabled={isGeneratingAI}
                     >
-                      {isGeneratingAI ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      {isGeneratingAI ? 'Thinking...' : 'AI Breakdown'}
+                      {isGeneratingAI ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
+                      {isGeneratingAI ? "Thinking..." : "AI Breakdown"}
                     </Button>
-                    <span className="text-xs font-bold text-primary ml-1">{Math.round(progress)}%</span>
+                    <span className="text-xs font-bold text-primary ml-1">
+                      {Math.round(progress)}%
+                    </span>
                   </div>
                 </div>
                 <Progress value={progress} className="h-2" />
@@ -283,11 +305,32 @@ export default function TaskDetailDialog({
                       >
                         <Checkbox
                           checked={s.status === "Done"}
-                          onCheckedChange={(checked) =>
-                            masarActions.updateTask(s.id, {
-                              status: checked ? "Done" : "To Do",
-                            })
-                          }
+                          onCheckedChange={async (checked) => {
+                            const newStatus = checked ? "Done" : "To Do";
+                            const oldStatus = s.status;
+
+                            // Optimistically update the list of subtasks
+                            setAllTasks((prev) =>
+                              prev.map((t) =>
+                                t.id === s.id ? { ...t, status: newStatus } : t,
+                              ),
+                            );
+
+                            try {
+                              await masarActions.updateTask(s.id, {
+                                status: newStatus,
+                              });
+                            } catch (e) {
+                              // Rollback on failure
+                              setAllTasks((prev) =>
+                                prev.map((t) =>
+                                  t.id === s.id
+                                    ? { ...t, status: oldStatus }
+                                    : t,
+                                ),
+                              );
+                            }
+                          }}
                         />
                         <span
                           className={`flex-1 cursor-pointer text-sm ${s.status === "Done" ? "line-through text-muted-foreground" : ""}`}

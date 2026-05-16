@@ -103,7 +103,7 @@ export function useTasks(projectId?: string | 'all') {
     };
   }, [projectId]);
 
-  return { tasks, loading };
+  return { tasks, loading, setTasks };
 }
 
 export function useTopLevelTasks(projectId?: string | 'all') {
@@ -211,7 +211,7 @@ export function useTask(taskId?: string | null) {
     };
   }, [taskId]);
 
-  return { task, loading };
+  return { task, loading, setTask };
 }
 
 export function useDependencies(taskId: string) {
