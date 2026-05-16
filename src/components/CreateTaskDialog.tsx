@@ -43,50 +43,50 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateT
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AnimatePresence>
         {isOpen && (
-          <DialogContent className="font-['ibm-ar']" dir="rtl">
+          <DialogContent className="sm:max-w-[425px]">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
             >
               <DialogHeader>
-                <DialogTitle className="text-right">إنشاء مهمة جديدة</DialogTitle>
+                <DialogTitle>Create New Task</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="block text-right">العنوان</Label>
+                  <Label htmlFor="title" className="block">Task Title</Label>
                   <Input
                     id="title"
-                    placeholder="عنوان المهمة..."
+                    placeholder="What needs to be done?"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                    className="text-right"
+                    autoFocus
                     disabled={loading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="priority" className="block text-right">الأولوية</Label>
+                  <Label htmlFor="priority" className="block">Priority</Label>
                   <Select value={priority} onValueChange={setPriority} disabled={loading}>
-                    <SelectTrigger id="priority" className="text-right">
+                    <SelectTrigger id="priority">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 - حرجة</SelectItem>
-                      <SelectItem value="2">2 - عالية</SelectItem>
-                      <SelectItem value="3">3 - متوسطة</SelectItem>
-                      <SelectItem value="4">4 - منخفضة</SelectItem>
-                      <SelectItem value="5">5 - مؤجلة</SelectItem>
+                      <SelectItem value="1">1 - Critical</SelectItem>
+                      <SelectItem value="2">2 - High</SelectItem>
+                      <SelectItem value="3">3 - Medium</SelectItem>
+                      <SelectItem value="4">4 - Low</SelectItem>
+                      <SelectItem value="5">5 - Backlog</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <DialogFooter className="flex gap-2 sm:justify-start">
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
                 <Button onClick={handleCreate} disabled={!title.trim() || loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
-                  إنشاء المهمة
+                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Create Task
                 </Button>
-                <Button variant="outline" onClick={onClose} disabled={loading}>إلغاء</Button>
               </DialogFooter>
             </motion.div>
           </DialogContent>

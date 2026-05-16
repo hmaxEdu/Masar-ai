@@ -69,7 +69,7 @@ function ProjectMembersAvatars({ projectId }: { projectId: string }) {
   if (members.length === 0) return null;
 
   return (
-    <div className="flex -space-x-2  rtl:space-x-reverse ml-2">
+    <div className="flex -space-x-2   ml-2">
       {members.slice(0, 3).map((m) => (
         <Tooltip key={m.id}>
           <TooltipTrigger asChild>
@@ -120,7 +120,7 @@ function MainContent({ session }: { session: Session }) {
   }, [isDarkMode]);
 
   const handleCreateProject = async () => {
-    const name = prompt("اسم المشروع الجديد:");
+    const name = prompt("New Project Name:");
     if (name) {
       const { data } = await masarActions.addProject(name);
       if (data) navigate(`/projects/${data.id}`);
@@ -129,14 +129,14 @@ function MainContent({ session }: { session: Session }) {
 
   const handleRenameProject = async (id: string) => {
     const project = projects.find((p) => p.id === id);
-    const newName = prompt("اسم المشروع الجديد:", project?.name);
+    const newName = prompt("New Project Name:", project?.name);
     if (newName && newName !== project?.name) {
       await masarActions.updateProject(id, { name: newName });
     }
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (confirm("هل أنت متأكد من حذف هذا المشروع؟")) {
+    if (confirm("Are you sure you want to delete this project?")) {
       await masarActions.deleteProject(id);
       navigate("/projects/all");
     }
@@ -151,10 +151,7 @@ function MainContent({ session }: { session: Session }) {
 
   return (
     <TooltipProvider>
-      <div
-        className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-['ibm-ar']"
-        dir="rtl"
-      >
+      <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden ">
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -186,10 +183,10 @@ function MainContent({ session }: { session: Session }) {
                 onValueChange={(v) => navigate(`/projects/${v}`)}
               >
                 <SelectTrigger className="w-full max-w-[140px] sm:max-w-[200px] h-9 text-xs sm:text-sm truncate">
-                  <SelectValue placeholder="اختر المشروع" />
+                  <SelectValue placeholder="Select Project" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">كل المشاريع</SelectItem>
+                  <SelectItem value="all">All Projects</SelectItem>
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
@@ -197,7 +194,6 @@ function MainContent({ session }: { session: Session }) {
                   ))}
                 </SelectContent>
               </Select>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center">
@@ -211,7 +207,7 @@ function MainContent({ session }: { session: Session }) {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>خيارات المشروع</TooltipContent>
+                      <TooltipContent>Project options</TooltipContent>
                     </Tooltip>
                   </div>
                 </DropdownMenuTrigger>
@@ -220,7 +216,7 @@ function MainContent({ session }: { session: Session }) {
                     onClick={handleCreateProject}
                     className="flex gap-2"
                   >
-                    <Plus className="h-4 w-4" /> مشروع جديد
+                    <Plus className="h-4 w-4" /> New Project
                   </DropdownMenuItem>
                   {activeProjectId &&
                     activeProjectId !== "all" &&
@@ -231,7 +227,7 @@ function MainContent({ session }: { session: Session }) {
                         }
                         className="flex gap-2"
                       >
-                        <Settings className="h-4 w-4" /> إعدادات المشروع
+                        <Settings className="h-4 w-4" /> Project Settings
                       </DropdownMenuItem>
                     )}
                   {activeProjectId &&
@@ -243,7 +239,7 @@ function MainContent({ session }: { session: Session }) {
                         }
                         className="flex gap-2"
                       >
-                        <Settings className="h-4 w-4" /> إعادة تسمية المشروع
+                        <Settings className="h-4 w-4" /> Rename project
                       </DropdownMenuItem>
                     )}
                   {activeProjectId &&
@@ -257,7 +253,7 @@ function MainContent({ session }: { session: Session }) {
                           }
                           className="flex gap-2 text-destructive focus:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4" /> حذف المشروع الحالي
+                          <Trash2 className="h-4 w-4" /> Delete current
                         </DropdownMenuItem>
                       </>
                     )}
@@ -284,7 +280,7 @@ function MainContent({ session }: { session: Session }) {
                       <Users className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>أعضاء المشروع</TooltipContent>
+                  <TooltipContent>Project members</TooltipContent>
                 </Tooltip>
               )}
 
@@ -304,7 +300,7 @@ function MainContent({ session }: { session: Session }) {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isDarkMode ? "الوضع المضيء" : "الوضع الليلي"}
+                  {isDarkMode ? "Light mode" : "Dark mode"}
                 </TooltipContent>
               </Tooltip>
 
@@ -319,7 +315,7 @@ function MainContent({ session }: { session: Session }) {
                     <Settings className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>الإعدادات العامة</TooltipContent>
+                <TooltipContent> General settings</TooltipContent>
               </Tooltip>
             </div>
 
@@ -339,7 +335,7 @@ function MainContent({ session }: { session: Session }) {
                     onClick={() => setIsCollaborationOpen(true)}
                     className="flex gap-2"
                   >
-                    <Users className="h-4 w-4" /> أعضاء المشروع
+                    <Users className="h-4 w-4" /> Project members
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
@@ -351,20 +347,20 @@ function MainContent({ session }: { session: Session }) {
                   ) : (
                     <Moon className="h-4 w-4" />
                   )}
-                  {isDarkMode ? "الوضع المضيء" : "الوضع الليلي"}
+                  {isDarkMode ? "Light mode" : "Dark mode"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setIsSettingsOpen(true)}
                   className="flex gap-2"
                 >
-                  <Settings className="h-4 w-4" /> الإعدادات العامة
+                  <Settings className="h-4 w-4" />  General settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => supabase.auth.signOut()}
                   className="flex gap-2 text-destructive focus:text-destructive"
                 >
-                  <LogOut className="h-4 w-4" /> تسجيل الخروج
+                  <LogOut className="h-4 w-4" />  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -381,7 +377,7 @@ function MainContent({ session }: { session: Session }) {
                     <LogOut className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>تسجيل الخروج</TooltipContent>
+                <TooltipContent> Sign out</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -402,8 +398,8 @@ function MainContent({ session }: { session: Session }) {
                       <div className="flex items-center justify-between shrink-0">
                         <h2 className="text-lg sm:text-xl font-semibold truncate ml-2">
                           {activeProjectId === "all"
-                            ? "جميع المهام"
-                            : `مهام ${projects.find((p) => p.id === activeProjectId)?.name || ""}`}
+                            ? "All tasks"
+                            : `tasks ${projects.find((p) => p.id === activeProjectId)?.name || ""}`}
                         </h2>
                         {activeProjectId !== "all" && (
                           <motion.div
@@ -417,7 +413,7 @@ function MainContent({ session }: { session: Session }) {
                             >
                               <Plus className="h-4 w-4 sm:ml-2" />{" "}
                               <span className="hidden sm:inline">
-                                إضافة مهمة
+                                 Create new task
                               </span>
                             </Button>
                           </motion.div>
@@ -454,14 +450,14 @@ function MainContent({ session }: { session: Session }) {
                         <Plus className="h-8 w-8 text-muted-foreground" />
                       </motion.div>
                       <h2 className="text-2xl font-semibold">
-                        مرحباً بك في مسار
+                        Welcome to Masar
                       </h2>
                       <p className="text-muted-foreground max-w-md">
-                        أنشئ مشروعك الأول للبدء في تتبع مسارك وإدارة مهامك مع
-                        التبعيات.
+                        Create your first project to start tracking your path
+                        and managing tasks with dependencies.
                       </p>
                       <Button onClick={handleCreateProject}>
-                        أنشئ مشروعك الأول
+                        Create First Project
                       </Button>
                     </div>
                   )

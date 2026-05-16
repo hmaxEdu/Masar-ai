@@ -1,0 +1,20 @@
+{
+  "output_file": "masar_project_context.md",
+  "max_tokens": 1000000,
+  "non_interactive": true,
+  "exclude_dirs": [
+    "node_modules",
+    ".git",
+    "dist",
+    "ui-builder",
+    ".continue",
+    "prompts",
+    "build",
+    "out",
+    "ui",
+    "bulk-editor",
+    "Reports",
+    "DOCS"
+  ],
+  "exclude_files": ["*.lock", "package-lock.json", "pnpm-lock.yaml", "dev-app-update.yml"]
+}

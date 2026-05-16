@@ -51,38 +51,37 @@ export default function ProjectDialog({ isOpen, onClose, mode, projectId, initia
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AnimatePresence>
         {isOpen && (
-          <DialogContent className="font-['ibm-ar']" dir="rtl">
+          <DialogContent className="sm:max-w-[425px]">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
             >
               <DialogHeader>
-                <DialogTitle className="text-right">
-                  {mode === 'create' ? 'إنشاء مشروع جديد' : 'تعديل اسم المشروع'}
+                <DialogTitle>
+                  {mode === 'create' ? 'Create New Project' : 'Rename Project'}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="block text-right">اسم المشروع</Label>
+                  <Label htmlFor="name" className="block">Project Name</Label>
                   <Input
                     id="name"
-                    placeholder="أدخل اسم المشروع..."
+                    placeholder="Enter project name..."
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                    className="text-right"
                     autoFocus
                     disabled={loading}
                   />
                 </div>
               </div>
-              <DialogFooter className="flex gap-2 sm:justify-start">
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
                 <Button onClick={handleSubmit} disabled={!name.trim() || loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
-                  {mode === 'create' ? 'إنشاء المشروع' : 'حفظ التعديلات'}
+                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {mode === 'create' ? 'Create Project' : 'Save Changes'}
                 </Button>
-                <Button variant="outline" onClick={onClose} disabled={loading}>إلغاء</Button>
               </DialogFooter>
             </motion.div>
           </DialogContent>

@@ -15,7 +15,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     extensions: [
       StarterKit,
       Placeholder.configure({
-        placeholder: placeholder || 'اكتب شيئاً...',
+        placeholder: placeholder || 'Type something...',
       }),
     ],
     content,
@@ -27,7 +27,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
   if (!editor) return null;
 
   return (
-    <div className="border rounded-md focus-within:ring-1 focus-within:ring-ring" dir="rtl">
+    <div className="border rounded-md focus-within:ring-1 focus-within:ring-ring" dir="ltr">
       <div className="flex items-center gap-1 p-1 border-b bg-muted/50">
         <Button
           variant="ghost"
@@ -47,6 +47,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
         >
           <Italic className="h-4 w-4" />
         </Button>
+        <div className="w-px h-4 bg-border mx-1" />
         <Button
           variant="ghost"
           size="sm"
@@ -66,7 +67,10 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
           <ListOrdered className="h-4 w-4" />
         </Button>
       </div>
-      <EditorContent editor={editor} className="p-3 min-h-[100px] prose prose-sm max-w-none focus:outline-none text-right" />
+      <EditorContent 
+        editor={editor} 
+        className="p-3 min-h-[100px] prose prose-sm max-w-none focus:outline-none text-left" 
+      />
     </div>
   );
 }
