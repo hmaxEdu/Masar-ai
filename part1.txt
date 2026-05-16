@@ -1,0 +1,100 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  useProject,
+  useProjectMembers,
+  useMyRole,
+  masarActions,
+  collaborationActions
+} from '@/hooks/use-masar';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  ChevronLeft,
+  Settings,
+  Users,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  UserPlus,
+  UserX,
+  Trash2,
+  Lock,
+  Globe,
+  Search,
+  Loader2,
+  AlertTriangle,
+  Fingerprint
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { type ProjectRole, type ProjectVisibility, type Profile } from '@/lib/supabase';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } }
+};
+
+export default function ProjectSettings() {
+  const { projectId } = useParams();
+  const navigate = useNavigate();
+  const { project, loading: projectLoading } = useProject(projectId);
+  const members = useProjectMembers(projectId);
+  const myRole = useMyRole(projectId);
+
+  const [projectName, setProjectName] = useState('');
+  const [visibility, setVisibility] = useState<ProjectVisibility>('private');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (project) {
+      setProjectName(project.name);
+      setVisibility(project.visibility);
+    }
+  }, [project]);
+
+  useEffect(() => {
+    const search = async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+      setIsSearching(true);
+      const results = await collaborationActions.searchUsers(searchQuery);
+      setSearchResults(results.filter(r => !members.some(m => m.user_id === r.id)));
+      setIsSearching(false);
+    };
+    const timer = setTimeout(search, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery, members]);
+
+  const canManage = myRole === 'owner' || myRole === 'admin';
+  if (projectLoading) return <BentoSkeleton />;
+  if (!project || !projectId) return null;
+
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="max-w-6xl mx-auto px-4 py-8 space-y-6"
+      dir="ltr"
+    >
+      {/* Top Bar */}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+        <div>
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/projects/${projectId}`)} className="group mb-2 -ml-2">
+            <ChevronLeft className="h-4 w-4 mr-1 transition-transform group-hover:-translate-x-1" />
