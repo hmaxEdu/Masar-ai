@@ -48,8 +48,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden selection:bg-primary/30" dir="ltr">
-      
-
 
       {/* --- CONTENT --- */}
       <motion.div
