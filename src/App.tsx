@@ -1,25 +1,19 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import Logo from "@/assets/masar.png";
+import AIAgent from "@/components/AIAgent";
+import BoardView from "@/components/BoardView";
+import CollaborationDialog from "@/components/CollaborationDialog";
+import CreateTaskDialog from "@/components/CreateTaskDialog";
+import Login from "@/components/Login";
+import ProjectInsightsDialog from "@/components/ProjectInsightsDialog";
+import ProjectSettings from "@/components/ProjectSettings";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import TaskDetailDialog from "@/components/TaskDetailDialog";
 import {
-  Plus,
-  Settings,
-  Users,
-  Sun,
-  Moon,
-  LogOut,
-  MoreVertical,
-  Trash2,
-  Menu,
-  Loader2,
-  Sparkles,
-  ListTodo,
-} from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import {
-  useProjects,
-  useMyRole,
-  useProjectMembers,
-  masarActions,
-} from "@/hooks/use-masar";
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,39 +29,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { motion } from "motion/react";
-import Login from "@/components/Login";
-import { SettingsDialog } from "@/components/SettingsDialog";
-import CreateTaskDialog from "@/components/CreateTaskDialog";
-import TaskDetailDialog from "@/components/TaskDetailDialog";
-import CollaborationDialog from "@/components/CollaborationDialog";
-import ProjectSettings from "@/components/ProjectSettings";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { type Session } from "@supabase/supabase-js";
-import { migrateFromDexie } from "@/lib/migration";
 import {
-  Routes,
+  masarActions,
+  useMyRole,
+  useProjectMembers,
+  useProjects,
+} from "@/hooks/use-masar";
+import { migrateFromDexie } from "@/lib/migration";
+import { supabase } from "@/lib/supabase";
+import { type Session } from "@supabase/supabase-js";
+import {
+  KanbanSquare,
+  LayoutList,
+  Loader2,
+  LogOut,
+  Menu,
+  Moon,
+  MoreVertical,
+  Plus,
+  Settings,
+  Sparkles,
+  Sun,
+  Trash2,
+  Users
+} from "lucide-react";
+import { motion } from "motion/react";
+import { Suspense, lazy, useEffect, useState } from "react";
+import {
+  Navigate,
   Route,
+  Routes,
   useNavigate,
   useParams,
-  Navigate,
 } from "react-router-dom";
-import Logo from "@/assets/masar.png";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarGroup,
-  AvatarImage,
-} from "@/components/ui/avatar";
-import ProjectInsightsDialog from "@/components/ProjectInsightsDialog";
-import AIAgent from "@/components/AIAgent";
-import { LayoutList, KanbanSquare } from "lucide-react";
-import BoardView from "@/components/BoardView";
 const ListView = lazy(() => import("./components/ListView"));
 
 function ProjectMembersAvatars({ projectId }: { projectId: string }) {

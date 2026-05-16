@@ -1,6 +1,6 @@
 // src/components/AIAgent.tsx
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { 
   X, Send, Loader2, 
   Sparkles, Wrench, CheckSquare, Link as LinkIcon, Trash2, LayoutDashboard
@@ -36,13 +36,20 @@ const StreamingMarkdown = ({ content, isLatest }: { content: string, isLatest: b
     return () => clearInterval(timer);
   }, [content, isLatest, words.length]);
 
-  const wordVariants = {
-    hidden: { opacity: 0, y: 5, filter: 'blur(8px)' },
+ const wordVariants: Variants = {
+    hidden: { 
+      opacity: 0, 
+      y: 5, 
+      filter: 'blur(8px)' 
+    },
     visible: { 
       opacity: 1, 
       y: 0, 
       filter: 'blur(0px)',
-      transition: { duration: 0.4, ease: "easeOut" }
+      transition: { 
+        duration: 0.4, 
+        ease: "easeOut" as any // Type assertion to bypass strict Easing literal check
+      }
     }
   };
 
