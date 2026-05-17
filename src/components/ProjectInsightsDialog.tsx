@@ -10,7 +10,8 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { getProjectInsights } from "@/lib/ai";
 import { useTasks } from "@/hooks/use-masar";
-import ReactMarkdown from "react-markdown";
+import { MessageResponse } from "@/components/ai-elements/message";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 
 interface ProjectInsightsDialogProps {
   projectId: string;
@@ -70,9 +71,9 @@ export default function ProjectInsightsDialog({
                 className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-4"
               >
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm animate-pulse">
+                <Shimmer className="text-sm font-medium">
                   Analyzing project tasks and priorities...
-                </p>
+                </Shimmer>
               </motion.div>
             ) : error ? (
               <motion.div
@@ -96,9 +97,9 @@ export default function ProjectInsightsDialog({
                 key="content"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="markdown-content prose prose-sm dark:prose-invert max-w-none"
+                className="markdown-content prose prose-sm dark:prose-invert max-w-none px-2"
               >
-                <ReactMarkdown>{insights}</ReactMarkdown>
+                <MessageResponse>{insights}</MessageResponse>
               </motion.div>
             ) : null}
           </AnimatePresence>

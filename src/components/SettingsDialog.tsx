@@ -54,58 +54,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
 
           <div className="space-y-6 py-6">
             
-            {/* AI Integration Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium border-b pb-2 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" /> AI Integration (Ollama)
-              </h3>
-              <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border/50">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Ollama Host URL</Label>
-                  <Input 
-                    value={aiUrl} 
-                    onChange={(e) => setAiUrl(e.target.value)} 
-                    placeholder="https://ollama.com or http://localhost:11434"
-                    className="h-8 text-xs bg-background/50"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">API Key (Ollama Cloud)</Label>
-                  <Input 
-                    value={aiKey} 
-                    onChange={(e) => setAiKey(e.target.value)} 
-                    placeholder="Leave blank for local unauthenticated instances"
-                    type="password"
-                    className="h-8 text-xs bg-background/50"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Model Name</Label>
-                  <Input 
-                    value={aiModel} 
-                    onChange={(e) => setAiModel(e.target.value)} 
-                    placeholder="e.g. gemma3, llama3.1"
-                    className="h-8 text-xs bg-background/50"
-                  />
-                </div>
-                <div className="pt-2 flex items-center justify-between">
-                  <AnimatePresence>
-                    {showSavedMsg && (
-                      <motion.span 
-                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                        className="text-xs text-green-500 font-bold flex items-center gap-1"
-                      >
-                        <CheckCircle2 className="h-3 w-3" /> Saved
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                  <Button onClick={saveAISettings} size="sm" variant="secondary" className="ml-auto h-8 text-xs">
-                    Save AI Settings
-                  </Button>
-                </div>
-              </div>
-            </div>
-
+           
             {/* Local Data Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium border-b pb-2 flex items-center gap-2">

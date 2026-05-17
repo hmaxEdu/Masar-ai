@@ -1,192 +1,235 @@
-// src/components/AIAgent.tsx
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence, type Variants } from 'motion/react';
+import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
-  X, Send, Loader2, 
-  Sparkles, Wrench, CheckSquare, Link as LinkIcon, Trash2, LayoutDashboard
+  X, Sparkles, LayoutDashboard, Link as LinkIcon, Trash2, CheckSquare, Wrench,
+  Type, ArrowUpCircle, FileText, PenLine, UserPlus, UserMinus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useTasks, masarActions, useProjectMembers } from '@/hooks/use-masar';
-import { sendAgentTurn } from '@/lib/ai';
-import ReactMarkdown from 'react-markdown';
+import { useTasks, masarActions, useProjectMembers, collaborationActions } from '@/hooks/use-masar';
+import { streamAgentTurn } from '@/lib/ai';
 
-// --- SATISFYING WORD-BY-WORD REVEALER ---
-const StreamingMarkdown = ({ content, isLatest }: { content: string, isLatest: boolean }) => {
-  const [displayedWords, setDisplayedWords] = useState(isLatest ? 0 : content.split(' ').length);
-  const words = useMemo(() => content.split(' '), [content]);
+// --- AI Elements ---
+import { 
+  Conversation, 
+  ConversationContent, 
+  ConversationEmptyState,
+  ConversationScrollButton
+} from "@/components/ai-elements/conversation";
+import { 
+  Message, 
+  MessageContent, 
+  MessageResponse 
+} from "@/components/ai-elements/message";
+import { 
+  PromptInput, 
+  PromptInputTextarea, 
+  PromptInputSubmit, 
+  PromptInputFooter,
+  PromptInputActionMenu,
+  PromptInputActionMenuTrigger,
+  PromptInputActionMenuContent,
+  PromptInputActionAddAttachments,
+  PromptInputActionAddScreenshot
+} from "@/components/ai-elements/prompt-input";
+import { 
+  Tool, 
+  ToolHeader 
+} from "@/components/ai-elements/tool";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import {
+  Attachments, Attachment, AttachmentPreview, AttachmentRemove
+} from "@/components/ai-elements/attachments";
+import { usePromptInputAttachments } from '@/components/ai-elements/prompt-input';
+import { Image } from "@/components/ai-elements/image";
 
-  // If it's the latest message, simulate the stream
-  useEffect(() => {
-    if (!isLatest) return;
-    
-    // Reset if content changes
-    setDisplayedWords(0);
+const ToolUI: Record<string, { icon: React.ElementType, label: string }> = {
+  create_tasks: { icon: CheckSquare, label: 'Creating tasks' },
+  update_task_status: { icon: LayoutDashboard, label: 'Updating board' },
+  set_dependency: { icon: LinkIcon, label: 'Linking dependencies' },
+  delete_tasks: { icon: Trash2, label: 'Removing tasks' },
+  delete_task: { icon: Trash2, label: 'Removing task' }, // Fallback just in case
+  assign_task: { icon: Wrench, label: 'Assigning task' },
+  update_task_title: { icon: Type, label: 'Renaming task' },
+  update_task_priority: { icon: ArrowUpCircle, label: 'Changing priority' },
+  update_task_description: { icon: FileText, label: 'Updating description' },
+  rename_project: { icon: PenLine, label: 'Renaming project' },
+  invite_member: { icon: UserPlus, label: 'Inviting member' },
+  remove_member: { icon: UserMinus, label: 'Removing member' },
+};
 
-    const timer = setInterval(() => {
-      setDisplayedWords((prev) => {
-        if (prev >= words.length) {
-          clearInterval(timer);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 40); // Speed of the word-by-word reveal
-
-    return () => clearInterval(timer);
-  }, [content, isLatest, words.length]);
-
- const wordVariants: Variants = {
-    hidden: { 
-      opacity: 0, 
-      y: 5, 
-      filter: 'blur(8px)' 
-    },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      filter: 'blur(0px)',
-      transition: { 
-        duration: 0.4, 
-        ease: "easeOut" as any // Type assertion to bypass strict Easing literal check
-      }
-    }
-  };
-
-  // If not latest, just show standard markdown
-  if (!isLatest) {
-    return (
-      <div className="prose prose-sm dark:prose-invert max-w-none">
-        <ReactMarkdown>{content}</ReactMarkdown>
-      </div>
-    );
-  }
-
+function InputAttachments() {
+  const { files, remove } = usePromptInputAttachments();
+  if (!files.length) return null;
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none">
-      {/* 
-        We slice the array to only show words up to 'displayedWords' 
-        This creates the actual "streaming" visual growth
-      */}
-      {words.slice(0, displayedWords).map((word, i) => (
-        <motion.span
-          key={`${i}-${word}`}
-          initial="hidden"
-          animate="visible"
-          variants={wordVariants}
-          style={{ display: 'inline-block', whiteSpace: 'pre' }}
-        >
-          {word}{' '}
-        </motion.span>
+    <Attachments className="px-4 pt-3 pb-0" variant="list">
+      {files.map((file) => (
+        <Attachment key={file.id} data={file} onRemove={() => remove(file.id)}>
+          <AttachmentPreview />
+          <div className="flex-1 text-xs truncate">{file.filename || "Image"}</div>
+          <AttachmentRemove />
+        </Attachment>
       ))}
-    </div>
+    </Attachments>
   );
-};
-
-const ToolUI: Record<string, { icon: React.ElementType, label: string, color: string }> = {
-  create_tasks: { icon: CheckSquare, label: 'Creating tasks', color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
-  update_task_status: { icon: LayoutDashboard, label: 'Updating board', color: 'text-purple-500 bg-purple-500/10 border-purple-500/20' },
-  set_dependency: { icon: LinkIcon, label: 'Linking dependencies', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
-  delete_task: { icon: Trash2, label: 'Removing task', color: 'text-red-500 bg-red-500/10 border-red-500/20' },
-};
+}
 
 export default function AIAgent({ projectId }: { projectId: string }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<any[]>([{ 
-    role: 'assistant', 
-    content: "Hi! I'm Masar AI. I can manage your board, organize tasks, or build project plans. How can I help?" 
-  }]);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [agentStatus, setAgentStatus] = useState<string | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { tasks } = useTasks(projectId);
-
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   const members = useProjectMembers(projectId);
-  useEffect(() => { 
-    scrollToBottom(); 
-  }, [messages, isLoading, agentStatus]);
 
-const tools = [
-  { type: "function", function: { name: "create_tasks", description: "Creates one or many new tasks.", parameters: { type: "object", properties: { tasks: { type: "array", items: { type: "object", properties: { title: { type: "string" }, description: { type: "string" }, priority: { type: "integer" } } } } } } } },
-  { type: "function", function: { name: "update_task_status", description: "Moves a task to a different column.", parameters: { type: "object", properties: { taskId: { type: "string" }, newStatus: { type: "string", enum: ["To Do", "Doing", "Done"] } } } } },
-  { type: "function", function: { name: "set_dependency", description: "Creates a dependency where one task blocks another.", parameters: { type: "object", properties: { blockingTaskId: { type: "string" }, blockedTaskId: { type: "string" } }, required: ["blockingTaskId", "blockedTaskId"] } } },
-  { type: "function", function: { name: "delete_task", description: "Permanently removes a task.", parameters: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } } },
-  // --- NEW TOOL ---
-  { 
-    type: "function", 
-    function: { 
-      name: "assign_task", 
-      description: "Assigns a task to a team member using their User ID.", 
-      parameters: { 
-        type: "object", 
-        properties: { 
-          taskId: { type: "string" }, 
-          assigneeId: { type: "string", description: "The UUID of the project member." } 
-        }, 
-        required: ["taskId", "assigneeId"] 
-      } 
-    } 
-  }
-];
+  const handleSend = async (text: string, files: any[]) => {
+    if ((!text.trim() && files.length === 0) || isLoading) return;
 
-const handleSend = async () => {
-  if (!input.trim() || isLoading) return;
+    // Process uploaded images: get base64 portion
+    const base64Images = files
+      .filter(f => f.mediaType?.startsWith('image/'))
+      .map(f => f.url?.split(',')[1]) // extract base64 from data URL
+      .filter(Boolean);
 
-  // 3. Update context to include team members
-  const projectContext = JSON.stringify({
-    tasks: tasks.map(t => ({ id: t.id, title: t.title, status: t.status, priority: t.priority })),
-    team: members.map(m => ({ id: m.profiles.id, email: m.profiles.email })) // AI now knows WHO is in the project
-  });
+    // AI Context: Include parent_id so the AI knows task hierarchies
+    const projectContext = JSON.stringify({
+      tasks: tasks.map(t => ({ 
+        id: t.id, 
+        title: t.title, 
+        status: t.status, 
+        priority: t.priority,
+        parent_id: t.parent_id 
+      })),
+      team: members.map(m => ({ id: m.profiles.id, email: m.profiles.email, role: m.role })) 
+    });
 
-  const systemMessage = {
-    role: 'system',
-    content: `You are Masar Agent. Use the available tools to manage the project. 
-    CURRENT PROJECT DATA: ${projectContext}`
-  };
+    const systemMessage = {
+      role: 'system',
+      content: `You are Masar Agent. Use the available tools to manage the project. 
+      CURRENT PROJECT DATA: ${projectContext}`
+    };
 
-  const userMsg = { role: 'user', content: input };
-  let currentHistory = [...messages, userMsg];
+    const userMsg: any = { role: 'user', content: text };
+    if (base64Images.length > 0) {
+      userMsg.images = base64Images;
+    }
 
-  setMessages(currentHistory);
-  setInput('');
-  setIsLoading(true);
-  setAgentStatus("Thinking...");
+    let currentHistory = [...messages, userMsg];
 
-  try {
-    let isAgentDone = false;
-    let loopCount = 0;
+    setMessages(currentHistory);
+    setIsLoading(true);
+    setAgentStatus("Thinking...");
 
-    while (!isAgentDone && loopCount < 5) {
-      loopCount++;
-      // 3. Send the systemMessage (with the task list) + history
-      const aiMessage = await sendAgentTurn([systemMessage, ...currentHistory], tools);
+    try {
+      let isAgentDone = false;
+      let loopCount = 0;
+
+      while (!isAgentDone && loopCount < 5) {
+        loopCount++;
+        
+        let currentContent = "";
+        let currentToolCalls: any[] = [];
+        
+        // Push a placeholder message for the assistant stream
+        setMessages(prev => [...prev, { role: 'assistant', content: '', tool_calls: [] }]);
+        
+        // Consume the stream
+        const stream = streamAgentTurn([systemMessage, ...currentHistory]);
+        
+        for await (const chunk of stream) {
+          if (chunk.message?.content) {
+            currentContent += chunk.message.content;
+          }
+          if (chunk.message?.tool_calls) {
+             currentToolCalls = chunk.message.tool_calls;
+          }
+          
+          setMessages(prev => {
+             const newMsgs = [...prev];
+             newMsgs[newMsgs.length - 1] = {
+               role: 'assistant',
+               content: currentContent,
+               tool_calls: currentToolCalls
+             };
+             return newMsgs;
+          });
+        }
+
+        const aiMessage = { role: 'assistant', content: currentContent, tool_calls: currentToolCalls };
         currentHistory = [...currentHistory, aiMessage];
-        setMessages([...currentHistory]);
 
-        if (aiMessage.tool_calls && aiMessage.tool_calls.length > 0) {
+        if (currentToolCalls && currentToolCalls.length > 0) {
           setAgentStatus("Executing actions...");
-          for (const toolCall of aiMessage.tool_calls) {
-            const args = toolCall.function.arguments;
+          
+          for (const toolCall of currentToolCalls) {
+            const args = typeof toolCall.function.arguments === 'string' 
+              ? JSON.parse(toolCall.function.arguments) 
+              : toolCall.function.arguments;
+              
             const toolName = toolCall.function.name;
+            let toolResponseContent = "Successfully executed.";
 
-            if (toolName === 'create_tasks') {
-              for (const t of args.tasks || []) {
-                await masarActions.addTask({ project_id: projectId, title: t.title, description: t.description || "", priority: t.priority || 3, status: 'To Do', started_at: new Date().toISOString() });
+            try {
+              if (toolName === 'create_tasks') {
+                const created = [];
+                for (const t of args.tasks || []) {
+                  const res = await masarActions.addTask({ 
+                    project_id: projectId, 
+                    title: t.title, 
+                    description: t.description || "", 
+                    priority: t.priority || 3, 
+                    status: 'To Do', 
+                    started_at: new Date().toISOString(),
+                    parent_id: t.parentId // Support for sub-tasks
+                  });
+                  if (res.data) created.push({ id: res.data.id, title: t.title });
+                }
+                toolResponseContent = `Created tasks: ${JSON.stringify(created)}`;
               }
+              else if (toolName === 'delete_tasks') {
+                for (const id of args.taskIds || []) {
+                  await masarActions.deleteTask(id);
+                }
+                toolResponseContent = `Deleted tasks successfully.`;
+              }
+              // Fallback just in case the model hallucinates the old singular tool
+              else if (toolName === 'delete_task') {
+                await masarActions.deleteTask(args.taskId);
+                toolResponseContent = `Deleted task ${args.taskId}`;
+              }
+              else if (toolName === 'update_task_status') {
+                await masarActions.updateTask(args.taskId, { status: args.newStatus });
+              }
+              else if (toolName === 'set_dependency') {
+                await masarActions.addDependency(args.blockingTaskId, args.blockedTaskId);
+              }
+              else if (toolName === 'assign_task') {
+                await masarActions.updateTask(args.taskId, { assignee_id: args.assigneeId });
+              }
+              else if (toolName === 'update_task_title') {
+                await masarActions.updateTask(args.taskId, { title: args.title });
+              }
+              else if (toolName === 'update_task_priority') {
+                await masarActions.updateTask(args.taskId, { priority: args.priority });
+              }
+              else if (toolName === 'update_task_description') {
+                await masarActions.updateTask(args.taskId, { description: args.description });
+              }
+              else if (toolName === 'rename_project') {
+                await masarActions.updateProject(projectId, { name: args.newName });
+              }
+              else if (toolName === 'invite_member') {
+                await collaborationActions.addMember(projectId, args.email, args.role);
+              }
+              else if (toolName === 'remove_member') {
+                const member = members.find(m => m.profiles.email === args.email);
+                if (member) await collaborationActions.removeMember(member.id);
+              }
+
+              currentHistory = [...currentHistory, { role: 'tool', name: toolName, content: toolResponseContent }];
+            } catch (err: any) {
+              currentHistory = [...currentHistory, { role: 'tool', name: toolName, content: `Error: ${err.message}` }];
             }
-            if (toolName === 'update_task_status') {
-              await masarActions.updateTask(args.taskId, { status: args.newStatus });
-            }
-            if (toolName === 'set_dependency') {
-              await masarActions.addDependency(args.blockingTaskId, args.blockedTaskId);
-            }
-            if (toolName === 'delete_task') {
-              await masarActions.deleteTask(args.taskId);
-            }
-            currentHistory = [...currentHistory, { role: 'tool', name: toolName, content: `Done.` }];
           }
           setMessages([...currentHistory]);
         } else {
@@ -194,7 +237,7 @@ const handleSend = async () => {
         }
       }
     } catch (error: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `**Error:** ${error.message}` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `**System Error:** ${error.message}` }]);
     } finally {
       setIsLoading(false);
       setAgentStatus(null);
@@ -207,7 +250,7 @@ const handleSend = async () => {
         layout
         className={`relative flex flex-col origin-bottom-right overflow-hidden transition-all duration-500 ease-in-out ${
           isOpen 
-          ? "w-[calc(100vw-2rem)] sm:w-[380px] h-[600px] max-h-[calc(100vh-6rem)] bg-background/90 backdrop-blur-xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10 shadow-2xl rounded-[24px]"
+          ? "w-[calc(100vw-2rem)] sm:w-[420px] h-[650px] max-h-[calc(100vh-6rem)] bg-background/95 backdrop-blur-xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10 shadow-2xl rounded-2xl"
           : "w-14 h-14 bg-primary text-primary-foreground cursor-pointer shadow-lg shadow-primary/30 rounded-[28px]"
         }`}
         onClick={() => !isOpen && setIsOpen(true)}
@@ -232,9 +275,9 @@ const handleSend = async () => {
               className="flex flex-col w-full h-full"
             >
               {/* Header */}
-              <div className="flex justify-between items-center px-4 py-3 border-b border-border/40 shrink-0 bg-background/50">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+              <div className="flex justify-between items-center px-4 py-3 border-b border-border/40 shrink-0 bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 bg-primary/10 text-primary rounded-full flex items-center justify-center border border-primary/20">
                     <Sparkles className="h-4 w-4" />
                   </div>
                   <div className="flex flex-col">
@@ -244,92 +287,118 @@ const handleSend = async () => {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
                       </span>
-                      Ready
+                      {agentStatus || "Online"}
                     </span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Chat Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-5 scroll-smooth">
-                {messages.map((msg, idx) => {
-                  if (msg.role === 'system' || msg.role === 'tool') return null;
-                  const isUser = msg.role === 'user';
-                  // Identify if this is the absolute last assistant message
-                  const isLatestAssistant = !isUser && idx === messages.length - 1;
-
-                  return (
-                    <div key={idx} className="flex flex-col gap-1.5 w-full">
-                      {msg.tool_calls && (
-                        <div className="flex flex-col gap-2 mb-2 ml-9">
-                          {msg.tool_calls.map((tool: any, tIdx: number) => {
-                            const ui = ToolUI[tool.function.name] || { icon: Wrench, label: 'Running task', color: 'text-primary bg-primary/10 border-primary/20' };
-                            const Icon = ui.icon;
-                            return (
-                              <motion.div layout initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} key={tIdx} className={`flex items-center gap-2 text-[11px] font-medium px-2.5 py-1.5 rounded-md border w-fit ${ui.color}`}>
-                                <Icon className="h-3 w-3" /> 
-                                {ui.label}...
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      
-                      <div className={`flex gap-3 w-full ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                        {!isUser && (
-                          <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5 border border-primary/10">
-                            <Sparkles className="h-3.5 w-3.5" />
-                          </div>
-                        )}
-                        <div className={`px-4 py-2 text-[13px] leading-relaxed max-w-[85%] ${isUser ? 'bg-muted/80 text-foreground rounded-2xl rounded-tr-sm border border-border/50 shadow-sm' : 'text-foreground'}`}>
-                          <StreamingMarkdown 
-                            content={msg.content} 
-                            isLatest={isLatestAssistant} 
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <AnimatePresence>
-                  {isLoading && (
-                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 w-full">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center mt-0.5 border border-primary/10">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground py-1.5 animate-pulse">
-                        {agentStatus || "Thinking..."}
-                      </span>
-                    </motion.div>
+              {/* Chat Area using ai-elements */}
+              <Conversation className="flex-1 bg-background/50">
+                <ConversationContent>
+                  {messages.length === 0 && (
+                    <ConversationEmptyState
+                      title="AI Project Assistant"
+                      description="I can manage your board, invite members, edit tasks, or build plans. Ask me anything!"
+                      icon={<Sparkles className="size-8 text-primary/50" />}
+                    />
                   )}
-                </AnimatePresence>
-                <div ref={messagesEndRef} className="h-1" />
+
+                  {messages.map((msg, idx) => {
+                    if (msg.role === 'system' || msg.role === 'tool') return null;
+                    const isUser = msg.role === 'user';
+                    const isLatestAssistant = !isUser && idx === messages.length - 1;
+
+                    return (
+                      <div key={idx} className="flex flex-col gap-2 w-full">
+                        {/* Tool Executions */}
+                        {msg.tool_calls?.map((tool: any, tIdx: number) => {
+                          const ui = ToolUI[tool.function.name] || { label: tool.function.name, icon: Wrench };
+                          return (
+                            <Tool key={tIdx} className="w-10/12 ml-4 bg-muted/30">
+                              <ToolHeader
+                                type="dynamic-tool"
+                                state={isLoading && isLatestAssistant ? "input-available" : "output-available"}
+                                toolName={ui.label}
+                                className="py-2.5 px-3"
+                              />
+                            </Tool>
+                          );
+                        })}
+
+                        {/* Standard Message */}
+                        {(msg.content || (msg.images && msg.images.length > 0)) && (
+                          <Message from={msg.role as 'user' | 'assistant'}>
+                            <MessageContent>
+                              {/* Display associated images */}
+                              {msg.images && msg.images.length > 0 && (
+                                <Attachments variant="grid" className="mt-1">
+                                  {msg.images.map((base64: string, i: number) => (
+                                    <Attachment key={i} data={{ type: 'file', mediaType: 'image/jpeg', url: '', id: `img-${i}` }}>
+                                      <Image base64={base64} mediaType="image/jpeg" />
+                                    </Attachment>
+                                  ))}
+                                </Attachments>
+                              )}
+                              
+                              {/* Display text content */}
+                              {isLatestAssistant && isLoading && !msg.content ? (
+                                <Shimmer>Processing response...</Shimmer>
+                              ) : (
+                                msg.content && <MessageResponse>{msg.content}</MessageResponse>
+                              )}
+                            </MessageContent>
+                          </Message>
+                        )}
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Empty Shimmer block if thinking before getting text content */}
+                  {isLoading && agentStatus === "Thinking..." && (!messages.length || messages[messages.length - 1].role === 'user') && (
+                    <Message from="assistant">
+                      <MessageContent>
+                        <Shimmer>Processing response...</Shimmer>
+                      </MessageContent>
+                    </Message>
+                  )}
+                </ConversationContent>
+                <ConversationScrollButton />
+              </Conversation>
+
+              {/* Input Area using ai-elements */}
+              <div className="p-4 bg-background border-t border-border/40 shrink-0">
+                <PromptInput
+                  accept="image/*"
+                  onSubmit={(message) => handleSend(message.text, message.files)}
+                  className="relative flex flex-col w-full overflow-hidden border border-border/50 rounded-xl bg-muted/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-sm"
+                >
+                  <InputAttachments />
+                  <PromptInputTextarea 
+                    placeholder="Message Masar AI..." 
+                    className="border-none bg-transparent shadow-none focus-visible:ring-0 min-h-[44px] resize-none px-4 pt-3 pb-2 text-[13px]" 
+                    disabled={isLoading}
+                  />
+                  <PromptInputFooter className="px-2 pb-2 pt-0 justify-between items-center bg-transparent border-none shadow-none">
+                    <PromptInputActionMenu>
+                      <PromptInputActionMenuTrigger />
+                      <PromptInputActionMenuContent>
+                        <PromptInputActionAddAttachments />
+                        <PromptInputActionAddScreenshot />
+                      </PromptInputActionMenuContent>
+                    </PromptInputActionMenu>
+                    
+                    <div className="flex-1 text-xs text-muted-foreground text-right mr-2 font-medium">
+                      Press <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border/50 font-sans shadow-sm">Enter</kbd> to send
+                    </div>
+                    <PromptInputSubmit status={isLoading ? "submitted" : "idle"} />
+                  </PromptInputFooter>
+                </PromptInput>
               </div>
 
-              {/* Input Area */}
-              <div className="p-3 bg-background/50 border-t border-border/40 shrink-0">
-                <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex items-center">
-                  <Input 
-                    value={input} 
-                    onChange={(e) => setInput(e.target.value)} 
-                    placeholder="Message Masar AI..." 
-                    className="w-full pr-11 bg-muted/50 border-transparent rounded-[16px] h-11 text-[13px] transition-all" 
-                    disabled={isLoading} 
-                  />
-                  <Button 
-                    type="submit" 
-                    size="icon" 
-                    disabled={!input.trim() || isLoading} 
-                    className="absolute right-1.5 h-8 w-8 rounded-xl bg-primary text-primary-foreground shadow-sm"
-                  >
-                    <Send className="h-3.5 w-3.5 ml-0.5" />
-                  </Button>
-                </form>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

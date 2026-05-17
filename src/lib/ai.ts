@@ -125,9 +125,9 @@ export async function generateProjectPlan(goal: string, projectContext: string):
   }
 }
 
-export async function sendAgentTurn(messages: any[], tools: any[] = []) {
+export async function sendAgentTurn(messages: any[]) {
   const { data, error } = await supabase.functions.invoke('agent-chat', {
-    body: { messages, tools }
+    body: { messages } 
   });
 
   if (error) {
@@ -139,5 +139,63 @@ export async function sendAgentTurn(messages: any[], tools: any[] = []) {
     throw new Error(exactError);
   }
 
-  return data.message; // Returns { role: 'assistant', content: '...', tool_calls?: [...] }
+  return data.message; 
+}
+/**
+ * Handles consuming a chunked NDJSON stream from the Edge Function
+ */
+export async function* streamAgentTurn(messages: any[]) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/agent-chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseAnonKey}`
+    },
+    // No tools sent here anymore
+    body: JSON.stringify({ messages, stream: true })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`API Error: ${err}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("No response body");
+
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    
+    // Keep the last partial line in the buffer
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (line.trim()) {
+        try {
+          yield JSON.parse(line);
+        } catch (e) {
+          console.error("Failed to parse chunk:", line);
+        }
+      }
+    }
+  }
+
+  // Handle any remaining string in the buffer
+  if (buffer.trim()) {
+    try {
+      yield JSON.parse(buffer);
+    } catch (e) {
+      console.error("Failed to parse final chunk:", buffer);
+    }
+  }
 }

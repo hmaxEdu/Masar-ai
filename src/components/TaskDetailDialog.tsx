@@ -42,6 +42,8 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import RichTextEditor from "./RichTextEditor";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+
 interface TaskDetailDialogProps {
   taskId: string | null;
   isOpen: boolean;
@@ -266,7 +268,7 @@ export default function TaskDetailDialog({
                 />
               </div>
 
-              <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+              <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border/50">
                 <div className="flex justify-between items-center">
                   <Label>
                     Sub-tasks ({completedChildren}/{childTasks.length})
@@ -276,7 +278,7 @@ export default function TaskDetailDialog({
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-6 text-[10px] gap-1 px-2 border-primary/20 hover:bg-primary/10 text-primary shadow-sm transition-all"
+                      className="h-7 text-[11px] font-medium gap-1.5 px-3 border-primary/20 hover:bg-primary/10 text-primary shadow-sm transition-all"
                       onClick={handleAIBreakdown}
                       disabled={isGeneratingAI}
                     >
@@ -285,7 +287,7 @@ export default function TaskDetailDialog({
                       ) : (
                         <Sparkles className="h-3 w-3" />
                       )}
-                      {isGeneratingAI ? "Thinking..." : "AI Breakdown"}
+                      {isGeneratingAI ? <Shimmer>Thinking...</Shimmer> : "AI Breakdown"}
                     </Button>
                     <span className="text-xs font-bold text-primary ml-1">
                       {Math.round(progress)}%
