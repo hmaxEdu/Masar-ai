@@ -1,13 +1,11 @@
 // src/components/SettingsDialog.tsx
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { db } from '@/lib/db';
-import { Trash2, Info, Github, LogOut, Cpu, Sparkles, CheckCircle2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '@/lib/supabase';
+import { Cpu, Github, Info, LogOut, Trash2 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -15,11 +13,6 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
-  // AI Settings State
-  const [aiUrl, setAiUrl] = useState(localStorage.getItem('masar_ai_url') || 'https://ollama.com');
-  const [aiKey, setAiKey] = useState(localStorage.getItem('masar_ai_key') || '');
-  const [aiModel, setAiModel] = useState(localStorage.getItem('masar_ai_model') || 'gemma3');
-  const [showSavedMsg, setShowSavedMsg] = useState(false);
 
   const handleClearLocalData = async () => {
     if (confirm('Are you sure you want to clear local data? This will delete all migrated Dexie records from your browser.')) {
@@ -33,13 +26,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
     }
   };
 
-  const saveAISettings = () => {
-    localStorage.setItem('masar_ai_url', aiUrl);
-    localStorage.setItem('masar_ai_key', aiKey);
-    localStorage.setItem('masar_ai_model', aiModel);
-    setShowSavedMsg(true);
-    setTimeout(() => setShowSavedMsg(false), 2000);
-  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

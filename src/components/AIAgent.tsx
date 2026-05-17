@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, Sparkles, LayoutDashboard, Link as LinkIcon, Trash2, CheckSquare, Wrench,
@@ -29,7 +29,8 @@ import {
   PromptInputActionMenuTrigger,
   PromptInputActionMenuContent,
   PromptInputActionAddAttachments,
-  PromptInputActionAddScreenshot
+  PromptInputActionAddScreenshot,
+  usePromptInputAttachments
 } from "@/components/ai-elements/prompt-input";
 import { 
   Tool, 
@@ -39,7 +40,6 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
   Attachments, Attachment, AttachmentPreview, AttachmentRemove
 } from "@/components/ai-elements/attachments";
-import { usePromptInputAttachments } from '@/components/ai-elements/prompt-input';
 import { Image } from "@/components/ai-elements/image";
 
 const ToolUI: Record<string, { icon: React.ElementType, label: string }> = {
@@ -338,7 +338,7 @@ export default function AIAgent({ projectId }: { projectId: string }) {
                                 <Attachments variant="grid" className="mt-1">
                                   {msg.images.map((base64: string, i: number) => (
                                     <Attachment key={i} data={{ type: 'file', mediaType: 'image/jpeg', url: '', id: `img-${i}` }}>
-                                      <Image base64={base64} mediaType="image/jpeg" />
+                                      <Image base64={base64} mediaType="image/jpeg" uint8Array={new Uint8Array()} />
                                     </Attachment>
                                   ))}
                                 </Attachments>
@@ -394,7 +394,7 @@ export default function AIAgent({ projectId }: { projectId: string }) {
                     <div className="flex-1 text-xs text-muted-foreground text-right mr-2 font-medium">
                       Press <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border/50 font-sans shadow-sm">Enter</kbd> to send
                     </div>
-                    <PromptInputSubmit status={isLoading ? "submitted" : "idle"} />
+                    <PromptInputSubmit status={isLoading ? "submitted" : undefined} />
                   </PromptInputFooter>
                 </PromptInput>
               </div>
