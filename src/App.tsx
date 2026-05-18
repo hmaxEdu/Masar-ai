@@ -1,13 +1,6 @@
+// src/App.tsx
 import Logo from "@/assets/masar.png";
-import AIAgent from "@/components/AIAgent";
-import BoardView from "@/components/BoardView";
-import CollaborationDialog from "@/components/CollaborationDialog";
-import CreateTaskDialog from "@/components/CreateTaskDialog";
-import Login from "@/components/Login";
-import ProjectInsightsDialog from "@/components/ProjectInsightsDialog";
-import ProjectSettings from "@/components/ProjectSettings";
-import { SettingsDialog } from "@/components/SettingsDialog";
-import TaskDetailDialog from "@/components/TaskDetailDialog";
+import LandingPage from "@/components/LandingPage";
 import {
   Avatar,
   AvatarFallback,
@@ -46,6 +39,7 @@ import { supabase } from "@/lib/supabase";
 import { type Session } from "@supabase/supabase-js";
 import {
   KanbanSquare,
+  LayoutDashboard,
   LayoutList,
   Loader2,
   LogOut,
@@ -57,7 +51,7 @@ import {
   Sparkles,
   Sun,
   Trash2,
-  Users
+  Users,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Suspense, lazy, useEffect, useState } from "react";
@@ -68,8 +62,28 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-const ListView = lazy(() => import("./components/ListView"));
+import EmptyState from "./components/EmptyState";
 
+// 👇 Lazily load all heavy routes and dialogs
+const Login = lazy(() => import("@/components/Login"));
+const AIAgent = lazy(() => import("@/components/AIAgent"));
+const BoardView = lazy(() => import("@/components/BoardView"));
+const CollaborationDialog = lazy(
+  () => import("@/components/CollaborationDialog"),
+);
+const CreateTaskDialog = lazy(() => import("@/components/CreateTaskDialog"));
+const ProjectInsightsDialog = lazy(
+  () => import("@/components/ProjectInsightsDialog"),
+);
+const ProjectSettings = lazy(() => import("@/components/ProjectSettings"));
+const SettingsDialog = lazy(() =>
+  import("@/components/SettingsDialog").then((m) => ({
+    default: m.SettingsDialog,
+  })),
+);
+const TaskDetailDialog = lazy(() => import("@/components/TaskDetailDialog"));
+const ListView = lazy(() => import("./components/ListView"));
+const DashboardView = lazy(() => import("./components/DashboardView"));
 function ProjectMembersAvatars({ projectId }: { projectId: string }) {
   const members = useProjectMembers(projectId);
   if (members.length === 0) return null;
@@ -120,7 +134,9 @@ function MainContent({ session }: { session: Session }) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "board">("board");
+  const [viewMode, setViewMode] = useState<"list" | "board" | "dashboard">(
+    "dashboard",
+  );
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
@@ -170,7 +186,7 @@ function MainContent({ session }: { session: Session }) {
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => navigate("/projects/all")}
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-md flex items-center justify-center shadow-lg shadow-primary/20">
                 <img
                   src={Logo}
                   className="w-6 h-6 sm:w-6 sm:h-6 brightness-0 invert"
@@ -396,7 +412,22 @@ function MainContent({ session }: { session: Session }) {
             className="flex-1 p-4 sm:p-6 overflow-hidden flex flex-col gap-4"
           >
             <Routes>
-              <Route path="settings" element={<ProjectSettings />} />
+              {/* 👇 Wrap routed lazy components in Suspense */}
+              <Route
+                path="settings"
+                element={
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    }
+                  >
+                    <ProjectSettings />
+                  </Suspense>
+                }
+              />
+
               <Route
                 path="/"
                 element={
@@ -412,26 +443,57 @@ function MainContent({ session }: { session: Session }) {
                           <div className="flex items-center gap-2">
                             {/* View Toggle */}
                             <div className="flex items-center bg-muted p-1 rounded-md border border-border mr-2">
-                              <Button
-                                variant={
-                                  viewMode === "list" ? "secondary" : "ghost"
-                                }
-                                size="sm"
-                                className="h-7 px-2 shadow-none"
-                                onClick={() => setViewMode("list")}
-                              >
-                                <LayoutList className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant={
-                                  viewMode === "board" ? "secondary" : "ghost"
-                                }
-                                size="sm"
-                                className="h-7 px-2 shadow-none"
-                                onClick={() => setViewMode("board")}
-                              >
-                                <KanbanSquare className="h-4 w-4" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      viewMode === "dashboard"
+                                        ? "secondary"
+                                        : "ghost"
+                                    }
+                                    size="sm"
+                                    className="h-7 px-2 shadow-none"
+                                    onClick={() => setViewMode("dashboard")}
+                                  >
+                                    <LayoutDashboard className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Dashboard View</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      viewMode === "list"
+                                        ? "secondary"
+                                        : "ghost"
+                                    }
+                                    size="sm"
+                                    className="h-7 px-2 shadow-none"
+                                    onClick={() => setViewMode("list")}
+                                  >
+                                    <LayoutList className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>List View</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      viewMode === "board"
+                                        ? "secondary"
+                                        : "ghost"
+                                    }
+                                    size="sm"
+                                    className="h-7 px-2 shadow-none"
+                                    onClick={() => setViewMode("board")}
+                                  >
+                                    <KanbanSquare className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Board View</TooltipContent>
+                              </Tooltip>
                             </div>
                             {/* NEW AI INSIGHTS BUTTON */}
                             <motion.div
@@ -478,7 +540,9 @@ function MainContent({ session }: { session: Session }) {
                             </div>
                           }
                         >
-                          {viewMode === "list" ? (
+                          {viewMode === "dashboard" ? (
+                            <DashboardView projectId={activeProjectId} />
+                          ) : viewMode === "list" ? (
                             <ListView
                               projectId={activeProjectId}
                               onTaskClick={handleTaskClick}
@@ -493,29 +557,21 @@ function MainContent({ session }: { session: Session }) {
                       </div>
                     </>
                   ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 260,
-                          damping: 20,
-                        }}
-                        className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"
-                      >
-                        <Plus className="h-8 w-8 text-muted-foreground" />
-                      </motion.div>
-                      <h2 className="text-2xl font-semibold">
-                        Welcome to Masar
-                      </h2>
-                      <p className="text-muted-foreground max-w-md">
-                        Create your first project to start tracking your path
-                        and managing tasks with dependencies.
-                      </p>
-                      <Button onClick={handleCreateProject}>
-                        Create First Project
-                      </Button>
+                    <div className="flex-1 flex items-center justify-center p-4">
+                      <EmptyState
+                        icon={Sparkles}
+                        title="Ready to start your path?"
+                        description="You don't have any projects yet. Initialize a workspace to start managing tasks with AI-driven precision."
+                        actionLabel="Create Project"
+                        onAction={handleCreateProject}
+                        secondaryActionLabel="Try AI Demo"
+                        onSecondaryAction={() =>
+                          alert(
+                            "Ask the AI Agent in the bottom right to 'Build a marketing plan'!",
+                          )
+                        }
+                        className="max-w-2xl w-full"
+                      />
                     </div>
                   )
                 }
@@ -523,41 +579,42 @@ function MainContent({ session }: { session: Session }) {
             </Routes>
           </motion.main>
         </div>
+        <Suspense fallback={null}>
+          <SettingsDialog
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+          />
+          {activeProjectId && activeProjectId !== "all" && (
+            <CollaborationDialog
+              projectId={activeProjectId}
+              isOpen={isCollaborationOpen}
+              onClose={() => setIsCollaborationOpen(false)}
+            />
+          )}
+          <TaskDetailDialog
+            taskId={selectedTaskId}
+            isOpen={isTaskDetailOpen}
+            onClose={() => setIsTaskDetailOpen(false)}
+          />
 
-        <SettingsDialog
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-        />
-        {activeProjectId && activeProjectId !== "all" && (
-          <CollaborationDialog
-            projectId={activeProjectId}
-            isOpen={isCollaborationOpen}
-            onClose={() => setIsCollaborationOpen(false)}
-          />
-        )}
-        <TaskDetailDialog
-          taskId={selectedTaskId}
-          isOpen={isTaskDetailOpen}
-          onClose={() => setIsTaskDetailOpen(false)}
-        />
-
-        {activeProjectId && activeProjectId !== "all" && (
-          <CreateTaskDialog
-            projectId={activeProjectId}
-            isOpen={isCreateTaskOpen}
-            onClose={() => setIsCreateTaskOpen(false)}
-          />
-        )}
-        {activeProjectId && activeProjectId !== "all" && (
-          <ProjectInsightsDialog
-            projectId={activeProjectId}
-            isOpen={isInsightsOpen}
-            onClose={() => setIsInsightsOpen(false)}
-          />
-        )}
-        {activeProjectId && activeProjectId !== "all" && (
-          <AIAgent projectId={activeProjectId} />
-        )}
+          {activeProjectId && activeProjectId !== "all" && (
+            <CreateTaskDialog
+              projectId={activeProjectId}
+              isOpen={isCreateTaskOpen}
+              onClose={() => setIsCreateTaskOpen(false)}
+            />
+          )}
+          {activeProjectId && activeProjectId !== "all" && (
+            <ProjectInsightsDialog
+              projectId={activeProjectId}
+              isOpen={isInsightsOpen}
+              onClose={() => setIsInsightsOpen(false)}
+            />
+          )}
+          {activeProjectId && activeProjectId !== "all" && (
+            <AIAgent projectId={activeProjectId} />
+          )}
+        </Suspense>
       </div>
     </TooltipProvider>
   );
@@ -566,6 +623,7 @@ function MainContent({ session }: { session: Session }) {
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(false); // ADD THIS STATE
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -585,8 +643,16 @@ export default function App() {
   }, []);
 
   if (loading) return null;
-  if (!session) return <Login />;
 
+  // UPDATED CONDITIONAL RENDERING FOR UNAUTHENTICATED USERS
+  if (!session) {
+    if (showLogin) {
+      return <Login onBack={() => setShowLogin(false)} />;
+    }
+    return <LandingPage onLoginClick={() => setShowLogin(true)} />;
+  }
+
+  // Authenticaticated routes
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/projects/all" replace />} />

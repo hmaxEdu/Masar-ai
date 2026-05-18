@@ -46,6 +46,7 @@
     "react-jsx-parser": "^2.4.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.2",
+    "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
     "shiki": "^4.0.2",
     "streamdown": "^2.5.0",

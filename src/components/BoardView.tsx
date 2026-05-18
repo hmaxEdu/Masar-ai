@@ -11,7 +11,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@/components/ui/badge';
-import { GripVertical, AlertCircle } from 'lucide-react';
+import { GripVertical, AlertCircle, KanbanSquare } from 'lucide-react';
+import EmptyState from './EmptyState';
 
 const COLUMNS: TaskStatus[] = ['To Do', 'Doing', 'Done', 'Blocked'];
 
@@ -55,7 +56,7 @@ function ColumnDropArea({ id, tasks, onTaskClick }: { id: TaskStatus, tasks: Tas
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <div className={`flex flex-col w-[300px] h-full rounded-xl border overflow-hidden shrink-0 transition-colors ${isOver ? 'bg-primary/5 border-primary/30' : 'bg-muted/30 border-border/50'}`}>
+    <div className={`flex flex-col w-[300px] h-full rounded-md border overflow-hidden shrink-0 transition-colors ${isOver ? 'bg-primary/5 border-primary/30' : 'bg-muted/30 border-border/50'}`}>
       <div className="p-3 border-b border-border/50 bg-muted/50 flex items-center justify-between shrink-0">
         <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">{id}</h3>
         <Badge variant="secondary" className="text-xs">{tasks.length}</Badge>
@@ -140,6 +141,19 @@ export default function BoardView({ projectId, onTaskClick }: { projectId: strin
       }
     }
   };
+  if (tasks.length === 0) {
+    return (
+      <EmptyState
+        icon={KanbanSquare}
+        title="This board is a clean slate"
+        description="Every massive goal starts with a single task. Break down your project into manageable steps or let the AI help you plan."
+        actionLabel="Add First Task"
+        onAction={() => document.getElementById('create-task-trigger')?.click()} // Assumes you have a trigger
+        secondaryActionLabel="AI Breakdown"
+        onSecondaryAction={() => alert("Open the AI Agent and say: 'Generate a task list for this project'")}
+      />
+    );
+  }
   return (
     <div className="h-full w-full overflow-x-auto pb-4" dir="ltr">
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

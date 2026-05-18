@@ -143,7 +143,7 @@ export default function ProjectSettings() {
                     <Button
                       key={opt.id}
                       variant={visibility === opt.id ? 'default' : 'outline'}
-                      className="flex-1 h-16 rounded-2xl transition-all"
+                      className="flex-1 h-16 rounded-md transition-all"
                       onClick={() => canManage && setVisibility(opt.id as ProjectVisibility)}
                       disabled={!canManage}
                     >
@@ -308,11 +308,11 @@ function BentoSkeleton() {
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
       <Skeleton className="h-12 w-64" />
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Skeleton className="md:col-span-4 h-32 rounded-3xl" />
-        <Skeleton className="md:col-span-2 h-32 rounded-3xl" />
-        <Skeleton className="md:col-span-4 h-96 rounded-3xl" />
-        <Skeleton className="md:col-span-2 h-48 rounded-3xl" />
-        <Skeleton className="md:col-span-2 h-44 rounded-3xl" />
+        <Skeleton className="md:col-span-4 h-32 rounded-lg" />
+        <Skeleton className="md:col-span-2 h-32 rounded-lg" />
+        <Skeleton className="md:col-span-4 h-96 rounded-lg" />
+        <Skeleton className="md:col-span-2 h-48 rounded-lg" />
+        <Skeleton className="md:col-span-2 h-44 rounded-lg" />
       </div>
     </div>
   );

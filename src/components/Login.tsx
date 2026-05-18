@@ -25,7 +25,7 @@ const itemVariants: Variants = {
   visible: { opacity: 1, x: 0 }
 };
 
-export default function Login() {
+export default function Login({ onBack }: { onBack?: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,7 +48,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden selection:bg-primary/30" dir="ltr">
-
+        
       {/* --- CONTENT --- */}
       <motion.div
         initial="hidden"
@@ -56,11 +56,18 @@ export default function Login() {
         variants={containerVariants}
         className="relative z-10 w-full max-w-[420px] px-4"
       >
+        {onBack && (
+          <motion.div variants={itemVariants} className="mb-6">
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground hover:text-foreground">
+              <ArrowRight className="mr-2 h-4 w-4 rotate-180" /> Back to Home
+            </Button>
+          </motion.div>
+        )}
         <div className="flex flex-col items-center mb-8">
           <motion.div 
-            className="w-16 h-16  p-0.5 rounded-2xl shadow-2xl mb-4 shadow-primary/20"
+            className="w-16 h-16  p-0.5 rounded-md shadow-2xl mb-4 shadow-primary/20"
           >
-            <div className="w-full h-full bg-card rounded-[14px] flex items-center justify-center p-3">
+            <div className="w-full h-full bg-card rounded-md flex items-center justify-center p-3">
               <img src={Logo} alt="Masar" className="w-full h-full object-contain dark:invert" />
             </div>
           </motion.div>
@@ -74,7 +81,6 @@ export default function Login() {
 
         <Card className="border-border bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden">
           {/* Top accent line using the primary theme color */}
-          <div className="h-1.5 w-full bg-primary/20" />
           
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-bold text-center text-foreground">

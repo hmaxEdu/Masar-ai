@@ -58,7 +58,7 @@
                     <Button
                       key={opt.id}
                       variant={visibility === opt.id ? 'default' : 'outline'}
-                      className="flex-1 h-16 rounded-2xl transition-all"
+                      className="flex-1 h-16 rounded-md transition-all"
                       onClick={() => canManage && setVisibility(opt.id as ProjectVisibility)}
                       disabled={!canManage}
                     >

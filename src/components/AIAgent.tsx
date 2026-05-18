@@ -250,8 +250,8 @@ export default function AIAgent({ projectId }: { projectId: string }) {
         layout
         className={`relative flex flex-col origin-bottom-right overflow-hidden transition-all duration-500 ease-in-out ${
           isOpen 
-          ? "w-[calc(100vw-2rem)] sm:w-[420px] h-[650px] max-h-[calc(100vh-6rem)] bg-background/95 backdrop-blur-xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10 shadow-2xl rounded-2xl"
-          : "w-14 h-14 bg-primary text-primary-foreground cursor-pointer shadow-lg shadow-primary/30 rounded-[28px]"
+          ? "w-[calc(100vw-2rem)] sm:w-[420px] h-[650px] max-h-[calc(100vh-6rem)] bg-background/95 backdrop-blur-xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10 shadow-2xl rounded-md"
+          : "w-14 h-14 bg-primary text-primary-foreground cursor-pointer shadow-lg shadow-primary/30 rounded-lg"
         }`}
         onClick={() => !isOpen && setIsOpen(true)}
       >
@@ -374,7 +374,7 @@ export default function AIAgent({ projectId }: { projectId: string }) {
                 <PromptInput
                   accept="image/*"
                   onSubmit={(message) => handleSend(message.text, message.files)}
-                  className="relative flex flex-col w-full overflow-hidden border border-border/50 rounded-xl bg-muted/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-sm"
+                  className="relative flex flex-col w-full overflow-hidden border border-border/50 rounded-md bg-muted/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-sm"
                 >
                   <InputAttachments />
                   <PromptInputTextarea 
