@@ -8,10 +8,13 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+supabase_context
 dist
 dist-ssr
 *.local
 
+.codebase_config.json
+ollama_api_docs.md
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

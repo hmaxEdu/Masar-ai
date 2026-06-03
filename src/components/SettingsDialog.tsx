@@ -2,9 +2,8 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { db } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
-import { Cpu, Github, Info, LogOut, Trash2 } from 'lucide-react';
+import { Cpu, Github, Info, LogOut } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface SettingsDialogProps {
@@ -13,20 +12,6 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
-
-  const handleClearLocalData = async () => {
-    if (confirm('Are you sure you want to clear local data? This will delete all migrated Dexie records from your browser.')) {
-      await db.transaction('rw', [db.projects, db.tasks, db.dependencies], async () => {
-        await db.projects.clear();
-        await db.tasks.clear();
-        await db.dependencies.clear();
-      });
-      localStorage.removeItem('dexie_migrated');
-      alert('Local data cleared successfully.');
-    }
-  };
-
-
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -40,25 +25,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
           </DialogHeader>
 
           <div className="space-y-6 py-6">
-            
-           
-            {/* Local Data Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium border-b pb-2 flex items-center gap-2">
-                <Trash2 className="h-4 w-4" /> Local Storage
-              </h3>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Clear Dexie Cache</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Remove legacy local database records.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleClearLocalData}>
-                   Clear
-                </Button>
-              </div>
-            </div>
+
 
             {/* Account Section */}
             <div className="space-y-4">

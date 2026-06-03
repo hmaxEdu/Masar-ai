@@ -1,11 +1,11 @@
+import { ArrowRight, Chrome, Github, Loader2, Lock, Mail } from 'lucide-react';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/card';
-import { Mail, Loader2, Lock, ArrowRight, Github, Chrome } from 'lucide-react';
-import { motion, AnimatePresence, type Variants } from 'motion/react';
-import Logo from '../assets/masar.png';
+import { Logo } from './Logo';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -67,9 +67,7 @@ export default function Login({ onBack }: { onBack?: () => void }) {
           <motion.div 
             className="w-16 h-16  p-0.5 rounded-md shadow-2xl mb-4 shadow-primary/20"
           >
-            <div className="w-full h-full bg-card rounded-md flex items-center justify-center p-3">
-              <img src={Logo} alt="Masar" className="w-full h-full object-contain dark:invert" />
-            </div>
+              <Logo className='w-14 h-14' />
           </motion.div>
           <motion.h1 variants={itemVariants} className="text-4xl font-black tracking-tighter text-foreground">
             MASAR
@@ -79,7 +77,7 @@ export default function Login({ onBack }: { onBack?: () => void }) {
           </motion.p>
         </div>
 
-        <Card className="border-border bg-card/50 backdrop-blur-xl shadow-xl overflow-hidden">
+        <Card className="border-border bg-card backdrop-blur-xl shadow-xl overflow-hidden">
           {/* Top accent line using the primary theme color */}
           
           <CardHeader className="space-y-1 pb-4">
