@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import logoImage from "@/assets/masar.png";
+import logoImage from "@/assets/masar.webp";
 
 interface LogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   className?: string;

@@ -8,23 +8,19 @@ import {
   LayoutDashboard,
   Network,
   Shield,
-  Zap
+  Zap,
 } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { Suspense, lazy, useRef } from "react";
 import { Footer } from "./Footer";
 import { IntegrationGraph } from "./IntegrationGraph";
-import { Logo } from "./Logo";
+import { LandingHeader } from "./LandingHeader";
 import { MarqueeTicker } from "./MarqueeTicker"; // <-- IMPORT NEW TICKER COMPONENT
-import { ModeToggle } from "./mode-toggle";
-import { Separator } from "./ui/separator";
 const WebGLBackground = lazy(() => import("./WebGLBackground"));
 
 interface LandingPageProps {
   onLoginClick: () => void;
 }
-
-
 
 // ----------------------------------------------------------------------
 // MAIN LANDING PAGE
@@ -50,49 +46,15 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
       </Suspense>
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/60 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12   flex items-center ">
-              <Logo className="w-10 h-10 brightness-0  dark:invert" />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-foreground hidden xs:block">
-              Masar
-            </span>
-          </div>
-          <div className="flex items-center gap-3 sm:gap-5">
-            <ModeToggle />
-            <Separator orientation="vertical" className="h-6" />
-            <Button
-              variant="ghost"
-              className="hidden sm:flex transition-colors hover:text-primary hover:bg-muted font-semibold"
-              onClick={onLoginClick}
-            >
-              Sign In
-            </Button>
-            <Button
-              className="shadow-xl shadow-primary/20 group overflow-hidden relative text-sm sm:text-base px-5 sm:px-6 font-bold "
-              onClick={onLoginClick}
-            >
-              <motion.div
-                className="absolute inset-0 bg-white/20"
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-              />
-              Get Started{" "}
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <LandingHeader
+        onLoginClick={onLoginClick}
+        onSignUpClick={onLoginClick} // Points directly to Auth Sign Up
+      />
 
       <main className="pt-32 sm:pt-40 pb-24 relative z-10">
         {/* Hero Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-10">
           <div className="max-w-4xl mx-auto flex flex-col items-center">
-            
-
             <h1 className="text-5xl sm:text-6xl md:text-[5rem] font-black tracking-tighter leading-[1.1] mb-6 text-foreground">
               {words.map((word, i) => (
                 <motion.span

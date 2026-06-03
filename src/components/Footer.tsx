@@ -59,7 +59,7 @@ export function Footer() {
             <ul className="space-y-3">
               {productLinks.map((link) => (
                 <li key={link}>
-                  <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
+                  <a href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
                     {link}
                   </a>
                 </li>

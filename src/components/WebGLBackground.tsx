@@ -21,7 +21,7 @@ const SHADER_CONFIG = {
   
   light: {
     bg: "#ffffff",       // Clean light background
-    glass: "#00b5ff",    // Base panel color
+    glass: "#00acc2",    // Base panel color
     highlight: "#94a3b8",// Edge reflection color
     shimmer: "#ffffff",  // Bright moving light
   }
@@ -97,7 +97,7 @@ const fragmentShaderSource = `
     float border = 0.02;
     float mask = smoothstep(0.0, border, localX) * smoothstep(1.0, 1.0 - border, localX);
     
-    color = mix(color, glassCol, mask * 0.3);
+    color = mix(color, glassCol, mask * 0.4);
 
     // Beveled Edge Highlights (The "Glass" look)
     float edge = smoothstep(0.0, 0.1, localX) * smoothstep(0.2, 0.1, localX);

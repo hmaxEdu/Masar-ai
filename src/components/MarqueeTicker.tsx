@@ -2,13 +2,13 @@
 import { motion } from "motion/react";
 
 // Static PNG asset imports
-import nokiaLogo from "@/assets/logos/nokia-com-wordmark.png";
-import reactLogo from "@/assets/logos/react-dev-logo.png";
-import samsungLogo from "@/assets/logos/samsung-com-wordmark.png";
-import supabaseLogo from "@/assets/logos/supabase-com-wordmark.png";
-import vercelLogo from "@/assets/logos/vercel-com-wordmark.png";
-import githubLogo from "@/assets/logos/github-com-wordmark.png";
-import hpLogo from "@/assets/logos/hp-com-wordmark.png";
+import nokiaLogo from "@/assets/logos/nokia-com-wordmark.webp";
+import reactLogo from "@/assets/logos/react-dev-logo.webp";
+import samsungLogo from "@/assets/logos/samsung-com-wordmark.webp";
+import supabaseLogo from "@/assets/logos/supabase-com-wordmark.webp";
+import vercelLogo from "@/assets/logos/vercel-com-wordmark.webp";
+import githubLogo from "@/assets/logos/github-com-wordmark.webp";
+import hpLogo from "@/assets/logos/hp-com-wordmark.webp";
 
 export function MarqueeTicker() {
   const items = [
