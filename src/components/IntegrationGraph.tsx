@@ -121,7 +121,7 @@ export function IntegrationGraph() {
   const [isTopHovered, setIsTopHovered] = useState(false);
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto h-[320px] sm:h-[450px] select-none bg-card/30 dark:bg-black/40 backdrop-blur-xl border border-border/80 dark:border-white/5 rounded-[2rem] shadow-xl p-4 sm:p-8">
+    <div className="relative w-full max-w-5xl mx-auto h-[320px] sm:h-[450px] select-none bg-card/30 dark:bg-black/40 backdrop-blur-xl border border-border/80 dark:border-white/5 rounded-lg shadow-xl p-4 sm:p-8">
       <svg viewBox="0 0 1000 400" className="w-full h-auto">
         
         {/* Main Central Trunk (Originates from bottom of top node container at Y=125) */}
@@ -181,13 +181,13 @@ export function IntegrationGraph() {
             >
               {/* Default Pill Header */}
               <motion.div layout className="flex items-center gap-4 sm:gap-5 px-3.5 h-[85px] w-[260px] shrink-0 justify-center">
-                <div className="bg-[#F8F9FA] text-black w-12 h-12 rounded-full flex items-center justify-center shadow-[0_0_24px_rgba(255,255,255,0.25)] shrink-0">
+                <div className="bg-[#F8F9FA] text-black w-12 h-12 rounded-md flex items-center justify-center shadow-[0_0_24px_rgba(255,255,255,0.25)] shrink-0">
                   <SparkleIcon />
                 </div>
                 
                 <Plus className="text-muted-foreground/60 w-4.5 h-4.5 stroke-[3] shrink-0" />
                 
-                <div className="bg-muted dark:bg-[#111111]/90 border border-border dark:border-white/5 text-foreground/85 dark:text-white/90 w-12 h-12 rounded-full flex items-center justify-center shadow-inner shrink-0">
+                <div className="bg-muted dark:bg-[#111111]/90 border border-border dark:border-white/5 text-foreground/85 dark:text-white/90 w-12 h-12 rounded-md flex items-center justify-center shadow-inner shrink-0">
                   <NetworkIcon />
                 </div>
               </motion.div>

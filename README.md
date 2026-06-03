@@ -130,4 +130,4 @@ The backend is powered by **Supabase PostgreSQL** and **Edge Functions**, orches
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more details.
+Distributed under the PolyForm Noncommercial License 1.0.0 License. See `LICENSE` for more details.

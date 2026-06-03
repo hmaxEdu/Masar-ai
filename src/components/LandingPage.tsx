@@ -71,7 +71,7 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
               Sign In
             </Button>
             <Button
-              className="shadow-xl shadow-primary/20 group overflow-hidden relative text-sm sm:text-base px-5 sm:px-6 font-bold rounded-full"
+              className="shadow-xl shadow-primary/20 group overflow-hidden relative text-sm sm:text-base px-5 sm:px-6 font-bold "
               onClick={onLoginClick}
             >
               <motion.div
@@ -135,7 +135,7 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
             >
               <Button
                 size="lg"
-                className="h-14 px-8 text-base shadow-2xl shadow-primary/30 w-full sm:w-auto group relative overflow-hidden rounded-full font-bold"
+                className="h-14 px-8 text-base shadow-2xl shadow-primary/30 w-full sm:w-auto group relative overflow-hidden font-bold"
                 onClick={onLoginClick}
               >
                 <span className="relative z-10 flex items-center">
@@ -146,7 +146,7 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-14 px-8 text-base bg-card/50 text-foreground border-border/80 backdrop-blur w-full sm:w-auto hover:bg-muted transition-colors rounded-full font-bold"
+                className="h-14 px-8 text-base bg-card/50 text-foreground border-border/80 backdrop-blur w-full sm:w-auto hover:bg-muted transition-colors  font-bold"
                 onClick={() =>
                   window.open("https://github.com/hmaxEdu/Masar-ai", "_blank")
                 }
@@ -253,9 +253,9 @@ function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay }}
       whileHover={{ y: -8, transition: { duration: 0.2 } }}
-      className="group relative rounded-[2rem] border border-border/60 bg-card/50 p-8 backdrop-blur-xl transition-all duration-300 hover:border-primary/40 hover:bg-card/80 hover:shadow-2xl hover:shadow-primary/5"
+      className="group relative rounded-lg border border-border/60 bg-card/50 p-8 backdrop-blur-xl transition-all duration-300 hover:border-primary/40 hover:bg-card/80 hover:shadow-2xl hover:shadow-primary/5"
     >
-      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/0 via-primary/5 to-primary/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 via-primary/5 to-primary/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
       <div className="relative z-10 space-y-6">
         <div className="inline-flex rounded-2xl bg-primary/10 p-4 text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/20 shadow-inner">
