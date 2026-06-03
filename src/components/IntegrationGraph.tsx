@@ -84,7 +84,7 @@ function BottomMorphNode({ x, delay, node }: { x: number; delay: number; node: t
           animate={{
             borderRadius: isHovered ? 16 : 32,
             width: isHovered ? 172 : 64,
-            height: isHovered ? 136 : 64, // Increased height to comfortably house text and preserve padding
+            height: isHovered ? 136 : 64, // Comfortable text and padding height
           }}
           transition={{ type: "spring", stiffness: 350, damping: 25 }}
           className="flex flex-col items-center justify-start overflow-hidden border border-border dark:border-white/10 bg-card/60 dark:bg-white/[0.03] backdrop-blur-xl shadow-xl hover:border-primary/50 dark:hover:border-primary/50 hover:bg-muted/50 dark:hover:bg-white/[0.08] hover:shadow-[0_0_24px_rgba(255,255,255,0.1)] transition-colors cursor-pointer group"
@@ -121,10 +121,10 @@ export function IntegrationGraph() {
   const [isTopHovered, setIsTopHovered] = useState(false);
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto h-[320px] sm:h-[450px] select-none bg-card/30 dark:bg-black/40 backdrop-blur-xl border border-border/80 dark:border-white/5 rounded-lg shadow-xl p-4 sm:p-8">
-      <svg viewBox="0 0 1000 400" className="w-full h-auto">
+    <div className="relative w-full max-w-5xl mx-auto h-auto aspect-[1000/430] sm:aspect-auto sm:h-[450px] select-none bg-card/30 dark:bg-black/40 backdrop-blur-xl border border-border/80 dark:border-white/5 rounded-lg shadow-xl p-4 sm:p-8">
+      <svg viewBox="0 0 1000 430" className="w-full h-auto">
         
-        {/* Main Central Trunk (Originates from bottom of top node container at Y=125) */}
+        {/* Main Central Trunk */}
         <line 
           x1="500" y1="125" 
           x2="500" y2="180" 
@@ -143,7 +143,6 @@ export function IntegrationGraph() {
         {/* Vertical drops to Bottom Nodes */}
         {endpoints.map((x, i) => (
           <g key={`drop-${i}`}>
-            {/* Connects with the top edge of bottom foreignObject circles at Y=250 */}
             <line 
               x1={x} 
               y1="180" 
@@ -155,8 +154,6 @@ export function IntegrationGraph() {
           </g>
         ))}
 
-       
-
         {/* --- TOP INTEGRATION NODE (MORPHING) --- */}
         <foreignObject x="300" y="0" width="400" height="125" className="overflow-visible">
           <motion.div 
@@ -165,7 +162,6 @@ export function IntegrationGraph() {
             transition={{ duration: 0.6 }}
             className="relative w-full h-full"
           >
-            {/* Sits locked to the bottom boundary of the foreignObject container (Y=125) */}
             <motion.div
               onHoverStart={() => setIsTopHovered(true)}
               onHoverEnd={() => setIsTopHovered(false)}
@@ -202,7 +198,6 @@ export function IntegrationGraph() {
                     className="px-6 pb-5 text-center w-full"
                   >
                     <h4 className="text-sm font-bold text-foreground mb-1">Orchestration Engine</h4>
-                    
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -210,7 +205,7 @@ export function IntegrationGraph() {
           </motion.div>
         </foreignObject>
 
-        {/* --- BOTTOM NODES (MOUNT & COHESIVE LAYOUT TRANSITIONS) --- */}
+        {/* --- BOTTOM NODES --- */}
         {endpoints.map((x, i) => (
           <BottomMorphNode key={`node-${i}`} x={x} delay={1 + i * 0.1} node={bottomNodesData[i]} />
         ))}

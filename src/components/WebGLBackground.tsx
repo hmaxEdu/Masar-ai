@@ -5,9 +5,8 @@ import { useEffect, useRef } from "react";
 // 🛠️ GLASS SHADER CONFIGURATION
 // ============================================================================
 const SHADER_CONFIG = {
-  stripCount: 8.0,       // How many main glass panels
   glassRefraction: 0.004, // How much the light "bends" at edges
-  shimmerSpeed: 1,     // Speed of light reflecting off the glass
+  shimmerSpeed: 1,       // Speed of light reflecting off the glass
   tilt: 0.15,            // 0.0 for vertical, higher for diagonal
   
   staticGrain: 0.074,    // Frosted texture intensity
@@ -46,9 +45,9 @@ const fragmentShaderSource = `
   uniform float u_time;
   uniform float u_theme;
   uniform vec2 u_mouse;
+  uniform float u_stripCount; // Responsive uniform
 
   // Values from JS Config
-  const float count = ${SHADER_CONFIG.stripCount.toFixed(2)};
   const float refraction = ${SHADER_CONFIG.glassRefraction.toFixed(3)};
   const float speed = ${SHADER_CONFIG.shimmerSpeed.toFixed(3)};
   const float grainAmount = ${SHADER_CONFIG.staticGrain.toFixed(4)};
@@ -81,8 +80,8 @@ const fragmentShaderSource = `
     p.x += p.y * tilt; // Tilt the glass
     p.x += (u_mouse.x - 0.5) * ${SHADER_CONFIG.mouseInfluence.toFixed(2)}; // Mouse parallax
     
-    // Create repeating strips
-    float stripX = p.x * count;
+    // Create repeating strips using responsive uniform count
+    float stripX = p.x * u_stripCount;
     float id = floor(stripX);
     float localX = fract(stripX); // 0.0 to 1.0 inside each strip
 
@@ -165,6 +164,7 @@ export default function WebGLBackground() {
     const uTime = gl.getUniformLocation(program, "u_time");
     const uTheme = gl.getUniformLocation(program, "u_theme");
     const uMouse = gl.getUniformLocation(program, "u_mouse");
+    const uStripCount = gl.getUniformLocation(program, "u_stripCount");
 
     let currentTheme = themeRef.current;
     let aid: number;
@@ -184,6 +184,16 @@ export default function WebGLBackground() {
       gl.uniform2f(uMouse, mouseRef.current.x, mouseRef.current.y);
       currentTheme += (themeRef.current - currentTheme) * 0.05;
       gl.uniform1f(uTheme, currentTheme);
+
+      // Determine responsive strip count to prevent prison-bar visual compressions
+      let strips = 8.0;
+      if (window.innerWidth < 640) {
+        strips = 2.0; // 3 elegant wide panels on mobile
+      } else if (window.innerWidth < 1024) {
+        strips = 5.0; // 5 elegant panels on tablet
+      }
+      gl.uniform1f(uStripCount, strips);
+
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       aid = requestAnimationFrame(render);
     };
