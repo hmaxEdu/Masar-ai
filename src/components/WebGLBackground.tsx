@@ -1,5 +1,5 @@
 // src/components/WebGLBackground.tsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const SHADER_CONFIG = {
   glassRefraction: 0.004,
@@ -90,17 +90,29 @@ const fragmentShaderSource = `
 
 export default function WebGLBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const themeRef = useRef<number>(document.documentElement.classList.contains("dark") ? 1.0 : 0.0);
+  const themeRef = useRef<number>(0);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
-  const isVisibleRef = useRef(true); // Tracks if canvas is in viewport
+  const isVisibleRef = useRef(true);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" ? window.innerWidth < 768 : false);
 
   useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    // If mobile, do not initiate WebGL context or requestAnimationFrame
+    if (isMobile) return;
+
+    themeRef.current = document.documentElement.classList.contains("dark") ? 1.0 : 0.0;
     const observer = new MutationObserver(() => {
       themeRef.current = document.documentElement.classList.contains("dark") ? 1.0 : 0.0;
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-    // Intersection Observer to pause rendering when off-screen
     const intersectionObserver = new IntersectionObserver(([entry]) => {
       isVisibleRef.current = entry.isIntersecting;
     }, { threshold: 0 });
@@ -115,7 +127,7 @@ export default function WebGLBackground() {
     window.addEventListener("mousemove", handleMouseMove);
 
     const canvas = canvasRef.current!;
-    const gl = canvas.getContext("webgl", { antialias: false, alpha: false })!; // Disabled antialias for performance
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: false })!;
 
     const compile = (type: number, src: string) => {
       const s = gl.createShader(type)!;
@@ -147,9 +159,7 @@ export default function WebGLBackground() {
     let aid: number;
 
     const resize = () => {
-      // 🚀 MASSIVE MOBILE FIX: Cap devicePixelRatio to 1 on mobile to prevent GPU bottleneck
-      const isMobile = window.innerWidth < 768;
-      const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
+      const dpr = Math.min(window.devicePixelRatio, 2);
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -158,7 +168,6 @@ export default function WebGLBackground() {
     resize();
 
     const render = (t: number) => {
-      // Only execute GL instructions if canvas is actually visible
       if (isVisibleRef.current) {
         gl.uniform2f(uRes, canvas.width, canvas.height);
         gl.uniform1f(uTime, t * 0.001);
@@ -167,8 +176,7 @@ export default function WebGLBackground() {
         gl.uniform1f(uTheme, currentTheme);
 
         let strips = 8.0;
-        if (window.innerWidth < 640) strips = 2.0;
-        else if (window.innerWidth < 1024) strips = 5.0;
+        if (window.innerWidth < 1024) strips = 5.0;
         gl.uniform1f(uStripCount, strips);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -185,7 +193,9 @@ export default function WebGLBackground() {
       intersectionObserver.disconnect();
       cancelAnimationFrame(aid);
     };
-  }, []);
+  }, [isMobile]);
+
+  if (isMobile) return null;
 
   return (
     <div 

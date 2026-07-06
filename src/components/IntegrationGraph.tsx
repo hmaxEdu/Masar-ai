@@ -1,52 +1,23 @@
 // src/components/IntegrationGraph.tsx
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Bot, Code2, Database, Network, Sparkles, Zap } from "lucide-react";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import type { ElementType, CSSProperties } from "react";
 
-// ----------------------------------------------------------------------
-// DATA & THEMATIC COLOR PALETTE
-// ----------------------------------------------------------------------
 const endpoints = [160, 320, 480, 640] as const;
 
 const bottomNodesData = [
-  {
-    icon: Bot,
-    title: "AI Agents",
-    description: "Autonomous task delegation",
-    color: "#0284c7", // Slate Cyan
-  },
-  {
-    icon: Code2,
-    title: "Edge Functions",
-    description: "Low-latency computation",
-    color: "#6366f1", // Indigo
-  },
-  {
-    icon: Database,
-    title: "Realtime DB",
-    description: "Postgres synchronization",
-    color: "#0f766e", // Deep Teal
-  },
-  {
-    icon: Zap,
-    title: "Streamed Data",
-    description: "NDJSON event payloads",
-    color: "#f59e0b", // Soft Amber
-  },
+  { icon: Bot, title: "AI Agents", description: "Autonomous task delegation", color: "#0284c7" },
+  { icon: Code2, title: "Edge Functions", description: "Low-latency computation", color: "#6366f1" },
+  { icon: Database, title: "Realtime DB", description: "Postgres synchronization", color: "#0f766e" },
+  { icon: Zap, title: "Streamed Data", description: "NDJSON event payloads", color: "#f59e0b" },
 ] as const;
 
-// ----------------------------------------------------------------------
-// MATH & HELPERS (Elegant Symmetric S-Curve)
-// ----------------------------------------------------------------------
 function generatePath(startX: number, startY: number, endX: number, endY: number) {
   const midY = startY + (endY - startY) * 0.5;
   return `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
 }
 
-// ----------------------------------------------------------------------
-// SUB-COMPONENTS
-// ----------------------------------------------------------------------
 interface BottomNodeProps {
   x: number;
   y: number;
@@ -57,7 +28,6 @@ interface BottomNodeProps {
 function BottomNode({ x, y, delay, node }: BottomNodeProps) {
   const Icon = node.icon as ElementType;
 
-  // Utilize CSS Variables to manage styles declaratively
   const nodeStyles = {
     "--node-color": node.color,
     "--node-color-fade": `${node.color}15`,
@@ -72,22 +42,15 @@ function BottomNode({ x, y, delay, node }: BottomNodeProps) {
         style={nodeStyles}
         className="w-full flex flex-col items-center text-center group cursor-default"
       >
-        {/* Ambient Underglow */}
         <div 
           className="absolute top-6 w-12 h-12 rounded-full blur-[20px] opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"
           style={{ backgroundColor: "var(--node-color)" }}
         />
-
-        {/* Node Icon Box */}
         <div 
           className="relative w-12 h-12 rounded-2xl bg-card/60 border border-border/50 backdrop-blur-lg shadow-md flex items-center justify-center mb-3 transition-all duration-300 ease-out group-hover:-translate-y-1.5 z-10 overflow-hidden border-solid group-hover:border-[var(--node-color)] group-hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] group-hover:bg-[var(--node-color-fade)]"
         >
-          <Icon 
-            className="w-5 h-5 text-muted-foreground group-hover:text-[var(--node-color)] transition-colors duration-300" 
-          />
+          <Icon className="w-5 h-5 text-muted-foreground group-hover:text-[var(--node-color)] transition-colors duration-300" />
         </div>
-
-        {/* Text Area */}
         <div className="space-y-0.5 relative z-10 transition-transform duration-300 group-hover:-translate-y-0.5">
           <h4 className="text-[11px] font-bold text-foreground tracking-tight">{node.title}</h4>
           <p className="text-[9px] text-muted-foreground leading-normal px-2 font-medium">{node.description}</p>
@@ -97,22 +60,26 @@ function BottomNode({ x, y, delay, node }: BottomNodeProps) {
   );
 }
 
-// ----------------------------------------------------------------------
-// MAIN COMPONENT
-// ----------------------------------------------------------------------
 export function IntegrationGraph() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" ? window.innerWidth < 768 : false);
   
-  // Parallax Mouse Tracking
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Balanced, mature 3D rotation limits (4 degrees max)
   const rotateX = useTransform(useSpring(mouseY, { stiffness: 120, damping: 25 }), [-0.5, 0.5], ["4deg", "-4deg"]);
   const rotateY = useTransform(useSpring(mouseX, { stiffness: 120, damping: 25 }), [-0.5, 0.5], ["-4deg", "4deg"]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
+    if (isMobile || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -129,6 +96,9 @@ export function IntegrationGraph() {
     return endpoints.map(endX => generatePath(400, 50, endX, 150));
   }, []);
 
+  // Return absolutely nothing on mobile devices
+  if (isMobile) return null;
+
   return (
     <div 
       className="relative w-full max-w-4xl mx-auto py-6 sm:py-10 perspective-[1000px]"
@@ -137,10 +107,8 @@ export function IntegrationGraph() {
     >
       <motion.div 
         ref={containerRef}
-        // Let the browser optimize the 3D transforms
         style={{ rotateX, rotateY, transformStyle: "preserve-3d", willChange: "transform" }}
-        // Reduced to backdrop-blur-sm on mobile to prevent scroll lag
-        className="w-full select-none bg-card/30 dark:bg-black/30 backdrop-blur-sm md:backdrop-blur-md border border-border/40 dark:border-white/10 rounded-2xl shadow-xl p-4 sm:p-8 overflow-visible relative group"
+        className="w-full select-none bg-card/30 dark:bg-black/30 backdrop-blur-md border border-border/40 dark:border-white/10 rounded-2xl shadow-xl p-4 sm:p-8 overflow-visible relative group"
       >
         <div className="absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px)] bg-[size:24px_24px] rounded-2xl opacity-20 pointer-events-none" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[350px] h-[150px] bg-primary/5 blur-[80px] rounded-full pointer-events-none -z-10" />
@@ -163,7 +131,6 @@ export function IntegrationGraph() {
           {/* Central Pulsating Ring */}
           <g transform="translate(400, 35)">
             <circle cx="0" cy="0" r="24" fill="none" stroke="var(--color-primary)" strokeWidth="1" className="opacity-10" />
-            {/* 🚀 MOBILE FIX: Replaced framer-motion JS with pure SVG hardware animation */}
             <circle cx="0" cy="0" r="24" fill="none" stroke="var(--color-primary)" strokeWidth="1" opacity="0.3">
               <animate attributeName="r" values="24; 43" dur="3s" repeatCount="indefinite" />
               <animate attributeName="opacity" values="0.3; 0" dur="3s" repeatCount="indefinite" />
@@ -223,5 +190,4 @@ export function IntegrationGraph() {
       </motion.div>
     </div>
   );
-
 }
