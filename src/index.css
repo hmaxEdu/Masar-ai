@@ -262,6 +262,6 @@
 
 @media (max-width: 768px) {
   html {
-    font-size: 122.5%; /* Boosts all rem-based typography (text-xs, text-sm, text-base) globally by 12.5% */
+    font-size: 112.5%; /* Boosts all rem-based typography (text-xs, text-sm, text-base) globally by 12.5% */
   }
 }
