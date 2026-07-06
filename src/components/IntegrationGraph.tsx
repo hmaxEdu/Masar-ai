@@ -5,7 +5,7 @@ import { useRef, useMemo } from "react";
 import type { ElementType, CSSProperties } from "react";
 
 // ----------------------------------------------------------------------
-// DATA & THEMATIC COLOR PALETTE (Muted, Professional Tech Colors)
+// DATA & THEMATIC COLOR PALETTE
 // ----------------------------------------------------------------------
 const endpoints = [160, 320, 480, 640] as const;
 
@@ -45,7 +45,7 @@ function generatePath(startX: number, startY: number, endX: number, endY: number
 }
 
 // ----------------------------------------------------------------------
-// SUB-COMPONENTS (Performance Tuned with CSS Variables)
+// SUB-COMPONENTS
 // ----------------------------------------------------------------------
 interface BottomNodeProps {
   x: number;
@@ -57,12 +57,10 @@ interface BottomNodeProps {
 function BottomNode({ x, y, delay, node }: BottomNodeProps) {
   const Icon = node.icon as ElementType;
 
-  // Utilize CSS Variables to manage styles declaratively, avoiding DOM manipulation overhead
+  // Utilize CSS Variables to manage styles declaratively
   const nodeStyles = {
     "--node-color": node.color,
     "--node-color-fade": `${node.color}15`,
-    transformStyle: "preserve-3d" as const,
-    transform: "translateZ(30px)",
   } as CSSProperties;
 
   return (
@@ -77,12 +75,12 @@ function BottomNode({ x, y, delay, node }: BottomNodeProps) {
         {/* Ambient Underglow */}
         <div 
           className="absolute top-6 w-12 h-12 rounded-full blur-[20px] opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"
-          style={{ backgroundColor: "var(--node-color)", transform: "translateZ(-30px)" }}
+          style={{ backgroundColor: "var(--node-color)" }}
         />
 
         {/* Node Icon Box */}
         <div 
-          className="relative w-12 h-12 rounded-2xl bg-card/60 border border-border/50 backdrop-blur-2xl shadow-md flex items-center justify-center mb-3 transition-all duration-300 ease-out group-hover:-translate-y-1.5 z-10 overflow-hidden border-solid group-hover:border-[var(--node-color)] group-hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] group-hover:bg-[var(--node-color-fade)]"
+          className="relative w-12 h-12 rounded-2xl bg-card/60 border border-border/50 backdrop-blur-lg shadow-md flex items-center justify-center mb-3 transition-all duration-300 ease-out group-hover:-translate-y-1.5 z-10 overflow-hidden border-solid group-hover:border-[var(--node-color)] group-hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] group-hover:bg-[var(--node-color-fade)]"
         >
           <Icon 
             className="w-5 h-5 text-muted-foreground group-hover:text-[var(--node-color)] transition-colors duration-300" 
@@ -139,29 +137,23 @@ export function IntegrationGraph() {
     >
       <motion.div 
         ref={containerRef}
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="w-full select-none bg-card/10 dark:bg-black/10 backdrop-blur-3xl border border-border/40 dark:border-white/10 rounded-2xl shadow-xl p-4 sm:p-8 overflow-visible relative group"
+        // Optimized: added willChange to hardware accelerate the parallax transformations
+        style={{ rotateX, rotateY, transformStyle: "preserve-3d", willChange: "transform" }}
+        // Optimized: reduced backdrop-blur-3xl to md, and increased opacity slightly to compensate
+        className="w-full select-none bg-card/30 dark:bg-black/30 backdrop-blur-md border border-border/40 dark:border-white/10 rounded-2xl shadow-xl p-4 sm:p-8 overflow-visible relative group"
       >
-        {/* Crisp Geometric Grid (Subtle low-contrast grid) */}
+        {/* Crisp Geometric Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px)] bg-[size:24px_24px] rounded-2xl opacity-20 pointer-events-none" />
         
         {/* Soft, professional background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[350px] h-[150px] bg-primary/5 blur-[80px] rounded-full pointer-events-none -z-10" />
 
-        <svg viewBox="0 0 800 260" className="w-full h-auto overflow-visible relative z-10" style={{ transformStyle: "preserve-3d" }}>
+        <svg viewBox="0 0 800 260" className="w-full h-auto overflow-visible relative z-10">
           <defs>
             <linearGradient id="line-base" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="var(--color-border)" stopOpacity="0.4" />
               <stop offset="100%" stopColor="var(--color-border)" stopOpacity="0.05" />
             </linearGradient>
-            
-            <filter id="clean-glow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
 
             {/* Individual Comet Tail Gradients */}
             {bottomNodesData.map((node, i) => (
@@ -172,7 +164,7 @@ export function IntegrationGraph() {
             ))}
           </defs>
 
-          {/* Central Pulsating Ring (Muted radar effect) */}
+          {/* Central Pulsating Ring */}
           <g transform="translate(400, 35)">
             <circle cx="0" cy="0" r="24" fill="none" stroke="var(--color-primary)" strokeWidth="1" className="opacity-10" />
             <motion.circle
@@ -195,10 +187,10 @@ export function IntegrationGraph() {
           {/* Connection Paths & Smooth Particle Pipelines */}
           {basePaths.map((pathD, i) => {
             const color = bottomNodesData[i].color;
-            const duration = 2.8 + i * 0.2; // Staggered slightly to avoid synchronized grouping
+            const duration = 2.8 + i * 0.2; 
 
             return (
-              <g key={`path-group-${i}`} style={{ transformStyle: "preserve-3d" }}>
+              <g key={`path-group-${i}`}>
                 {/* Clean Base Connector */}
                 <path
                   d={pathD}
@@ -208,7 +200,7 @@ export function IntegrationGraph() {
                 />
                 
                 {/* Moving Data Comets */}
-                <g filter="url(#clean-glow)" style={{ transform: "translateZ(10px)" }}>
+                <g>
                   {/* Trail gradient */}
                   <path 
                     d="M -30 0 L 0 0" 
@@ -216,10 +208,12 @@ export function IntegrationGraph() {
                     strokeWidth="2.5" 
                     strokeLinecap="round" 
                   />
+                  {/* OPTIMIZED: Faked Glow using simple transparency instead of heavy SVG feGaussianBlur */}
+                  <circle cx="0" cy="0" r="6" fill={color} opacity="0.3" />
+                  
                   {/* Clean colored head */}
                   <circle cx="0" cy="0" r="2.5" fill={color} />
                   
-                  {/* Hardware-accelerated motion along vector paths */}
                   <animateMotion
                     dur={`${duration}s`}
                     repeatCount="indefinite"
@@ -247,8 +241,7 @@ export function IntegrationGraph() {
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.8, type: "spring", stiffness: 150 }}
-              style={{ transformStyle: "preserve-3d", transform: "translateZ(50px)" }}
-              className="w-[220px] mx-auto h-11 bg-card border border-border/80 backdrop-blur-2xl rounded-full flex items-center justify-between px-3 cursor-default group/engine relative"
+              className="w-[220px] mx-auto h-11 bg-card border border-border/80 backdrop-blur-md rounded-full flex items-center justify-between px-3 cursor-default group/engine relative"
             >
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                 <Network className="w-4 h-4 text-primary" />
