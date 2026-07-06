@@ -193,7 +193,6 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
     </div>
   );
 }
-
 // ----------------------------------------------------------------------
 // COMPACT MINIMAL FEATURE CARD
 // ----------------------------------------------------------------------
@@ -203,6 +202,7 @@ interface FeatureCardProps {
   description: string;
   delay: number;
 }
+
 function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
   return (
     <motion.div
@@ -210,21 +210,22 @@ function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.4, delay }}
-      className="flex flex-col gap-3 p-5 rounded-lg border border-border/40 bg-card/15 backdrop-blur-md transition-colors hover:border-primary/25 group cursor-default"
+      className="flex flex-col gap-3 p-5 rounded-lg border border-border/40 bg-card/15 backdrop-blur-md transition-colors hover:border-primary/25 group cursor-default text-left"
     >
-      {/* Discrete, flat icon wrapper */}
-      <div className="text-primary h-5 w-5 shrink-0 transition-transform group-hover:scale-105">
-        {icon}
-      </div>
-
-      <div className="space-y-1">
-        <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-foreground/95">
+      {/* Horizontally aligned Icon and Title */}
+      <div className="flex items-center gap-2.5">
+        <div className="text-primary h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-110 flex items-center justify-center">
+          {icon}
+        </div>
+        <h3 className="text-sm sm:text-base font-semibold tracking-tight text-foreground/95">
           {title}
         </h3>
-        <p className="text-xs text-muted-foreground/80 leading-normal">
-          {description}
-        </p>
       </div>
+
+      {/* Description below */}
+      <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed font-normal">
+        {description}
+      </p>
     </motion.div>
   );
 }

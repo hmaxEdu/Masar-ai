@@ -252,21 +252,23 @@ export default function IntegrationsPage() {
             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             
             <div className="p-5 pb-0">
-              <div className="flex gap-1.5 mb-3">
-                <div className="h-8 w-8 rounded bg-foreground flex items-center justify-center text-background shadow-sm">
-                  <Github className="h-4.5 w-4.5" />
+              {/* Inline Overlapping Icon Badges and Title */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="flex -space-x-1.5 shrink-0">
+                  <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center text-background shadow-sm border border-background">
+                    <Github className="h-4 w-4" />
+                  </div>
+                  <div className="h-8 w-8 rounded-lg bg-[#4A154B] flex items-center justify-center text-white shadow-sm border border-background">
+                    <Slack className="h-4 w-4" />
+                  </div>
                 </div>
-                <div className="h-8 w-8 rounded bg-[#4A154B] flex items-center justify-center text-white shadow-sm">
-                  <Slack className="h-4.5 w-4.5" />
-                </div>
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-foreground/95">Automated Workflows</h3>
               </div>
-              <h3 className="text-base font-bold tracking-tight mb-1.5">Automated Workflows</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-sm">
                 Trigger Masar task completions directly from GitHub pull requests, and broadcast project updates to your Slack channels instantly.
               </p>
             </div>
 
-            {/* Expansive Animated Visual */}
             <GitToSlackVisual />
           </motion.div>
 
@@ -275,16 +277,18 @@ export default function IntegrationsPage() {
             <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             
             <div className="p-5 pb-0">
-              <div className="h-8 w-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-3 shadow-inner border border-emerald-500/20">
-                <Database className="h-4.5 w-4.5" />
+              {/* Inline Icon and Title */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner border border-emerald-500/20 shrink-0">
+                  <Database className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-foreground/95">Native Supabase Sync</h3>
               </div>
-              <h3 className="text-base font-bold tracking-tight mb-1.5">Native Supabase Sync</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-sm">
                 Built on Postgres Realtime. Every change made in your workspace is synchronized globally in milliseconds via Supabase WebSockets.
               </p>
             </div>
 
-            {/* Expansive Animated Visual */}
             <SupabaseSyncVisual />
           </motion.div>
         </motion.section>

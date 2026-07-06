@@ -260,10 +260,13 @@ export default function SecurityPage() {
             <div className="absolute inset-0 bg-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             
             <div className="p-5 pb-0">
-              <div className="h-8 w-8 rounded bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3 shadow-inner border border-orange-500/20">
-                <Server className="h-4.5 w-4.5" />
+              {/* Inline Icon and Title */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 shadow-inner border border-orange-500/20 shrink-0">
+                  <Server className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-foreground/95">Row Level Security (RLS)</h3>
               </div>
-              <h3 className="text-base font-bold tracking-tight mb-1.5">Row Level Security (RLS)</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-sm">
                 Database queries are strictly scoped at the edge. Users can only access projects and tasks they are explicitly invited to, enforced mathematically by Postgres.
               </p>
@@ -279,13 +282,13 @@ export default function SecurityPage() {
               <div className="h-8 w-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-3 shadow-inner border border-emerald-500/20">
                 <Lock className="h-4.5 w-4.5" />
               </div>
-              <h3 className="text-base font-bold tracking-tight mb-1.5">End-to-End Encryption</h3>
+              <h3 className="text-sm sm:text-base font-bold tracking-tight mb-1.5">End-to-End Encryption</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-sm">
                 All workspace data is encrypted in transit using strict TLS 1.3 protocols, and heavily encrypted at rest using AES-256 military-grade standards.
               </p>
             </div>
             <EncryptionVisual />
-          </motion.div>
+          </motion.div> 
         </motion.section>
 
         {/* --- SECONDARY PILLARS GRID --- */}
@@ -297,14 +300,18 @@ export default function SecurityPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: idx * 0.05 }}
-              className="flex flex-col justify-between rounded-lg border border-border/40 p-5 bg-card/25 backdrop-blur-md hover:bg-card/45 hover:border-primary/25 transition-all cursor-default"
+              className="group flex flex-col justify-between rounded-lg border border-border/40 p-5 bg-card/25 backdrop-blur-md hover:bg-card/45 hover:border-primary/25 transition-all cursor-default text-left"
             >
-              <div>
-                <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary mb-3.5 transition-transform group-hover:scale-105">
-                  <pillar.icon className="h-4 w-4" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-105">
+                    <pillar.icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                    {pillar.title}
+                  </h3>
                 </div>
-                <h3 className="text-xs font-bold text-foreground mb-1.5">{pillar.title}</h3>
-                <p className="text-xs text-muted-foreground/80 leading-normal">
+                <p className="text-xs text-muted-foreground/80 leading-normal font-normal">
                   {pillar.description}
                 </p>
               </div>

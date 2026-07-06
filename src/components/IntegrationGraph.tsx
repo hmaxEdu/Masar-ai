@@ -143,7 +143,7 @@ export function IntegrationGraph() {
 
             return (
               <g key={`path-group-${i}`}>
-                <path d={pathD} fill="none" stroke="url(#line-base)" strokeWidth="1.5" />
+                <path d={pathD} fill="none" stroke="rgba(120,120,120,0.15)" strokeWidth="1.5" />
                 <g>
                   <path d="M -30 0 L 0 0" stroke={`url(#comet-tail-${i})`} strokeWidth="2.5" strokeLinecap="round" />
                   <circle cx="0" cy="0" r="6" fill={color} opacity="0.3" />

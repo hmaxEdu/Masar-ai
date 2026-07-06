@@ -237,10 +237,13 @@ export default function EngineeringPage() {
             <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             
             <div className="p-5 pb-0">
-              <div className="h-8 w-8 rounded bg-cyan-500/10 flex items-center justify-center text-cyan-500 mb-3 shadow-inner border border-cyan-500/20">
-                <GitBranch className="h-4.5 w-4.5" />
+              {/* Inline Icon and Title */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-500 shadow-inner border border-cyan-500/20 shrink-0">
+                  <GitBranch className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-foreground/95">Automated CI/CD Workflows</h3>
               </div>
-              <h3 className="text-base font-bold tracking-tight mb-1.5">Automated CI/CD Workflows</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-sm">
                 Bridge developer code with planning. Run test pipelines directly inside issue trackers and move tickets automatically on active git pushes.
               </p>
@@ -253,10 +256,13 @@ export default function EngineeringPage() {
             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             
             <div className="p-5 pb-0">
-              <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary mb-3 shadow-inner border border-primary/20">
-                <GanttChartSquare className="h-4.5 w-4.5" />
+              {/* Inline Icon and Title */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner border border-primary/20 shrink-0">
+                  <GanttChartSquare className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-foreground/95">Sprint Backlogs & Metrics</h3>
               </div>
-              <h3 className="text-base font-bold tracking-tight mb-1.5">Sprint Backlogs & Metrics</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-sm">
                 Accelerate software delivery. Plan sprints, calculate team velocity scores, and trace backlog burndown statistics over the life of a cycle.
               </p>
@@ -265,7 +271,7 @@ export default function EngineeringPage() {
           </motion.div>
         </motion.section>
 
-        {/* --- SECONDARY PILLARS GRID --- */}
+       {/* --- SECONDARY PILLARS GRID --- */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-14 sm:mb-20">
           {pillars.map((pillar, idx) => (
             <motion.div
@@ -274,14 +280,18 @@ export default function EngineeringPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: idx * 0.05 }}
-              className="flex flex-col justify-between rounded-lg border border-border/40 p-5 bg-card/25 backdrop-blur-md hover:bg-card/45 hover:border-primary/25 transition-all cursor-default"
+              className="group flex flex-col justify-between rounded-lg border border-border/40 p-5 bg-card/25 backdrop-blur-md hover:bg-card/45 hover:border-primary/25 transition-all cursor-default text-left"
             >
-              <div>
-                <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary mb-3.5 transition-transform group-hover:scale-105">
-                  <pillar.icon className="h-4 w-4" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-105">
+                    <pillar.icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                    {pillar.title}
+                  </h3>
                 </div>
-                <h3 className="text-xs font-bold text-foreground mb-1.5">{pillar.title}</h3>
-                <p className="text-xs text-muted-foreground/80 leading-normal">
+                <p className="text-xs text-muted-foreground/80 leading-normal font-normal">
                   {pillar.description}
                 </p>
               </div>

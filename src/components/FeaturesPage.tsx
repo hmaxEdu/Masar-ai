@@ -272,13 +272,16 @@ export default function FeaturesPage() {
           viewport={{ once: true, margin: "-100px" }}
           className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[110px] sm:auto-rows-[140px] mb-20 sm:mb-24"
         >
-          {/* BENTO 1: AI Agent */}
+          {/* BENTO 1: AI Agent (Updated Inline Header) */}
           <motion.div variants={item} className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-card/85 to-background/40 backdrop-blur-md hover:border-primary/30 transition-colors flex flex-col justify-between">
             <div className="p-5 pb-0">
-              <div className="h-9 w-9 rounded-md bg-primary/10 flex items-center justify-center text-primary mb-3 shadow-inner border border-primary/20">
-                <Bot className="h-4.5 w-4.5" />
+              {/* Inline Icon & Title */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+                  <Bot className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="text-base font-bold tracking-tight text-foreground/95">Streaming AI Agents</h3>
               </div>
-              <h3 className="text-lg font-bold tracking-tight mb-1.5">Streaming AI Agents</h3>
               <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-xs">
                 Interact with context-aware AI that autonomously plans tasks, checks bottlenecks, and modifies database entities inline.
               </p>
@@ -311,12 +314,15 @@ export default function FeaturesPage() {
             </div>
           </motion.div>
 
-          {/* BENTO 2: Kanban / Multi-View */}
+          {/* BENTO 2: Kanban / Multi-View (Updated Inline Header) */}
           <motion.div variants={item} className="md:col-span-2 md:row-span-1 group relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-card/85 to-background/40 backdrop-blur-md hover:border-blue-500/30 transition-colors flex flex-col sm:flex-row">
             <div className="w-full sm:w-1/2 p-5 flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <LayoutDashboard className="h-4.5 w-4.5 text-blue-500" />
-                <h3 className="text-sm font-bold tracking-tight">Multi-View Workspace</h3>
+              {/* Inline Icon & Title */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20 shrink-0">
+                  <LayoutDashboard className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-bold tracking-tight text-foreground/95">Multi-View Workspace</h3>
               </div>
               <p className="text-xs text-muted-foreground/80 leading-normal">
                 Toggle seamlessly between boards, nested tree-lists, and analytics without losing filter states.
