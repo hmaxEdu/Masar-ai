@@ -137,15 +137,12 @@ export function IntegrationGraph() {
     >
       <motion.div 
         ref={containerRef}
-        // Optimized: added willChange to hardware accelerate the parallax transformations
+        // Let the browser optimize the 3D transforms
         style={{ rotateX, rotateY, transformStyle: "preserve-3d", willChange: "transform" }}
-        // Optimized: reduced backdrop-blur-3xl to md, and increased opacity slightly to compensate
-        className="w-full select-none bg-card/30 dark:bg-black/30 backdrop-blur-md border border-border/40 dark:border-white/10 rounded-2xl shadow-xl p-4 sm:p-8 overflow-visible relative group"
+        // Reduced to backdrop-blur-sm on mobile to prevent scroll lag
+        className="w-full select-none bg-card/30 dark:bg-black/30 backdrop-blur-sm md:backdrop-blur-md border border-border/40 dark:border-white/10 rounded-2xl shadow-xl p-4 sm:p-8 overflow-visible relative group"
       >
-        {/* Crisp Geometric Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px)] bg-[size:24px_24px] rounded-2xl opacity-20 pointer-events-none" />
-        
-        {/* Soft, professional background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[350px] h-[150px] bg-primary/5 blur-[80px] rounded-full pointer-events-none -z-10" />
 
         <svg viewBox="0 0 800 260" className="w-full h-auto overflow-visible relative z-10">
@@ -155,7 +152,6 @@ export function IntegrationGraph() {
               <stop offset="100%" stopColor="var(--color-border)" stopOpacity="0.05" />
             </linearGradient>
 
-            {/* Individual Comet Tail Gradients */}
             {bottomNodesData.map((node, i) => (
               <linearGradient key={`tail-${i}`} id={`comet-tail-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor={node.color} stopOpacity="0" />
@@ -167,51 +163,23 @@ export function IntegrationGraph() {
           {/* Central Pulsating Ring */}
           <g transform="translate(400, 35)">
             <circle cx="0" cy="0" r="24" fill="none" stroke="var(--color-primary)" strokeWidth="1" className="opacity-10" />
-            <motion.circle
-              cx="0"
-              cy="0"
-              r="24"
-              fill="none"
-              stroke="var(--color-primary)"
-              strokeWidth="1"
-              initial={{ scale: 1, opacity: 0.3 }}
-              animate={{ scale: 1.8, opacity: 0 }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeOut",
-              }}
-            />
+            {/* 🚀 MOBILE FIX: Replaced framer-motion JS with pure SVG hardware animation */}
+            <circle cx="0" cy="0" r="24" fill="none" stroke="var(--color-primary)" strokeWidth="1" opacity="0.3">
+              <animate attributeName="r" values="24; 43" dur="3s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.3; 0" dur="3s" repeatCount="indefinite" />
+            </circle>
           </g>
 
-          {/* Connection Paths & Smooth Particle Pipelines */}
           {basePaths.map((pathD, i) => {
             const color = bottomNodesData[i].color;
             const duration = 2.8 + i * 0.2; 
 
             return (
               <g key={`path-group-${i}`}>
-                {/* Clean Base Connector */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke="url(#line-base)"
-                  strokeWidth="1.5"
-                />
-                
-                {/* Moving Data Comets */}
+                <path d={pathD} fill="none" stroke="url(#line-base)" strokeWidth="1.5" />
                 <g>
-                  {/* Trail gradient */}
-                  <path 
-                    d="M -30 0 L 0 0" 
-                    stroke={`url(#comet-tail-${i})`} 
-                    strokeWidth="2.5" 
-                    strokeLinecap="round" 
-                  />
-                  {/* OPTIMIZED: Faked Glow using simple transparency instead of heavy SVG feGaussianBlur */}
+                  <path d="M -30 0 L 0 0" stroke={`url(#comet-tail-${i})`} strokeWidth="2.5" strokeLinecap="round" />
                   <circle cx="0" cy="0" r="6" fill={color} opacity="0.3" />
-                  
-                  {/* Clean colored head */}
                   <circle cx="0" cy="0" r="2.5" fill={color} />
                   
                   <animateMotion
@@ -223,19 +191,12 @@ export function IntegrationGraph() {
                     keySplines="0.25 1 0.5 1"
                     keyTimes="0;1"
                   />
-                  <animate 
-                    attributeName="opacity" 
-                    values="0;1;1;0" 
-                    keyTimes="0;0.1;0.9;1" 
-                    dur={`${duration}s`} 
-                    repeatCount="indefinite" 
-                  />
+                  <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur={`${duration}s`} repeatCount="indefinite" />
                 </g>
               </g>
             );
           })}
 
-          {/* --- TOP PIPELINE ENGINE NODE --- */}
           <foreignObject x="250" y="5" width="300" height="70" className="overflow-visible">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -246,29 +207,21 @@ export function IntegrationGraph() {
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                 <Network className="w-4 h-4 text-primary" />
               </div>
-              
               <span className="text-[12px] font-bold tracking-tight text-foreground/90">
                 Orchestration Pipeline
               </span>
-              
               <div className="w-7 h-7 flex items-center justify-center">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500/80 group-hover/engine:scale-110 transition-transform duration-300" />
               </div>
             </motion.div>
           </foreignObject>
 
-          {/* --- BOTTOM ENDPOINT NODES --- */}
           {endpoints.map((x, i) => (
-            <BottomNode
-              key={`node-${i}`}
-              x={x}
-              y={150}
-              delay={0.3 + i * 0.12}
-              node={bottomNodesData[i]}
-            />
+            <BottomNode key={`node-${i}`} x={x} y={150} delay={0.3 + i * 0.12} node={bottomNodesData[i]} />
           ))}
         </svg>
       </motion.div>
     </div>
   );
+
 }

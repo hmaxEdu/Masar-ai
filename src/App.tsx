@@ -1,5 +1,6 @@
 // src/App.tsx
 import LandingPage from "@/components/LandingPage";
+import Login from "@/components/Login"; // <-- Changed to a direct, eager import
 import { migrateFromDexie } from "@/lib/migration";
 import { supabase } from "@/lib/supabase";
 import { type Session } from "@supabase/supabase-js";
@@ -7,17 +8,14 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
-// Lazily load heavier page chunks
-const Login = lazy(() => import("@/components/Login"));
+// Lazily load heavier marketing & workspace pages ONLY
 const MainContent = lazy(() => import("@/components/MainContent"));
 const PricingPage = lazy(() => import("@/components/PricingPage"));
 const FeaturesPage = lazy(() => import("@/components/FeaturesPage"));
 const IntegrationsPage = lazy(() => import("@/components/IntegrationsPage"));
 const SecurityPage = lazy(() => import("@/components/SecurityPage"));
 const EnterprisePage = lazy(() => import("@/components/EnterprisePage"));
-const MarketingTeamsPage = lazy(
-  () => import("@/components/MarketingTeamsPage"),
-);
+const MarketingTeamsPage = lazy(() => import("@/components/MarketingTeamsPage"));
 const EngineeringPage = lazy(() => import("@/components/EngineeringPage"));
 
 // Global Spinner for lazy-loaded code chunks
@@ -50,19 +48,16 @@ export default function App() {
 
   if (loading) return null;
 
-  // Map A: Guests / Public Visitor path (Lightweight)
+  // Map A: Guests / Public Visitor path
   if (!session) {
     return (
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route
-            path="/"
-            element={<LandingPage onLoginClick={() => navigate("/login")} />}
-          />
-          <Route
-            path="/login"
-            element={<Login onBack={() => navigate("/")} />}
-          />
+          <Route path="/" element={<LandingPage onLoginClick={() => navigate('/login')} />} />
+          
+          {/* Login is now instantly available with zero network delay */}
+          <Route path="/login" element={<Login onBack={() => navigate('/')} />} />
+          
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
@@ -89,10 +84,7 @@ export default function App() {
         <Route path="/marketing-teams" element={<MarketingTeamsPage />} />
         <Route path="/security" element={<SecurityPage />} />
         <Route path="/engineering" element={<EngineeringPage />} />
-        <Route
-          path="/projects/:projectId/*"
-          element={<MainContent session={session} />}
-        />
+        <Route path="/projects/:projectId/*" element={<MainContent session={session} />} />
         {/* Catch-all redirects authenticated users straight to their dashboard */}
         <Route path="*" element={<Navigate to="/projects/all" replace />} />
       </Routes>

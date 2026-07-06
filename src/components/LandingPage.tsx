@@ -10,8 +10,8 @@ import {
   Shield,
   Zap,
 } from "lucide-react";
-import { motion, useScroll, useTransform } from "motion/react";
-import { Suspense, lazy, useRef } from "react";
+import { motion } from "motion/react";
+import { Suspense, lazy } from "react";
 import { Footer } from "./Footer";
 import { IntegrationGraph } from "./IntegrationGraph";
 import { LandingHeader } from "./LandingHeader";
@@ -26,14 +26,7 @@ interface LandingPageProps {
 // MAIN LANDING PAGE (Sleek & Minimal)
 // ----------------------------------------------------------------------
 export default function LandingPage({ onLoginClick }: LandingPageProps) {
-  const targetRef = useRef<HTMLDivElement>(null);
   const words = "Operationalize your workflow".split(" ");
-
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start end", "end start"],
-  });
-  const y1 = useTransform(scrollYProgress, [0, 1], [25, -25]);
 
   return (
     <div
@@ -124,8 +117,6 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
 
           {/* Symmetrical Orchestration Engine Canvas */}
           <motion.div
-            style={{ y: y1 }}
-            ref={targetRef}
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}

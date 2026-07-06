@@ -1,30 +1,14 @@
 // src/components/WebGLBackground.tsx
 import { useEffect, useRef } from "react";
 
-// ============================================================================
-// 🛠️ GLASS SHADER CONFIGURATION
-// ============================================================================
 const SHADER_CONFIG = {
-  glassRefraction: 0.004, // How much the light "bends" at edges
-  shimmerSpeed: 1,       // Speed of light reflecting off the glass
-  tilt: 0.15,            // 0.0 for vertical, higher for diagonal
-  
-  staticGrain: 0.074,    // Frosted texture intensity
-  mouseInfluence: 0.01,   // How much the glass shifts with mouse
-  
-  dark: {
-    bg: "#000000",       // Deep background
-    glass: "#005582",    // Base panel color
-    highlight: "#ffffff",// Edge reflection color
-    shimmer: "#ffffff",  // Bright moving light
-  },
-  
-  light: {
-    bg: "#ffffff",       // Clean light background
-    glass: "#00acc2",    // Base panel color
-    highlight: "#94a3b8",// Edge reflection color
-    shimmer: "#ffffff",  // Bright moving light
-  }
+  glassRefraction: 0.004,
+  shimmerSpeed: 1,
+  tilt: 0.15,
+  staticGrain: 0.074,
+  mouseInfluence: 0.01,
+  dark: { bg: "#000000", glass: "#005582", highlight: "#ffffff", shimmer: "#ffffff" },
+  light: { bg: "#ffffff", glass: "#00acc2", highlight: "#94a3b8", shimmer: "#ffffff" }
 };
 
 const hexToRgb = (hex: string) => {
@@ -45,21 +29,18 @@ const fragmentShaderSource = `
   uniform float u_time;
   uniform float u_theme;
   uniform vec2 u_mouse;
-  uniform float u_stripCount; // Responsive uniform
+  uniform float u_stripCount;
 
-  // Values from JS Config
   const float refraction = ${SHADER_CONFIG.glassRefraction.toFixed(3)};
   const float speed = ${SHADER_CONFIG.shimmerSpeed.toFixed(3)};
   const float grainAmount = ${SHADER_CONFIG.staticGrain.toFixed(4)};
   const float tilt = ${SHADER_CONFIG.tilt.toFixed(2)};
 
-  // Simple hash for variation per strip
   float hash(float n) { return fract(sin(n) * 43758.5453123); }
 
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution.xy;
     
-    // Theme Colors
     vec3 d_bg = vec3(${hexToRgb(SHADER_CONFIG.dark.bg)});
     vec3 d_gl = vec3(${hexToRgb(SHADER_CONFIG.dark.glass)});
     vec3 d_hi = vec3(${hexToRgb(SHADER_CONFIG.dark.highlight)});
@@ -75,45 +56,31 @@ const fragmentShaderSource = `
     vec3 hiCol = mix(l_hi, d_hi, u_theme);
     vec3 shimmerCol = mix(l_sh, d_sh, u_theme);
 
-    // Coordinate system for strips
     vec2 p = uv;
-    p.x += p.y * tilt; // Tilt the glass
-    p.x += (u_mouse.x - 0.5) * ${SHADER_CONFIG.mouseInfluence.toFixed(2)}; // Mouse parallax
+    p.x += p.y * tilt;
+    p.x += (u_mouse.x - 0.5) * ${SHADER_CONFIG.mouseInfluence.toFixed(2)};
     
-    // Create repeating strips using responsive uniform count
     float stripX = p.x * u_stripCount;
     float id = floor(stripX);
-    float localX = fract(stripX); // 0.0 to 1.0 inside each strip
+    float localX = fract(stripX);
 
-    // Vary strip properties based on ID
-    float stripWidthVar = hash(id) * 0.5;
-    float stripOffset = hash(id + 5.0) * u_time * 0.02;
-    
-    // Glass Surface base
     vec3 color = bgCol;
-    
-    // Logic to draw the glass panel
-    // We use a slight "inset" to create the gap between panels
     float border = 0.02;
     float mask = smoothstep(0.0, border, localX) * smoothstep(1.0, 1.0 - border, localX);
     
     color = mix(color, glassCol, mask * 0.4);
 
-    // Beveled Edge Highlights (The "Glass" look)
     float edge = smoothstep(0.0, 0.1, localX) * smoothstep(0.2, 0.1, localX);
     float edge2 = smoothstep(0.8, 0.9, localX) * smoothstep(1.0, 0.9, localX);
     color += hiCol * (edge + edge2) * (u_theme > 0.5 ? 0.2 : 0.1);
 
-    // Moving Shimmer (Light passing over the glass)
     float shimmer = sin(p.y * 2.0 - u_time * speed + id) * 0.5 + 0.5;
-    shimmer = pow(shimmer, 8.0); // Make it a sharp streak
+    shimmer = pow(shimmer, 8.0);
     color += shimmerCol * shimmer * mask * (u_theme > 0.5 ? 0.1 : 0.05);
 
-    // Static Frosted Grain
     float grain = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
     color += (grain - 0.5) * grainAmount;
 
-    // Vignette
     float vig = smoothstep(1.5, 0.2, length(uv - 0.5));
     color = mix(bgCol, color, vig);
 
@@ -125,6 +92,7 @@ export default function WebGLBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const themeRef = useRef<number>(document.documentElement.classList.contains("dark") ? 1.0 : 0.0);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
+  const isVisibleRef = useRef(true); // Tracks if canvas is in viewport
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -132,13 +100,22 @@ export default function WebGLBackground() {
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
+    // Intersection Observer to pause rendering when off-screen
+    const intersectionObserver = new IntersectionObserver(([entry]) => {
+      isVisibleRef.current = entry.isIntersecting;
+    }, { threshold: 0 });
+
+    if (canvasRef.current) {
+      intersectionObserver.observe(canvasRef.current);
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX / window.innerWidth, y: 1.0 - (e.clientY / window.innerHeight) };
     };
     window.addEventListener("mousemove", handleMouseMove);
 
     const canvas = canvasRef.current!;
-    const gl = canvas.getContext("webgl", { antialias: true, alpha: false })!;
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: false })!; // Disabled antialias for performance
 
     const compile = (type: number, src: string) => {
       const s = gl.createShader(type)!;
@@ -170,7 +147,9 @@ export default function WebGLBackground() {
     let aid: number;
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio, 2);
+      // 🚀 MASSIVE MOBILE FIX: Cap devicePixelRatio to 1 on mobile to prevent GPU bottleneck
+      const isMobile = window.innerWidth < 768;
+      const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio, 2);
       canvas.width = window.innerWidth * dpr;
       canvas.height = window.innerHeight * dpr;
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -179,22 +158,22 @@ export default function WebGLBackground() {
     resize();
 
     const render = (t: number) => {
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, t * 0.001);
-      gl.uniform2f(uMouse, mouseRef.current.x, mouseRef.current.y);
-      currentTheme += (themeRef.current - currentTheme) * 0.05;
-      gl.uniform1f(uTheme, currentTheme);
+      // Only execute GL instructions if canvas is actually visible
+      if (isVisibleRef.current) {
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uTime, t * 0.001);
+        gl.uniform2f(uMouse, mouseRef.current.x, mouseRef.current.y);
+        currentTheme += (themeRef.current - currentTheme) * 0.05;
+        gl.uniform1f(uTheme, currentTheme);
 
-      // Determine responsive strip count to prevent prison-bar visual compressions
-      let strips = 8.0;
-      if (window.innerWidth < 640) {
-        strips = 2.0; // 3 elegant wide panels on mobile
-      } else if (window.innerWidth < 1024) {
-        strips = 5.0; // 5 elegant panels on tablet
+        let strips = 8.0;
+        if (window.innerWidth < 640) strips = 2.0;
+        else if (window.innerWidth < 1024) strips = 5.0;
+        gl.uniform1f(uStripCount, strips);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
-      gl.uniform1f(uStripCount, strips);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      
       aid = requestAnimationFrame(render);
     };
     render(0);
@@ -203,6 +182,7 @@ export default function WebGLBackground() {
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
       observer.disconnect();
+      intersectionObserver.disconnect();
       cancelAnimationFrame(aid);
     };
   }, []);
