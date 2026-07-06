@@ -1,4 +1,4 @@
-// src/components/task-detail/SubtaskList.tsx
+// src/components/TaskDetail/SubtaskList.tsx
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,26 +55,28 @@ export function SubtaskList({
   };
 
   return (
-    <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border/50">
+    <div className="space-y-2.5 p-3.5 bg-muted/20 rounded-lg border border-border/40 shadow-2xs">
       <div className="flex justify-between items-center">
-        <Label>Sub-tasks ({completedChildren}/{childTasks.length})</Label>
+        <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+          Subtasks ({completedChildren}/{childTasks.length})
+        </Label>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-7 text-[11px] font-medium gap-1.5 px-3 border-primary/20 hover:bg-primary/10 text-primary shadow-sm transition-all"
+            className="h-6.5 text-[9px] font-bold gap-1 px-2.5 border-primary/25 hover:bg-primary/10 text-primary shadow-2xs rounded-md transition-all"
             onClick={handleAIBreakdown}
             disabled={isGeneratingAI}
           >
             {isGeneratingAI ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
             {isGeneratingAI ? <Shimmer>Thinking...</Shimmer> : "AI Breakdown"}
           </Button>
-          <span className="text-xs font-bold text-primary ml-1">{Math.round(progress)}%</span>
+          <span className="text-[10px] font-bold text-primary ml-1">{Math.round(progress)}%</span>
         </div>
       </div>
-      <Progress value={progress} className="h-2" />
-      <div className="space-y-2 max-h-[300px] overflow-y-auto pl-1">
+      <Progress value={progress} className="h-1.5" />
+      <div className="space-y-1.5 max-h-[180px] overflow-y-auto pl-0.5 pr-1">
         <AnimatePresence>
           {childTasks.map((s) => (
             <motion.div
@@ -82,7 +84,7 @@ export function SubtaskList({
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
-              className="flex items-center gap-2 group bg-card p-2 rounded border"
+              className="flex items-center gap-2 group bg-card border border-border/30 p-1.5 rounded-md hover:border-primary/25 transition-colors"
             >
               <Checkbox
                 checked={s.status === "Done"}
@@ -91,18 +93,18 @@ export function SubtaskList({
                 }
               />
               <span
-                className={`flex-1 cursor-pointer text-sm ${
-                  s.status === "Done" ? "line-through text-muted-foreground" : ""
+                className={`flex-1 cursor-pointer text-xs font-semibold text-foreground/90 ${
+                  s.status === "Done" ? "line-through text-muted-foreground/50" : ""
                 }`}
                 onClick={() => onSubtaskEdit(s.id)}
               >
                 {s.title}
               </span>
-              <div className="flex items-center opacity-0 group-hover:opacity-100 gap-1">
+              <div className="flex items-center opacity-0 group-hover:opacity-100 gap-0.5">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-muted-foreground"
+                  className="h-6 w-6 text-muted-foreground/60 hover:text-foreground"
                   onClick={() => onSubtaskEdit(s.id)}
                 >
                   <ChevronRight className="h-3 w-3" />
@@ -110,7 +112,7 @@ export function SubtaskList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 text-destructive"
+                  className="h-6 w-6 text-destructive/70 hover:text-destructive"
                   onClick={() => onSubtaskDelete(s.id)}
                 >
                   <X className="h-3 w-3" />
@@ -120,14 +122,14 @@ export function SubtaskList({
           ))}
         </AnimatePresence>
       </div>
-      <form onSubmit={handleAdd} className="flex gap-2 pt-2">
+      <form onSubmit={handleAdd} className="flex gap-2 pt-1 border-t border-border/30">
         <Input
-          placeholder="Add a sub-task..."
+          placeholder="Add a subtask..."
           value={newChildTask}
           onChange={(e) => setNewChildTask(e.target.value)}
-          className="h-9"
+          className="h-8 text-xs bg-background/50 border-border/50 py-0 focus-visible:ring-1 focus-visible:ring-primary/30"
         />
-        <Button type="submit" size="sm" variant="secondary">
+        <Button type="submit" size="sm" variant="secondary" className="h-8 w-8 p-0 shrink-0">
           <Plus className="h-4 w-4" />
         </Button>
       </form>

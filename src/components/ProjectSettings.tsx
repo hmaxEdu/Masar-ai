@@ -1,46 +1,42 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  useProject,
-  useProjectMembers,
-  useMyRole,
-  masarActions,
-  collaborationActions
-} from '@/hooks/use-masar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
+  collaborationActions,
+  masarActions,
+  useMyRole,
+  useProject,
+  useProjectMembers
+} from '@/hooks/use-masar';
+import { type Profile, type ProjectRole, type ProjectVisibility } from '@/lib/supabase';
+import {
+  AlertTriangle,
   ChevronLeft,
-  Settings,
-  Users,
+  Fingerprint,
+  Globe,
+  Lock,
+  Search,
   Shield,
   ShieldAlert,
   ShieldCheck,
   UserPlus,
-  UserX,
-  Lock,
-  Globe,
-  Search,
-  AlertTriangle,
-  Fingerprint
+  Users,
+  UserX
 } from 'lucide-react';
-import { motion, AnimatePresence, type Variants } from 'motion/react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { type ProjectRole, type ProjectVisibility, type Profile } from '@/lib/supabase';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { AnimatePresence, motion, type Variants } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
 };
 
 const itemVariants: Variants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } }
+  hidden: { y: 10, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }
 };
 
 export default function ProjectSettings() {
@@ -71,7 +67,7 @@ export default function ProjectSettings() {
       const results = await collaborationActions.searchUsers(searchQuery);
       setSearchResults(results.filter(r => !members.some(m => m.user_id === r.id)));
     };
-    const timer = setTimeout(search, 400);
+    const timer = setTimeout(search, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, members]);
 
@@ -84,235 +80,245 @@ export default function ProjectSettings() {
       initial="hidden" 
       animate="visible" 
       variants={containerVariants}
-      className="max-w-6xl mx-auto px-4 py-8 space-y-6"
+      className="max-w-4xl mx-auto py-4 space-y-5"
       dir="ltr"
     >
-      {/* Top Bar */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/projects/${projectId}`)} className="group mb-2 -ml-2">
-            <ChevronLeft className="h-4 w-4 mr-1 transition-transform group-hover:-translate-x-1" /> 
-            Back to Project
+      {/* Top Bar Navigation */}
+      <motion.div variants={itemVariants} className="flex items-center justify-between border-b border-border/40 pb-3">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate(`/projects/${projectId}`)} 
+            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5 mr-1" /> 
+            Back
           </Button>
-          <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
-            Settings <Settings className="h-6 w-6 text-primary animate-spin-slow" />
+          <div className="h-4 w-px bg-border/60" />
+          <h1 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+            Project Settings
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-background/50 backdrop-blur">
-            ID: {projectId.slice(0, 8)}
-          </Badge>
-        </div>
+        <span className="text-[10px] font-mono text-muted-foreground/60 bg-muted/30 px-2 py-0.5 rounded border border-border/30">
+          ID: {projectId.slice(0, 8)}
+        </span>
       </motion.div>
 
-      {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 auto-rows-min">
+      {/* Main Streamlined Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         
-        {/* Tile 1: Project Identity (Spans 4 cols) */}
-        <motion.div variants={itemVariants} className="md:col-span-4">
-          <Card className="h-full border-none bg-card/60 backdrop-blur-xl shadow-sm ring-1 ring-border/50">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2 opacity-70">
-                <Fingerprint className="h-4 w-4" /> Project Identity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest font-bold opacity-50">Project Name</Label>
-                <Input 
-                  value={projectName} 
-                  onChange={(e) => setProjectName(e.target.value)}
-                  className="bg-background/50 border-none ring-1 ring-border h-12 text-lg font-semibold"
+        {/* Left/Middle Primary Column */}
+        <div className="md:col-span-2 space-y-5">
+          
+          {/* Section 1: Identity & Privacy */}
+          <motion.div variants={itemVariants} className="rounded-lg border border-border/40 bg-card/20 p-4 space-y-4 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Fingerprint className="h-3.5 w-3.5 text-primary" />
+                Project Identity
+              </div>
+              
+              {/* Tight Segmented Control for Visibility */}
+              <div className="flex bg-muted/40 p-0.5 rounded-md border border-border/40">
+                <button
+                  onClick={() => canManage && setVisibility('private')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-sm transition-all ${
+                    visibility === 'private' 
+                    ? 'bg-background text-foreground shadow-2xs' 
+                    : 'text-muted-foreground hover:text-foreground'
+                  }`}
                   disabled={!canManage}
-                />
+                >
+                  <Lock className="h-3 w-3" /> Private
+                </button>
+                <button
+                  onClick={() => canManage && setVisibility('public')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-sm transition-all ${
+                    visibility === 'public' 
+                    ? 'bg-background text-foreground shadow-2xs' 
+                    : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  disabled={!canManage}
+                >
+                  <Globe className="h-3 w-3" /> Public
+                </button>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            </div>
 
-        {/* Tile 2: Visibility Toggle (Spans 2 cols) */}
-        <motion.div variants={itemVariants} className="md:col-span-2">
-          <Card className="h-full border-none bg-card/60 backdrop-blur-xl shadow-sm ring-1 ring-border/50">
-            <CardContent className="pt-6 h-full flex flex-col justify-center gap-3">
-               <Label className="text-xs uppercase tracking-widest font-bold opacity-50">Privacy Mode</Label>
-               <div className="flex gap-2">
-                  {[
-                    { id: 'private', icon: Lock },
-                    { id: 'public', icon: Globe }
-                  ].map((opt) => (
-                    <Button
-                      key={opt.id}
-                      variant={visibility === opt.id ? 'default' : 'outline'}
-                      className="flex-1 h-16 rounded-md transition-all"
-                      onClick={() => canManage && setVisibility(opt.id as ProjectVisibility)}
-                      disabled={!canManage}
-                    >
-                      <opt.icon className={`h-5 w-5 ${visibility === opt.id ? 'animate-pulse' : ''}`} />
-                    </Button>
-                  ))}
-               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-medium text-muted-foreground">Rename Project</Label>
+              <Input 
+                value={projectName} 
+                onChange={(e) => setProjectName(e.target.value)}
+                className="bg-background/40 border-border/50 h-9 text-sm focus-visible:ring-1 focus-visible:ring-primary/45"
+                disabled={!canManage}
+              />
+            </div>
+          </motion.div>
 
-        {/* Tile 3: Team Members (Spans 4 cols, Tall) */}
-        <motion.div variants={itemVariants} className="md:col-span-4 md:row-span-2">
-          <Card className="h-full border-none bg-card/60 backdrop-blur-xl shadow-sm ring-1 ring-border/50 overflow-hidden flex flex-col">
-            <CardHeader className="border-b border-border/50 bg-muted/20">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" /> Active Team
-              </CardTitle>
-              <CardDescription>Manage roles and project permissions</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-y-auto max-h-[450px]">
-              <div className="divide-y divide-border/50">
-                <AnimatePresence mode="popLayout">
-                  {members.map((m) => (
-                    <motion.div
-                      key={m.id}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
-                          <AvatarImage src={m.profiles?.avatar_url} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                            {m.profiles?.email?.[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold">{m.profiles?.email}</span>
-                            {m.user_id === project.owner_id && <Badge className="text-[9px] h-4">Owner</Badge>}
-                          </div>
-                          <span className="text-[10px] uppercase text-muted-foreground font-medium tracking-tighter">Joined {new Date(m.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      
-                      {canManage && m.role !== 'owner' ? (
-                        <div className="flex items-center gap-2">
-                          <Select 
-                            value={m.role} 
-                            onValueChange={(v) => collaborationActions.updateMemberRole(m.id, v as ProjectRole)}
-                          >
-                            <SelectTrigger className="h-8 w-24 text-[10px] font-bold">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {['admin', 'editor', 'viewer'].map(r => (
-                                <SelectItem key={r} value={r} className="text-xs uppercase">{r}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => collaborationActions.removeMember(m.id)}>
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full">
-                           {getRoleIcon(m.role)}
-                           <span className="text-[10px] font-bold uppercase">{m.role}</span>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+          {/* Section 2: Active Team Management */}
+          <motion.div variants={itemVariants} className="rounded-lg border border-border/40 bg-card/20 overflow-hidden shadow-2xs">
+            <div className="px-4 py-3 border-b border-border/30 bg-muted/10 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Users className="h-3.5 w-3.5 text-primary" />
+                Active Team
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              <span className="text-[10px] font-semibold text-muted-foreground/80 bg-muted/50 px-2 py-0.5 rounded-full">
+                {members.length} members
+              </span>
+            </div>
 
-        {/* Tile 4: Invite Members (Spans 2 cols) */}
-        <motion.div variants={itemVariants} className="md:col-span-2">
-          <Card className="h-full border-none bg-primary/5 shadow-sm ring-1 ring-primary/20">
-            <CardHeader>
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-primary" /> Invite Team
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 opacity-30" />
-                <Input 
-                  placeholder="Find by email..." 
-                  className="pl-9 bg-background/50 border-none"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <AnimatePresence>
-                {searchResults.length > 0 && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }} 
-                    animate={{ height: 'auto', opacity: 1 }}
-                    className="space-y-1"
+            <div className="divide-y divide-border/30 max-h-[320px] overflow-y-auto">
+              <AnimatePresence mode="popLayout">
+                {members.map((m) => (
+                  <motion.div
+                    key={m.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-between p-3 hover:bg-muted/10 transition-colors"
                   >
-                    {searchResults.map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-2 bg-background/50 rounded-lg border border-border/50">
-                        <span className="text-[10px] font-medium truncate max-w-[100px]">{u.email}</span>
-                        <Button size="xs" onClick={() => collaborationActions.addMember(projectId, u.id)} className="h-6 text-[10px]">Add</Button>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Avatar className="h-7 w-7 ring-1 ring-border/20">
+                        <AvatarImage src={m.profiles?.avatar_url} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+                          {m.profiles?.email?.[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium truncate text-foreground/90">{m.profiles?.email}</span>
+                          {m.user_id === project.owner_id && (
+                            <span className="text-[8px] bg-primary/10 text-primary px-1 rounded-sm uppercase tracking-wider font-bold">Owner</span>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                    </div>
+                    
+                    {canManage && m.role !== 'owner' ? (
+                      <div className="flex items-center gap-1.5">
+                        <select 
+                          value={m.role} 
+                          onChange={(e) => collaborationActions.updateMemberRole(m.id, e.target.value as ProjectRole)}
+                          className="h-7 rounded border border-border/40 bg-background/50 px-1.5 text-[10px] font-semibold text-muted-foreground uppercase outline-none focus:ring-1 focus:ring-primary/30"
+                        >
+                          {['admin', 'editor', 'viewer'].map(r => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                        </select>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => collaborationActions.removeMember(m.id)}
+                        >
+                          <UserX className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 px-2 py-0.5 bg-muted/40 border border-border/30 rounded text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {getRoleIcon(m.role)}
+                        {m.role}
+                      </div>
+                    )}
                   </motion.div>
-                )}
+                ))}
               </AnimatePresence>
-            </CardContent>
-          </Card>
-        </motion.div>
+            </div>
+          </motion.div>
+        </div>
 
-        {/* Tile 5: Danger Zone (Spans 2 cols) */}
-        <motion.div variants={itemVariants} className="md:col-span-2">
-          <Card className="h-full border-none bg-destructive/5 shadow-sm ring-1 ring-destructive/20 group hover:bg-destructive/10 transition-colors">
-            <CardHeader>
-              <CardTitle className="text-sm font-bold text-destructive flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" /> Danger Zone
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="w-full font-bold"
-                onClick={async () => {
-                   if (confirm('Permanently delete project?')) {
-                     await masarActions.deleteProject(projectId);
-                     navigate('/projects/all');
-                   }
-                }}
-              >
-                Delete Project
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Right Sidebar Column */}
+        <div className="space-y-5">
+          
+          {/* Section 3: Invite Team */}
+          <motion.div variants={itemVariants} className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+              <UserPlus className="h-3.5 w-3.5" />
+              Invite Team
+            </div>
+            
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 opacity-40 text-foreground" />
+              <Input 
+                placeholder="Find by email..." 
+                className="pl-8 bg-background/60 border-border/50 h-8.5 text-xs"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <AnimatePresence>
+              {searchResults.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-background border border-border/40 rounded-md divide-y divide-border/20 max-h-[150px] overflow-y-auto"
+                >
+                  {searchResults.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => collaborationActions.addMember(projectId, user.id, 'viewer')}
+                      className="w-full text-left p-2 hover:bg-muted/40 text-[11px] truncate flex items-center justify-between"
+                    >
+                      <span className="truncate">{user.email}</span>
+                      <span className="text-[9px] text-primary font-bold">Add</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Section 4: Danger Zone */}
+          <motion.div variants={itemVariants} className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-destructive">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Danger Zone
+            </div>
+            <p className="text-[10px] text-muted-foreground/80 leading-normal">
+              Deleting this project will permanently remove all tasks, subtasks, and dependencies.
+            </p>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="w-full h-8.5 text-xs font-bold bg-destructive/90 hover:bg-destructive"
+              onClick={async () => {
+                 if (confirm('Permanently delete project?')) {
+                   await masarActions.deleteProject(projectId);
+                   navigate('/projects/all');
+                 }
+              }}
+            >
+              Delete Project
+            </Button>
+          </motion.div>
+        </div>
 
       </div>
     </motion.div>
   );
 }
 
-// Helpers
 const getRoleIcon = (role: ProjectRole) => {
   switch (role) {
-    case 'owner': return <ShieldAlert className="h-3 w-3 text-primary" />;
-    case 'admin': return <ShieldCheck className="h-3 w-3 text-blue-500" />;
-    case 'editor': return <Shield className="h-3 w-3 text-green-500" />;
-    default: return <Users className="h-3 w-3 text-muted-foreground" />;
+    case 'owner': return <ShieldAlert className="h-3 w-3 mr-0.5 text-primary" />;
+    case 'admin': return <ShieldCheck className="h-3 w-3 mr-0.5 text-blue-500" />;
+    case 'editor': return <Shield className="h-3 w-3 mr-0.5 text-green-500" />;
+    default: return <Users className="h-3 w-3 mr-0.5 text-muted-foreground" />;
   }
 };
 
 function BentoSkeleton() {
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <Skeleton className="h-12 w-64" />
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Skeleton className="md:col-span-4 h-32 rounded-lg" />
-        <Skeleton className="md:col-span-2 h-32 rounded-lg" />
-        <Skeleton className="md:col-span-4 h-96 rounded-lg" />
-        <Skeleton className="md:col-span-2 h-48 rounded-lg" />
+    <div className="max-w-4xl mx-auto py-4 space-y-6">
+      <Skeleton className="h-10 w-48" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <Skeleton className="md:col-span-2 h-44 rounded-lg" />
+        <Skeleton className="h-44 rounded-lg" />
+        <Skeleton className="md:col-span-2 h-64 rounded-lg" />
+        <Skeleton className="h-32 rounded-lg" />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-// src/components/task-detail/TaskDescriptionEditor.tsx
+// src/components/TaskDetail/TaskDescriptionEditor.tsx
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -9,8 +9,8 @@ interface TaskDescriptionEditorProps {
 
 export function TaskDescriptionEditor({ description, onChange }: TaskDescriptionEditorProps) {
   return (
-    <div className="space-y-2">
-      <Label className="text-muted-foreground flex items-center gap-2">Description</Label>
+    <div className="space-y-1.5">
+      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 block">Description</Label>
       <RichTextEditor
         content={description}
         onChange={onChange}

@@ -44,7 +44,7 @@
   --font-sans: DM Sans, ui-sans-serif, sans-serif, system-ui;
   --font-serif: Source Serif 4, serif;
   --font-mono: JetBrains Mono, monospace;
-  --radius: 0.75rem;
+  --radius: 0.55rem;
   --shadow-x: 0;
   --shadow-y: 1px;
   --shadow-blur: 3px;
@@ -60,7 +60,7 @@
   --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0em;
-  --spacing: 0.25rem;
+  --spacing: 0.21rem;
 }
 
 .dark {
@@ -99,7 +99,7 @@
   --font-sans: DM Sans, ui-sans-serif, sans-serif, system-ui;
   --font-serif: Source Serif 4, serif;
   --font-mono: JetBrains Mono, monospace;
-  --radius: 0.75rem;
+  --radius: 0.55rem;
   --shadow-x: 0;
   --shadow-y: 1px;
   --shadow-blur: 3px;

@@ -1,3 +1,4 @@
+// src/components/CreateTaskDialog.tsx
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -43,18 +44,24 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateT
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AnimatePresence>
         {isOpen && (
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[340px] p-4 gap-0">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.98, y: 5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              exit={{ opacity: 0, scale: 0.98, y: 5 }}
+              className="space-y-4"
             >
               <DialogHeader>
-                <DialogTitle>Create New Task</DialogTitle>
+                <DialogTitle className="text-sm font-semibold tracking-tight text-foreground/90">
+                  Create New Task
+                </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title" className="block">Task Title</Label>
+
+              <div className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                    Task Title
+                  </Label>
                   <Input
                     id="title"
                     placeholder="What needs to be done?"
@@ -63,29 +70,36 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateT
                     onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                     autoFocus
                     disabled={loading}
+                    className="h-8 text-xs bg-background/50 border-border/60 focus-visible:ring-1 focus-visible:ring-primary/30"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="priority" className="block">Priority</Label>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="priority" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                    Priority
+                  </Label>
                   <Select value={priority} onValueChange={setPriority} disabled={loading}>
-                    <SelectTrigger id="priority">
+                    <SelectTrigger id="priority" className="h-8 text-xs bg-background/50 border-border/60 focus:ring-1 focus:ring-primary/30">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 - Critical</SelectItem>
-                      <SelectItem value="2">2 - High</SelectItem>
-                      <SelectItem value="3">3 - Medium</SelectItem>
-                      <SelectItem value="4">4 - Low</SelectItem>
-                      <SelectItem value="5">5 - Backlog</SelectItem>
+                    <SelectContent className="text-xs">
+                      <SelectItem value="1" className="text-xs">1 - Critical</SelectItem>
+                      <SelectItem value="2" className="text-xs">2 - High</SelectItem>
+                      <SelectItem value="3" className="text-xs">3 - Medium</SelectItem>
+                      <SelectItem value="4" className="text-xs">4 - Low</SelectItem>
+                      <SelectItem value="5" className="text-xs">5 - Backlog</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-                <Button onClick={handleCreate} disabled={!title.trim() || loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Create Task
+
+              <DialogFooter className="gap-1.5 flex flex-row justify-end pt-1">
+                <Button variant="outline" size="sm" onClick={onClose} disabled={loading} className="h-8 text-xs">
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleCreate} disabled={!title.trim() || loading} className="h-8 text-xs">
+                  {loading && <Loader2 className="h-3 w-3 animate-spin mr-1.5" />}
+                  Create
                 </Button>
               </DialogFooter>
             </motion.div>

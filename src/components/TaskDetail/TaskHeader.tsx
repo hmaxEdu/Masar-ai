@@ -1,4 +1,4 @@
-// src/components/task-detail/TaskHeader.tsx
+// src/components/TaskDetail/TaskHeader.tsx
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,38 +12,38 @@ interface TaskHeaderProps {
   onUpdate: (changes: Partial<Task>) => void;
 }
 
-export function TaskHeader({ task, onUpdate }: TaskHeaderProps) {
+export default function TaskHeader({ task, onUpdate }: TaskHeaderProps) {
   const members = useProjectMembers(task.project_id);
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="text-[10px]">
+    <div className="mb-4 space-y-2 border-b border-border/40 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0 rounded">
             TASK #{task.id.slice(0, 8)}
           </Badge>
           {task.status === "Blocked" && (
-            <Badge variant="destructive" className="flex gap-1 animate-pulse">
+            <Badge variant="destructive" className="flex gap-1 animate-pulse text-[9px] px-1.5 py-0 rounded">
               <AlertCircle className="h-3 w-3" /> BLOCKED
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Assignee:</Label>
+        <div className="flex items-center gap-1.5">
+          <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 shrink-0">Assignee:</Label>
           <Select
             value={task.assignee_id || "unassigned"}
             onValueChange={(v) => onUpdate({ assignee_id: v === "unassigned" ? undefined : v })}
           >
-            <SelectTrigger className="h-8 w-[180px] text-[11px]">
-              <div className="flex items-center gap-2">
-                <User className="h-3 w-3" />
+            <SelectTrigger className="h-7 w-[160px] text-[10px] font-semibold bg-background/50 border-border/50 focus:ring-1 focus:ring-primary/30">
+              <div className="flex items-center gap-1.5">
+                <User className="h-3 w-3 text-muted-foreground" />
                 <SelectValue placeholder="Unassigned" />
               </div>
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
+            <SelectContent className="text-xs">
+              <SelectItem value="unassigned" className="text-xs">Unassigned</SelectItem>
               {members.map((m) => (
-                <SelectItem key={m.profiles.id} value={m.profiles.id}>
+                <SelectItem key={m.profiles.id} value={m.profiles.id} className="text-xs">
                   {m.profiles.email}
                 </SelectItem>
               ))}
@@ -54,7 +54,7 @@ export function TaskHeader({ task, onUpdate }: TaskHeaderProps) {
       <Input
         value={task.title}
         onChange={(e) => onUpdate({ title: e.target.value })}
-        className="text-2xl font-bold border-none px-0 focus-visible:ring-0 h-auto"
+        className="text-base font-bold border-none px-0 focus-visible:ring-0 h-auto text-foreground/95 bg-transparent placeholder:text-muted-foreground/50 tracking-tight"
         placeholder="Task Title"
       />
     </div>

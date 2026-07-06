@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
+import { MessageResponse } from "@/components/ai-elements/message";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { getProjectInsights } from "@/lib/ai";
 import { useTasks } from "@/hooks/use-masar";
-import { MessageResponse } from "@/components/ai-elements/message";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { getProjectInsights } from "@/lib/ai";
+import { Loader2, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 
 interface ProjectInsightsDialogProps {
   projectId: string;

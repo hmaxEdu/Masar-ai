@@ -15,7 +15,7 @@ import { Suspense, lazy, useRef } from "react";
 import { Footer } from "./Footer";
 import { IntegrationGraph } from "./IntegrationGraph";
 import { LandingHeader } from "./LandingHeader";
-import { MarqueeTicker } from "./MarqueeTicker"; // <-- IMPORT NEW TICKER COMPONENT
+import { MarqueeTicker } from "./MarqueeTicker";
 const WebGLBackground = lazy(() => import("./WebGLBackground"));
 
 interface LandingPageProps {
@@ -23,7 +23,7 @@ interface LandingPageProps {
 }
 
 // ----------------------------------------------------------------------
-// MAIN LANDING PAGE
+// MAIN LANDING PAGE (Sleek & Minimal)
 // ----------------------------------------------------------------------
 export default function LandingPage({ onLoginClick }: LandingPageProps) {
   const targetRef = useRef<HTMLDivElement>(null);
@@ -33,14 +33,14 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
     target: targetRef,
     offset: ["start end", "end start"],
   });
-  const y1 = useTransform(scrollYProgress, [0, 1], [40, -40]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [25, -25]);
 
   return (
     <div
-      className="min-h-screen text-foreground bg-background overflow-x-hidden selection:bg-primary/30 font-sans relative"
+      className="min-h-screen text-foreground bg-background overflow-x-hidden selection:bg-primary/20 font-sans relative"
       dir="ltr"
     >
-      {/* High-Fidelity WebGL Background*/}
+      {/* Subtle Animated Background */}
       <Suspense fallback={null}>
         <WebGLBackground />
       </Suspense>
@@ -48,145 +48,150 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
       {/* Navigation */}
       <LandingHeader
         onLoginClick={onLoginClick}
-        onSignUpClick={onLoginClick} // Points directly to Auth Sign Up
+        onSignUpClick={onLoginClick}
       />
 
-      <main className="pt-32 sm:pt-40 pb-24 relative z-10">
-        {/* Hero Section */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-10">
-          <div className="max-w-4xl mx-auto flex flex-col items-center">
-            <h1 className="text-5xl sm:text-6xl md:text-[5rem] font-black tracking-tighter leading-[1.1] mb-6 text-foreground">
+      <main className="pt-24 sm:pt-28 pb-16 relative z-10">
+        
+        {/* --- HERO SECTION --- */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-8">
+          <div className="max-w-3xl mx-auto flex flex-col items-center">
+            
+            {/* Elegant Header with Smooth Scale & Blur */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.15] mb-4 text-foreground">
               {words.map((word, i) => (
                 <motion.span
                   key={i}
-                  initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
+                  initial={{ opacity: 0, filter: "blur(8px)", y: 15 }}
                   animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                  transition={{ delay: i * 0.1, duration: 0.6 }}
-                  className="inline-block mr-[0.3em] drop-shadow-sm"
+                  transition={{ delay: i * 0.08, duration: 0.5 }}
+                  className="inline-block mr-[0.25em]"
                 >
                   {word}
                 </motion.span>
               ))}
               <br />
               <motion.span
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: words.length * 0.1, duration: 0.6 }}
-                className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-primary to-cyan-400 bg-[length:200%_auto] animate-gradient pb-2 mt-2"
+                transition={{ delay: words.length * 0.08, duration: 0.5 }}
+                className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-primary to-cyan-400 bg-[length:200%_auto] pb-1 mt-1 font-semibold"
               >
                 with multi-agent AI.
               </motion.span>
             </h1>
 
+            {/* Quiet, Low-Contrast Paragraph */}
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10 px-2 font-medium"
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="text-sm sm:text-base text-muted-foreground/80 max-w-xl mx-auto leading-relaxed mb-8 px-2 font-normal"
             >
-              Masar brings real AI automation to the enterprise. Plan projects,
-              predict bottlenecks, and execute tasks with speed, precision, and
-              measurable impact.
+              Masar introduces targeted task automation to your workspace. Plan sprints,
+              check critical paths, and execute actions with minimal friction.
             </motion.p>
 
+            {/* Sleek, Tight CTA row */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto px-4"
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto px-4"
             >
               <Button
-                size="lg"
-                className="h-14 px-8 text-base shadow-2xl shadow-primary/30 w-full sm:w-auto group relative overflow-hidden font-bold"
+                size="default"
+                className="h-10 px-5 text-xs shadow-none w-full sm:w-auto group relative overflow-hidden font-semibold rounded-md"
                 onClick={onLoginClick}
               >
                 <span className="relative z-10 flex items-center">
                   Start Building Free{" "}
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </span>
               </Button>
               <Button
-                size="lg"
+                size="default"
                 variant="outline"
-                className="h-14 px-8 text-base bg-card/50 text-foreground border-border/80 backdrop-blur w-full sm:w-auto hover:bg-muted transition-colors  font-bold"
+                className="h-10 px-5 text-xs bg-card/20 text-foreground border-border/60 backdrop-blur-xs w-full sm:w-auto hover:bg-muted transition-colors font-medium rounded-md"
                 onClick={() =>
                   window.open("https://github.com/hmaxEdu/Masar-ai", "_blank")
                 }
               >
-                <Github className="mr-2 h-5 w-5" /> View on GitHub
+                <Github className="mr-1.5 h-3.5 w-3.5" /> View on GitHub
               </Button>
             </motion.div>
           </div>
 
-          {/* Integration Graph Demonstration Section */}
+          {/* Symmetrical Orchestration Engine Canvas */}
           <motion.div
             style={{ y: y1 }}
             ref={targetRef}
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
-            className="mt-16 sm:mt-24 relative mx-auto w-full px-2 sm:px-0"
+            transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
+            className="mt-12 sm:mt-16 relative mx-auto w-full px-2 sm:px-0"
           >
             <IntegrationGraph />
           </motion.div>
         </section>
 
-        {/* Dynamic Infinite Marquee */}
+        {/* Dynamic Partner Marquee Ticker */}
         <MarqueeTicker />
 
-        {/* Features Grid */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 mt-24 sm:mt-32 relative z-20">
+        {/* --- HIGH-DENSITY FEATURE MATRIX --- */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 mt-20 sm:mt-24 relative z-20">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-6 text-foreground">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-2.5 text-foreground">
               Built at the frontier of applied AI.
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
+            <p className="text-muted-foreground text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
               Everything you need to operationalize team workflows, wrapped in a
               blazing-fast, modern interface.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {/* Clean 3-Column Grid without unnecessary colors/glows */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <FeatureCard
               delay={0}
-              icon={<Bot />}
+              icon={<Bot className="h-4 w-4" />}
               title="Streaming AI Agents"
-              description="Interact with context-aware AI that autonomously creates tasks, analyzes bottlenecks, and executes UI actions in real-time."
+              description="Interact with context-aware AI that autonomously creates tasks, analyzes bottlenecks, and executes actions in real-time."
+            />
+            <FeatureCard
+              delay={0.05}
+              icon={<Network className="h-4 w-4" />}
+              title="Dependency Trees"
+              description="Visualize complex project plans with clean layouts. See how every task interconnects instantly."
             />
             <FeatureCard
               delay={0.1}
-              icon={<Network />}
-              title="Animated Dependency Trees"
-              description="Visualize complex project plans with bespoke animations. See how every task interconnects instantly."
+              icon={<Zap className="h-4 w-4" />}
+              title="Optimistic UI Updates"
+              description="Experience zero-latency interactions. Our drag-and-drop architecture pre-renders transitions locally."
+            />
+            <FeatureCard
+              delay={0.15}
+              icon={<KanbanSquare className="h-4 w-4" />}
+              title="Complex Sprints"
+              description="Manage deeply nested subtasks and enforce strict task dependencies ensuring work is done in order."
             />
             <FeatureCard
               delay={0.2}
-              icon={<Zap />}
-              title="Optimistic UI Updates"
-              description="Experience zero-latency interactions. Our drag-and-drop architecture preempts network requests for a fluid experience."
+              icon={<LayoutDashboard className="h-4 w-4" />}
+              title="Real-time Postgres Sync"
+              description="Powered by WebSockets, collaborate seamlessly with your team. See changes instantly across devices."
             />
             <FeatureCard
-              delay={0.3}
-              icon={<KanbanSquare />}
-              title="Complex Workflows"
-              description="Manage deeply nested subtasks and enforce strict task dependencies ensuring work is done in the right order."
-            />
-            <FeatureCard
-              delay={0.4}
-              icon={<LayoutDashboard />}
-              title="Real-time Sync"
-              description="Powered by WebSockets, collaborate seamlessly with your team. See changes instantly across all devices."
-            />
-            <FeatureCard
-              delay={0.5}
-              icon={<Shield />}
-              title="Enterprise Grade"
-              description="Built with TypeScript, React 19, and scalable UI design patterns designed to handle massive datasets securely."
+              delay={0.25}
+              icon={<Shield className="h-4 w-4" />}
+              title="Secure at Rest"
+              description="Built with TypeScript, React 19, and rigorous security patterns designed to protect your repository data."
             />
           </div>
         </section>
@@ -199,7 +204,7 @@ export default function LandingPage({ onLoginClick }: LandingPageProps) {
 }
 
 // ----------------------------------------------------------------------
-// FEATURE CARD COMPONENT
+// COMPACT MINIMAL FEATURE CARD
 // ----------------------------------------------------------------------
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -210,32 +215,24 @@ interface FeatureCardProps {
 function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5, delay }}
-      whileHover={{ y: -8, transition: { duration: 0.2 } }}
-      className="group relative rounded-lg border border-border/60 bg-card/50 p-8 backdrop-blur-xl transition-all duration-300 hover:border-primary/40 hover:bg-card/80 hover:shadow-2xl hover:shadow-primary/5"
+      transition={{ duration: 0.4, delay }}
+      className="flex flex-col gap-3 p-5 rounded-lg border border-border/40 bg-card/15 backdrop-blur-md transition-colors hover:border-primary/25 group cursor-default"
     >
-      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 via-primary/5 to-primary/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      {/* Discrete, flat icon wrapper */}
+      <div className="text-primary h-5 w-5 shrink-0 transition-transform group-hover:scale-105">
+        {icon}
+      </div>
 
-      <div className="relative z-10 space-y-6">
-        <div className="inline-flex rounded-2xl bg-primary/10 p-4 text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/20 shadow-inner">
-          {icon}
-        </div>
-
-        <div className="space-y-3">
-          <h3 className="text-2xl font-bold tracking-tight text-foreground">
-            {title}
-          </h3>
-          <p className="text-muted-foreground leading-relaxed font-medium">
-            {description}
-          </p>
-        </div>
-
-        <div className="flex items-center text-sm font-bold text-primary opacity-0 transition-all duration-300 group-hover:translate-x-2 group-hover:opacity-100">
-          Learn more <ArrowRight className="ml-1 h-4 w-4" />
-        </div>
+      <div className="space-y-1">
+        <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-foreground/95">
+          {title}
+        </h3>
+        <p className="text-xs text-muted-foreground/80 leading-normal">
+          {description}
+        </p>
       </div>
     </motion.div>
   );

@@ -1,3 +1,4 @@
+// src/components/ProjectDialog.tsx
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -51,36 +52,42 @@ export default function ProjectDialog({ isOpen, onClose, mode, projectId, initia
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AnimatePresence>
         {isOpen && (
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[320px] p-4 gap-0">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.98, y: 5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              exit={{ opacity: 0, scale: 0.98, y: 5 }}
+              className="space-y-4"
             >
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-sm font-semibold tracking-tight text-foreground/90">
                   {mode === 'create' ? 'Create New Project' : 'Rename Project'}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="block">Project Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Enter project name..."
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                    autoFocus
-                    disabled={loading}
-                  />
-                </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                  Project Name
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="Enter project name..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                  autoFocus
+                  disabled={loading}
+                  className="h-8 text-xs bg-background/50 border-border/60 focus-visible:ring-1 focus-visible:ring-primary/30"
+                />
               </div>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-                <Button onClick={handleSubmit} disabled={!name.trim() || loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  {mode === 'create' ? 'Create Project' : 'Save Changes'}
+
+              <DialogFooter className="gap-1.5 flex flex-row justify-end pt-1">
+                <Button variant="outline" size="sm" onClick={onClose} disabled={loading} className="h-8 text-xs">
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSubmit} disabled={!name.trim() || loading} className="h-8 text-xs">
+                  {loading && <Loader2 className="h-3 w-3 animate-spin mr-1.5" />}
+                  {mode === 'create' ? 'Create' : 'Save'}
                 </Button>
               </DialogFooter>
             </motion.div>

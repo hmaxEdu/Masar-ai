@@ -91,6 +91,23 @@ const faqs = [
   },
 ];
 
+// Helper Chevron Icon Component (Declared at module scope)
+function ChevronDownIcon({ className, ...props }: any) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+      className={className}
+      {...props}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+  );
+}
+
 export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -105,51 +122,49 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen text-foreground bg-background overflow-x-hidden selection:bg-primary/30 font-sans relative" dir="ltr">
+    <div className="min-h-screen text-foreground bg-background overflow-x-hidden selection:bg-primary/20 font-sans relative" dir="ltr">
       
-      {/* High-Fidelity Animated Background */}
+      {/* Subtle Background */}
       <Suspense fallback={null}>
         <WebGLBackground />
       </Suspense>
 
-      {/* Reusable Landing Header */}
       <LandingHeader
         onLoginClick={() => navigate("/login")}
         onSignUpClick={() => navigate("/login")}
       />
 
-      <main className="pt-32 sm:pt-40 pb-24 relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="pt-24 sm:pt-28 pb-16 relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
         
         {/* --- HEADER SECTION --- */}
-        <section className="text-center space-y-4 mb-16">
-          
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tighter leading-none text-foreground">
+        <section className="text-center space-y-3 mb-12">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
             Simple, transparent pricing.
           </h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto font-medium">
+          <p className="text-muted-foreground text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
             Deploy Masar across your teams. No hidden overheads, no credit card required to start organizing with AI.
           </p>
 
-          {/* Billing Switcher */}
-          <div className="flex items-center justify-center gap-3 pt-6">
-            <span className={`text-sm font-semibold transition-colors ${!isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
+          {/* Compact Billing Switcher */}
+          <div className="flex items-center justify-center gap-2.5 pt-4">
+            <span className={`text-xs font-semibold transition-colors ${!isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
               Monthly
             </span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
-              className="relative w-12 h-6 bg-muted border border-border/80 rounded-full flex items-center p-1 transition-colors focus:outline-none"
+              className="relative w-10 h-5 bg-muted border border-border/60 rounded-full flex items-center p-0.5 transition-colors focus:outline-none"
               aria-label="Toggle Billing Interval"
             >
               <motion.div
                 layout
-                className="w-4 h-4 bg-primary rounded-full shadow-sm"
+                className="w-3.5 h-3.5 bg-primary rounded-full shadow-2xs"
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                animate={{ x: isAnnual ? 24 : 0 }}
+                animate={{ x: isAnnual ? 20 : 0 }}
               />
             </button>
-            <span className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
+            <span className={`text-xs font-semibold transition-colors flex items-center gap-1 ${isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
               Annually 
-              <span className="text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[9px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-1.5 py-0.5 rounded-full font-bold">
                 Save 20%
               </span>
             </span>
@@ -157,7 +172,7 @@ export default function PricingPage() {
         </section>
 
         {/* --- PRICING CARDS --- */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24 items-stretch">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20 items-stretch">
           {plans.map((plan, idx) => {
             const price = isAnnual ? plan.priceAnnually : plan.priceMonthly;
             const isPro = plan.name === "Pro";
@@ -165,37 +180,37 @@ export default function PricingPage() {
             return (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className={`relative flex flex-col justify-between rounded-lg border p-8 bg-card/40 backdrop-blur-xl transition-all duration-300 ${
+                transition={{ duration: 0.5, delay: idx * 0.05 }}
+                className={`relative flex flex-col justify-between rounded-lg border p-6 bg-card/85 backdrop-blur-md transition-all duration-300 ${
                   isPro
-                    ? "border-primary shadow-xl shadow-primary/5 md:scale-105 z-10"
-                    : "border-border/60 hover:border-border hover:bg-card/60"
+                    ? "border-primary shadow-lg shadow-primary/5 md:scale-[1.03] z-10"
+                    : "border-border/60 hover:border-border hover:bg-card/65"
                 }`}
               >
                 {/* Most Popular Badge */}
                 {plan.badge && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] uppercase font-bold tracking-widest px-4 py-1 rounded-full shadow-lg shadow-primary/20">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[8px] uppercase font-bold tracking-widest px-3 py-0.5 rounded-full shadow-md shadow-primary/20">
                     {plan.badge}
                   </div>
                 )}
 
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {/* Plan Name & Desc */}
                   <div>
-                    <h3 className="text-xl font-bold tracking-tight text-foreground">{plan.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1.5 font-medium leading-relaxed min-h-[40px]">
+                    <h3 className="text-base font-bold tracking-tight text-foreground">{plan.name}</h3>
+                    <p className="text-xs text-muted-foreground/80 mt-1 leading-normal min-h-[35px]">
                       {plan.description}
                     </p>
                   </div>
 
                   {/* Price */}
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl sm:text-5xl font-black text-foreground">
+                    <span className="text-3xl sm:text-4xl font-black text-foreground">
                       ${price}
                     </span>
-                    <span className="text-sm font-semibold text-muted-foreground">
+                    <span className="text-[11px] font-semibold text-muted-foreground">
                       / month
                     </span>
                   </div>
@@ -204,23 +219,23 @@ export default function PricingPage() {
                   <Button
                     onClick={() => handleCta(plan)}
                     variant={plan.ctaVariant}
-                    className={`w-full h-11 font-bold rounded-md transition-transform active:scale-[0.98] ${
-                      isPro ? "shadow-lg shadow-primary/25" : ""
+                    className={`w-full h-9 text-xs font-bold rounded-md transition-transform active:scale-[0.98] ${
+                      isPro ? "shadow-md shadow-primary/20" : ""
                     }`}
                   >
                     {plan.ctaText}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Button>
 
                   {/* Feature Lists */}
-                  <div className="space-y-3 pt-4 border-t border-border/40">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                  <div className="space-y-2.5 pt-3.5 border-t border-border/40">
+                    <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground/60">
                       What's Included
                     </span>
-                    <ul className="space-y-2.5">
+                    <ul className="space-y-2">
                       {plan.features.map((feature, fIdx) => (
-                        <li key={fIdx} className="flex items-start gap-2.5 text-xs font-medium">
-                          <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <li key={fIdx} className="flex items-start gap-2 text-[11px] font-medium">
+                          <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
                           <span className="text-foreground/80 leading-snug">{feature}</span>
                         </li>
                       ))}
@@ -233,60 +248,60 @@ export default function PricingPage() {
         </section>
 
         {/* --- PLAN COMPARISON MATRIX --- */}
-        <section className="mb-24 hidden md:block">
-          <h2 className="text-2xl font-bold text-center tracking-tight mb-12">Compare All Features</h2>
-          <div className="border border-border/60 rounded-2xl overflow-hidden bg-card/30 backdrop-blur-xl">
+        <section className="mb-20 hidden md:block">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60 text-center mb-8">Compare All Features</h2>
+          <div className="border border-border/40 rounded-xl overflow-hidden bg-card/25 backdrop-blur-md">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border/40 bg-muted/20">
-                  <th className="p-4 text-xs uppercase tracking-wider text-muted-foreground font-bold">Feature</th>
-                  <th className="p-4 text-xs uppercase tracking-wider text-muted-foreground font-bold">Hobby</th>
-                  <th className="p-4 text-xs uppercase tracking-wider text-muted-foreground font-bold">Pro</th>
-                  <th className="p-4 text-xs uppercase tracking-wider text-muted-foreground font-bold">Enterprise</th>
+                <tr className="border-b border-border/30 bg-muted/15">
+                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Feature</th>
+                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Hobby</th>
+                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Pro</th>
+                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Enterprise</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/40 text-sm font-medium">
+              <tbody className="divide-y divide-border/20 text-xs font-medium">
                 <tr>
-                  <td className="p-4">Active Workspaces</td>
-                  <td className="p-4 text-muted-foreground">1</td>
-                  <td className="p-4 text-foreground">Unlimited</td>
-                  <td className="p-4 text-foreground">Unlimited</td>
+                  <td className="p-3 text-foreground/90">Active Workspaces</td>
+                  <td className="p-3 text-muted-foreground">1</td>
+                  <td className="p-3 text-foreground">Unlimited</td>
+                  <td className="p-3 text-foreground">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="p-4">Collaborative Members</td>
-                  <td className="p-4 text-muted-foreground">Solo</td>
-                  <td className="p-4 text-foreground">Unlimited</td>
-                  <td className="p-4 text-foreground">Unlimited</td>
+                  <td className="p-3 text-foreground/90">Collaborative Members</td>
+                  <td className="p-3 text-muted-foreground">Solo</td>
+                  <td className="p-3 text-foreground">Unlimited</td>
+                  <td className="p-3 text-foreground">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="p-4">AI Task Breakdown</td>
-                  <td className="p-4 text-muted-foreground">100 / month</td>
-                  <td className="p-4 text-foreground">Unlimited</td>
-                  <td className="p-4 text-foreground">Unlimited</td>
+                  <td className="p-3 text-foreground/90">AI Task Breakdown</td>
+                  <td className="p-3 text-muted-foreground">100 / month</td>
+                  <td className="p-3 text-foreground">Unlimited</td>
+                  <td className="p-3 text-foreground">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="p-4">Dependency Graphs</td>
-                  <td className="p-4 text-muted-foreground">Standard</td>
-                  <td className="p-4 text-foreground">Symmetrical Propagation</td>
-                  <td className="p-4 text-foreground">Symmetrical Propagation</td>
+                  <td className="p-3 text-foreground/90">Dependency Graphs</td>
+                  <td className="p-3 text-muted-foreground">Standard</td>
+                  <td className="p-3 text-foreground">Symmetrical</td>
+                  <td className="p-3 text-foreground">Symmetrical</td>
                 </tr>
                 <tr>
-                  <td className="p-4">Custom Model Integration</td>
-                  <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
-                  <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
-                  <td className="p-4 text-primary font-bold">Bring-Your-Own-Key</td>
+                  <td className="p-3 text-foreground/90">Custom Model integration</td>
+                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
+                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
+                  <td className="p-3 text-primary font-bold">Bring-Your-Own-Key</td>
                 </tr>
                 <tr>
-                  <td className="p-4">SSO / SAML Logins</td>
-                  <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
-                  <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
-                  <td className="p-4 text-foreground">Yes</td>
+                  <td className="p-3 text-foreground/90">SSO / SAML Logins</td>
+                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
+                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
+                  <td className="p-3 text-foreground/90">Yes</td>
                 </tr>
                 <tr>
-                  <td className="p-4">Support SLA</td>
-                  <td className="p-4 text-muted-foreground">Standard Support</td>
-                  <td className="p-4 text-foreground">Priority (24h)</td>
-                  <td className="p-4 text-primary font-bold">Dedicated Manager (4h)</td>
+                  <td className="p-3 text-foreground/90">Support SLA</td>
+                  <td className="p-3 text-muted-foreground">Standard</td>
+                  <td className="p-3 text-foreground">Priority (24h)</td>
+                  <td className="p-3 text-primary font-bold">Dedicated Manager (4h)</td>
                 </tr>
               </tbody>
             </table>
@@ -294,22 +309,22 @@ export default function PricingPage() {
         </section>
 
         {/* --- FAQ SECTION --- */}
-        <section className="max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-8 flex items-center justify-center gap-2">
-            <HelpCircle className="h-6 w-6 text-primary" /> FAQ
+        <section className="max-w-2xl mx-auto mb-12">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60 text-center mb-6 flex items-center justify-center gap-1.5">
+            <HelpCircle className="h-4 w-4 text-primary" /> FAQ
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {faqs.map((faq, idx) => {
               const isOpen = activeFaq === idx;
               return (
-                <div key={idx} className="border border-border/60 rounded-xl overflow-hidden bg-card/25 backdrop-blur-md">
+                <div key={idx} className="border border-border/40 rounded-lg overflow-hidden bg-card/15 backdrop-blur-md">
                   <button
                     onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between p-5 text-left font-bold text-sm sm:text-base focus:outline-none transition-colors hover:bg-muted/30"
+                    className="w-full flex items-center justify-between p-3.5 text-left font-bold text-xs sm:text-sm focus:outline-none transition-colors hover:bg-muted/15"
                   >
                     <span>{faq.question}</span>
                     <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                      <ChevronDownIcon className="h-4 w-4 text-muted-foreground/80" />
                     </motion.div>
                   </button>
                   <AnimatePresence initial={false}>
@@ -319,9 +334,9 @@ export default function PricingPage() {
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25 }}
-                        className="overflow-hidden border-t border-border/40"
+                        className="overflow-hidden border-t border-border/30"
                       >
-                        <p className="p-5 text-xs sm:text-sm text-muted-foreground font-medium leading-relaxed">
+                        <p className="p-3.5 text-[11px] sm:text-xs text-muted-foreground/85 leading-relaxed font-normal">
                           {faq.answer}
                         </p>
                       </motion.div>
@@ -335,27 +350,7 @@ export default function PricingPage() {
 
       </main>
 
-      {/* FOOTER */}
       <Footer />
     </div>
-  );
-}
-
-// ----------------------------------------------------------------------
-// SUB-ACCORDION CHEVRON HELPER
-// ----------------------------------------------------------------------
-function ChevronDown({ className, ...props }: any) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={2}
-      stroke="currentColor"
-      className={className}
-      {...props}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-    </svg>
   );
 }

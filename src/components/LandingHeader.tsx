@@ -1,6 +1,6 @@
 // src/components/LandingHeader.tsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"; // <-- Ensure this is imported
 import { ChevronDown, Menu, X, Globe, Laptop, HelpCircle, Code, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
@@ -26,20 +26,21 @@ interface LandingHeaderProps {
   navItems?: NavItem[];
 }
 
+// Update the default routing paths to match the new pages
 const defaultNavItems: NavItem[] = [
   {
     label: "Product",
     dropdownItems: [
-      { label: "Features", description: "Explore task automation & tracking", icon: Laptop, href: "#" },
-      { label: "Integrations", description: "Connect with Slack, Github, & more", icon: Code, href: "#" },
-      { label: "Security", description: "Enterprise-grade data protection", icon: Shield, href: "#" },
+      { label: "Features", description: "Explore task automation & tracking", icon: Laptop, href: "/features" },
+      { label: "Integrations", description: "Connect with Slack, Github, & more", icon: Code, href: "/integrations" },
+      { label: "Security", description: "Enterprise-grade data protection", icon: Shield, href: "/security" },
     ],
   },
   {
     label: "Solutions",
     dropdownItems: [
-      { label: "Marketing Teams", description: "Coordinate campaigns", icon: Globe, href: "#" },
-      { label: "Engineering", description: "Sprint boards & backlog managers", icon: Code, href: "#" },
+      { label: "Marketing Teams", description: "Coordinate campaigns", icon: Globe, href: "/marketing-teams" },
+      { label: "Engineering", description: "Sprint boards & backlog managers", icon: Code, href: "/engineering" },
       { label: "Product Management", description: "Roadmaps & feature specs", icon: Laptop, href: "#" },
     ],
   },
@@ -51,7 +52,7 @@ const defaultNavItems: NavItem[] = [
     ],
   },
   { label: "Pricing", href: "/pricing" },
-  { label: "Enterprise", href: "#" },
+  { label: "Enterprise", href: "/enterprise" },
 ];
 
 export function LandingHeader({
@@ -67,9 +68,7 @@ export function LandingHeader({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* --- LEFT SECTION: Grouping Logo & Desktop Navigation closer together --- */}
           <div className="flex items-center gap-12">
-            {/* Logo */}
             <Link to="/" className="flex items-center gap-3 shrink-0">
               <Logo className="w-9 h-9 brightness-0 dark:invert" />
               <span className="font-bold text-xl tracking-tight text-foreground hidden sm:block">
@@ -77,27 +76,24 @@ export function LandingHeader({
               </span>
             </Link>
 
-            {/* Desktop Navigation Links (Grouped next to Logo) */}
             <div className="hidden lg:flex items-center gap-6">
               {navItems.map((item, idx) => {
                 if (item.dropdownItems) {
                   return (
                     <div key={idx} className="relative group py-4">
-                      {/* Trigger */}
                       <button className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                         {item.label}
                         <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180" />
                       </button>
 
-                      {/* Dropdown Panel */}
                       <div className="absolute top-full left-0 w-64 pt-2 z-50 invisible opacity-0 group-hover:visible group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
                         <div className="rounded-sm border border-border bg-card backdrop-blur-md p-3 shadow-lg flex flex-col gap-1">
                           {item.dropdownItems.map((subItem, subIdx) => {
                             const Icon = subItem.icon;
                             return (
-                              <a
+                              <Link
                                 key={subIdx}
-                                href={subItem.href}
+                                to={subItem.href}
                                 className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/80 transition-colors group/item"
                               >
                                 {Icon && (
@@ -115,7 +111,7 @@ export function LandingHeader({
                                     </span>
                                   )}
                                 </div>
-                              </a>
+                              </Link>
                             );
                           })}
                         </div>
@@ -124,23 +120,20 @@ export function LandingHeader({
                   );
                 }
 
-                // Normal link
                 return (
-                  <a
+                  <Link
                     key={idx}
-                    href={item.href || "#"}
+                    to={item.href || "#"}
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-4"
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 );
               })}
             </div>
           </div>
 
-          {/* --- RIGHT SECTION: CTAs (Desktop) & Mobile Menu Toggle --- */}
           <div className="flex items-center gap-5">
-            {/* Desktop Action Items */}
             <div className="hidden lg:flex items-center gap-5">
               <ModeToggle />
               <button
@@ -164,7 +157,6 @@ export function LandingHeader({
               </Button>
             </div>
 
-            {/* Mobile Actions Menu Trigger */}
             <div className="lg:hidden flex items-center gap-3">
               <ModeToggle />
               <Button
@@ -177,11 +169,9 @@ export function LandingHeader({
               </Button>
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* --- MOBILE DRAWER --- */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 pt-4 pb-6 space-y-3">
           {navItems.map((item, idx) => (
@@ -192,13 +182,13 @@ export function LandingHeader({
               {item.dropdownItems && (
                 <div className="pl-4 space-y-1">
                   {item.dropdownItems.map((subItem, subIdx) => (
-                    <a
+                    <Link
                       key={subIdx}
-                      href={subItem.href}
+                      to={subItem.href}
                       className="block text-xs font-semibold text-muted-foreground hover:text-foreground py-1 px-2 rounded-md hover:bg-muted/50"
                     >
                       {subItem.label}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}

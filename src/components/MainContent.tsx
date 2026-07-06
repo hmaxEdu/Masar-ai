@@ -1,12 +1,4 @@
 // src/components/MainContent.tsx
-import { useState, lazy, Suspense, useEffect } from "react";
-import { useNavigate, useParams, Route, Routes } from "react-router-dom";
-import { type Session } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
-import { useMyRole, useProjectMembers, useProjects } from "@/hooks/use-masar";
-import { toast } from "sonner";
-import { Logo } from "./Logo";
-import EmptyState from "./EmptyState";
 import {
   Avatar,
   AvatarFallback,
@@ -21,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -34,7 +27,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Label } from "@/components/ui/label";
+import { useMyRole, useProjectMembers, useProjects } from "@/hooks/use-masar";
+import { supabase } from "@/lib/supabase";
+import { type Session } from "@supabase/supabase-js";
 import {
   KanbanSquare,
   LayoutDashboard,
@@ -43,19 +38,30 @@ import {
   LogOut,
   Menu,
   Moon,
+  Network,
   Plus,
   Settings,
   Sparkles,
   Sun,
-  Users,
+  Users
 } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import EmptyState from "./EmptyState";
+import { Logo } from "./Logo";
 
 // Lazily load nested dashboard modules
 const AIAgent = lazy(() => import("@/components/AIAgent"));
 const BoardView = lazy(() => import("@/components/BoardView"));
-const CollaborationDialog = lazy(() => import("@/components/CollaborationDialog"));
+const NodeView = lazy(() => import("@/components/NodeView")); // <-- Added NodeView
+const CollaborationDialog = lazy(
+  () => import("@/components/CollaborationDialog"),
+);
 const CreateTaskDialog = lazy(() => import("@/components/CreateTaskDialog"));
-const ProjectInsightsDialog = lazy(() => import("@/components/ProjectInsightsDialog"));
+const ProjectInsightsDialog = lazy(
+  () => import("@/components/ProjectInsightsDialog"),
+);
 const ProjectSettings = lazy(() => import("@/components/ProjectSettings"));
 const ProjectDialog = lazy(() => import("@/components/ProjectDialog"));
 const SettingsDialog = lazy(() =>
@@ -63,7 +69,9 @@ const SettingsDialog = lazy(() =>
     default: m.SettingsDialog,
   })),
 );
-const TaskDetailDialog = lazy(() => import("@/components/TaskDetail/TaskDetailDialog"));
+const TaskDetailDialog = lazy(
+  () => import("@/components/TaskDetail/TaskDetailDialog"),
+);
 const ListView = lazy(() => import("./ListView"));
 const DashboardView = lazy(() => import("./Dashboard/DashboardView"));
 
@@ -72,25 +80,27 @@ function ProjectMembersAvatars({ projectId }: { projectId: string }) {
   if (members.length === 0) return null;
 
   return (
-    <div className="flex -space-x-2 ml-2">
+    <div className="flex -space-x-1.5 ml-1">
       {members.slice(0, 3).map((m) => (
         <Tooltip key={m.id}>
           <TooltipTrigger asChild>
             <AvatarGroup>
-              <Avatar className="shadow-lg">
+              <Avatar className="h-6 w-6 ring-1 ring-background shadow-xs">
                 <AvatarImage src={m.profiles?.avatar_url} />
-                <AvatarFallback>
+                <AvatarFallback className="text-[8px]">
                   {m.profiles?.email?.[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </AvatarGroup>
           </TooltipTrigger>
-          <TooltipContent>{m.profiles?.email}</TooltipContent>
+          <TooltipContent className="text-xs">
+            {m.profiles?.email}
+          </TooltipContent>
         </Tooltip>
       ))}
       {members.length > 3 && (
-        <Avatar>
-          <AvatarFallback>{`+${members.length - 3}`}</AvatarFallback>
+        <Avatar className="h-6 w-6 ring-1 ring-background shadow-xs">
+          <AvatarFallback className="text-[8px] bg-muted">{`+${members.length - 3}`}</AvatarFallback>
         </Avatar>
       )}
     </div>
@@ -116,7 +126,10 @@ export default function MainContent({ session }: { session: Session }) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "board" | "dashboard">("dashboard");
+  // <-- Updated ViewMode Type state tracking
+  const [viewMode, setViewMode] = useState<"list" | "board" | "dashboard" | "node">(
+    "dashboard",
+  );
 
   const [projectDialog, setProjectDialog] = useState<{
     isOpen: boolean;
@@ -145,20 +158,20 @@ export default function MainContent({ session }: { session: Session }) {
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
-        {/* --- LEFT SIDEBAR (App Shell) --- */}
-        <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card/30 backdrop-blur-md shrink-0">
+        {/* --- LEFT SIDEBAR (App Shell — Clean, Compact) --- */}
+        <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card/10 backdrop-blur-md shrink-0">
           <div
-            className="h-16 flex items-center gap-3 px-6 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors"
+            className="h-12 flex items-center gap-2 px-4 border-b border-border/40 cursor-pointer hover:bg-muted/20 transition-colors"
             onClick={() => navigate("/projects/all")}
           >
-            <Logo className="w-6 h-6 sm:w-6 sm:h-6" />
-            <h1 className="text-xl font-bold tracking-tight">Masar</h1>
+            <Logo className="w-5 h-5 brightness-0 dark:invert" />
+            <h1 className="text-base font-black tracking-tight">Masar</h1>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4">
             <div className="space-y-1">
-              <div className="flex items-center justify-between mb-1">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="flex items-center justify-between px-1">
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   Workspace
                 </Label>
                 <Tooltip>
@@ -166,26 +179,30 @@ export default function MainContent({ session }: { session: Session }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5"
+                      className="h-4 w-4 rounded-sm"
                       onClick={handleCreateProject}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>New Project</TooltipContent>
+                  <TooltipContent className="text-xs">
+                    New Project
+                  </TooltipContent>
                 </Tooltip>
               </div>
               <Select
                 value={activeProjectId || "all"}
                 onValueChange={(v) => navigate(`/projects/${v}`)}
               >
-                <SelectTrigger className="w-full bg-background shadow-sm h-9 text-sm">
+                <SelectTrigger className="w-full bg-background/50 border-border/60 shadow-none h-8 text-xs focus:ring-1 focus:ring-primary/30">
                   <SelectValue placeholder="Select Project" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Projects</SelectItem>
+                  <SelectItem value="all" className="text-xs">
+                    All Projects
+                  </SelectItem>
                   {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
+                    <SelectItem key={p.id} value={p.id} className="text-xs">
                       {p.name}
                     </SelectItem>
                   ))}
@@ -194,107 +211,113 @@ export default function MainContent({ session }: { session: Session }) {
             </div>
 
             {activeProjectId && activeProjectId !== "all" && (
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+              <div className="space-y-0.5">
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1 block">
                   Views
                 </Label>
                 <Button
                   variant={viewMode === "dashboard" ? "secondary" : "ghost"}
-                  className="w-full justify-start text-sm"
+                  className={`w-full justify-start text-xs h-8 px-2 ${viewMode === "dashboard" ? "bg-muted/80 text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => setViewMode("dashboard")}
                 >
-                  <LayoutDashboard className="mr-3 h-4 w-4" /> Dashboard
+                  <LayoutDashboard className="mr-2 h-3.5 w-3.5" /> Dashboard
                 </Button>
                 <Button
                   variant={viewMode === "list" ? "secondary" : "ghost"}
-                  className="w-full justify-start text-sm"
+                  className={`w-full justify-start text-xs h-8 px-2 ${viewMode === "list" ? "bg-muted/80 text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => setViewMode("list")}
                 >
-                  <LayoutList className="mr-3 h-4 w-4" /> List
+                  <LayoutList className="mr-2 h-3.5 w-3.5" /> List
                 </Button>
                 <Button
                   variant={viewMode === "board" ? "secondary" : "ghost"}
-                  className="w-full justify-start text-sm"
+                  className={`w-full justify-start text-xs h-8 px-2 ${viewMode === "board" ? "bg-muted/80 text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => setViewMode("board")}
                 >
-                  <KanbanSquare className="mr-3 h-4 w-4" /> Board
+                  <KanbanSquare className="mr-2 h-3.5 w-3.5" /> Board
+                </Button>
+                {/* <-- Node Graph View Link --> */}
+                <Button
+                  variant={viewMode === "node" ? "secondary" : "ghost"}
+                  className={`w-full justify-start text-xs h-8 px-2 ${viewMode === "node" ? "bg-muted/80 text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setViewMode("node")}
+                >
+                  <Network className="mr-2 h-3.5 w-3.5" /> Node Graph
                 </Button>
               </div>
             )}
           </div>
 
-          <div className="p-4 border-t border-border space-y-1 bg-muted/10">
+          <div className="p-3 border-t border-border/40 space-y-0.5 bg-muted/5">
             {activeProjectId && activeProjectId !== "all" && (
               <>
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
                   onClick={() => setIsCollaborationOpen(true)}
                 >
-                  <Users className="mr-3 h-4 w-4" /> Team
+                  <Users className="mr-2 h-3.5 w-3.5" /> Team
                 </Button>
                 {canManage && (
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-sm"
+                    className="w-full justify-start text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
                     onClick={() =>
                       navigate(`/projects/${activeProjectId}/settings`)
                     }
                   >
-                    <Settings className="mr-3 h-4 w-4" /> Project Settings
+                    <Settings className="mr-2 h-3.5 w-3.5" /> Project Settings
                   </Button>
                 )}
               </>
             )}
             <Button
               variant="ghost"
-              className="w-full justify-start text-sm"
+              className="w-full justify-start text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
               onClick={() => setIsSettingsOpen(true)}
             >
-              <Settings className="mr-3 h-4 w-4" /> App Settings
+              <Settings className="mr-2 h-3.5 w-3.5" /> App Settings
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-sm"
+              className="w-full justify-start text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
               onClick={() => setIsDarkMode(!isDarkMode)}
             >
               {isDarkMode ? (
-                <Sun className="mr-3 h-4 w-4" />
+                <Sun className="mr-2 h-3.5 w-3.5" />
               ) : (
-                <Moon className="mr-3 h-4 w-4" />
+                <Moon className="mr-2 h-3.5 w-3.5" />
               )}{" "}
               Theme
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="w-full justify-start text-xs h-8 px-2 text-destructive/80 hover:bg-destructive/5 hover:text-destructive"
               onClick={() => supabase.auth.signOut()}
             >
-              <LogOut className="mr-3 h-4 w-4" /> Sign out
+              <LogOut className="mr-2 h-3.5 w-3.5" /> Sign out
             </Button>
           </div>
         </aside>
 
-        {/* --- MAIN CONTENT --- */}
+        {/* --- MAIN CONTENT (Sleek Viewport) --- */}
         <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
           {/* Mobile Header */}
-          <header className="md:hidden h-14 border-b border-border flex items-center justify-between px-4 bg-card/50 backdrop-blur-md z-10 shrink-0">
+          <header className="md:hidden h-12 border-b border-border/40 flex items-center justify-between px-3 bg-card/20 backdrop-blur-md z-10 shrink-0">
             <div
               className="flex items-center gap-2"
               onClick={() => navigate("/projects/all")}
             >
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-                <Logo />
-              </div>
-              <h1 className="text-lg font-bold tracking-tight">Masar</h1>
+              <Logo className="w-4 h-4" />
+              <h1 className="text-sm font-bold tracking-tight">Masar</h1>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8">
-                  <Menu className="h-4 w-4" />
+                <Button variant="outline" size="icon" className="h-7 w-7">
+                  <Menu className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-48 text-xs">
                 <DropdownMenuItem onClick={() => navigate("/projects/all")}>
                   All Projects
                 </DropdownMenuItem>
@@ -302,19 +325,22 @@ export default function MainContent({ session }: { session: Session }) {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setViewMode("dashboard")}>
-                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                      <LayoutDashboard className="mr-2 h-3.5 w-3.5" /> Dashboard
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setViewMode("list")}>
-                      <LayoutList className="mr-2 h-4 w-4" /> List
+                      <LayoutList className="mr-2 h-3.5 w-3.5" /> List
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setViewMode("board")}>
-                      <KanbanSquare className="mr-2 h-4 w-4" /> Board
+                      <KanbanSquare className="mr-2 h-3.5 w-3.5" /> Board
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setViewMode("node")}>
+                      <Network className="mr-2 h-3.5 w-3.5" /> Node Graph
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => setIsCollaborationOpen(true)}
                     >
-                      <Users className="mr-2 h-4 w-4" /> Team
+                      <Users className="mr-2 h-3.5 w-3.5" /> Team
                     </DropdownMenuItem>
                     {canManage && (
                       <DropdownMenuItem
@@ -322,71 +348,76 @@ export default function MainContent({ session }: { session: Session }) {
                           navigate(`/projects/${activeProjectId}/settings`)
                         }
                       >
-                        <Settings className="mr-2 h-4 w-4" /> Project Settings
+                        <Settings className="mr-2 h-3.5 w-3.5" /> Project
+                        Settings
                       </DropdownMenuItem>
                     )}
                   </>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
-                  <Settings className="mr-2 h-4 w-4" /> App Settings
+                  <Settings className="mr-2 h-3.5 w-3.5" /> App Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsDarkMode(!isDarkMode)}>
                   {isDarkMode ? (
-                    <Sun className="mr-2 h-4 w-4" />
+                    <Sun className="mr-2 h-3.5 w-3.5" />
                   ) : (
-                    <Moon className="mr-2 h-4 w-4" />
+                    <Moon className="mr-2 h-3.5 w-3.5" />
                   )}{" "}
-                  Toggle Theme
+                  Theme
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => supabase.auth.signOut()}
-                  className="text-destructive"
+                  className="text-destructive text-xs"
                 >
-                  <LogOut className="mr-2 h-4 w-4" /> Sign out
+                  <LogOut className="mr-2 h-3.5 w-3.5" /> Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
 
-          {/* Desktop Top Content Bar */}
-          <header className="h-16 hidden md:flex items-center justify-between px-6 border-b border-border shrink-0 z-10 bg-background/50 backdrop-blur-sm">
-            <div className="flex items-center gap-4">
-              <h2 className="text-xl font-bold tracking-tight">
+          {/* Desktop Compact Header (h-12) */}
+          <header className="h-12 hidden md:flex items-center justify-between px-4 border-b border-border/40 shrink-0 z-10 bg-background/30 backdrop-blur-xs">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-semibold tracking-tight text-foreground/90">
                 {activeProjectId === "all"
                   ? "All Tasks"
                   : projects.find((p) => p.id === activeProjectId)?.name ||
                     "Project"}
               </h2>
               {activeProjectId !== "all" && (
-                <ProjectMembersAvatars projectId={activeProjectId!} />
+                <>
+                  <div className="h-3 w-px bg-border/40" />
+                  <ProjectMembersAvatars projectId={activeProjectId!} />
+                </>
               )}
             </div>
 
             {activeProjectId && activeProjectId !== "all" && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Button
                   onClick={() => setIsInsightsOpen(true)}
                   size="sm"
                   variant="secondary"
-                  className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 shadow-sm"
+                  className="h-7 px-2.5 text-xs bg-primary/5 text-primary hover:bg-primary/10 border border-primary/15 shadow-2xs"
                 >
-                  <Sparkles className="h-4 w-4 sm:mr-2" />{" "}
+                  <Sparkles className="h-3 w-3 sm:mr-1.5" />{" "}
                   <span className="hidden sm:inline">AI Insights</span>
                 </Button>
                 <Button
                   onClick={() => setIsCreateTaskOpen(true)}
                   size="sm"
-                  className="shadow-md shadow-primary/25"
+                  className="h-7 px-2.5 text-xs shadow-2xs font-semibold"
                 >
-                  <Plus className="h-4 w-4 sm:mr-2" />{" "}
+                  <Plus className="h-3 w-3 sm:mr-1.5" />{" "}
                   <span className="hidden sm:inline">New Task</span>
                 </Button>
               </div>
             )}
           </header>
 
-          <div className="flex-1 overflow-hidden p-4 sm:p-6">
+          {/* High Density Padding Container (p-3 sm:p-4) */}
+          <div className="flex-1 overflow-hidden p-3 sm:p-4">
             <Routes>
               <Route
                 path="settings"
@@ -394,7 +425,7 @@ export default function MainContent({ session }: { session: Session }) {
                   <Suspense
                     fallback={
                       <div className="flex h-full items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
                       </div>
                     }
                   >
@@ -409,10 +440,11 @@ export default function MainContent({ session }: { session: Session }) {
                     <Suspense
                       fallback={
                         <div className="flex h-full items-center justify-center">
-                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
                         </div>
                       }
                     >
+                      {/* View Output Routing logic */}
                       {viewMode === "dashboard" ? (
                         <DashboardView projectId={activeProjectId} />
                       ) : viewMode === "list" ? (
@@ -420,8 +452,13 @@ export default function MainContent({ session }: { session: Session }) {
                           projectId={activeProjectId}
                           onTaskClick={handleTaskClick}
                         />
-                      ) : (
+                      ) : viewMode === "board" ? (
                         <BoardView
+                          projectId={activeProjectId}
+                          onTaskClick={handleTaskClick}
+                        />
+                      ) : (
+                        <NodeView
                           projectId={activeProjectId}
                           onTaskClick={handleTaskClick}
                         />
@@ -431,8 +468,8 @@ export default function MainContent({ session }: { session: Session }) {
                     <div className="flex-1 flex items-center justify-center h-full">
                       <EmptyState
                         icon={Sparkles}
-                        title="Ready to start your path?"
-                        description="You don't have any projects yet. Initialize a workspace to start managing tasks with AI-driven precision."
+                        title="Initialize Workspace"
+                        description="You don't have any projects yet. Create a project to start planning with AI."
                         actionLabel="Create Project"
                         onAction={handleCreateProject}
                         secondaryActionLabel="Try AI Demo"
@@ -441,7 +478,7 @@ export default function MainContent({ session }: { session: Session }) {
                             "Ask the AI Agent in the bottom right to 'Build a marketing plan'!",
                           )
                         }
-                        className="max-w-2xl w-full border-none bg-transparent"
+                        className="max-w-md w-full border-none bg-transparent"
                       />
                     </div>
                   )

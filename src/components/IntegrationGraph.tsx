@@ -1,114 +1,99 @@
 // src/components/IntegrationGraph.tsx
-import { motion, AnimatePresence } from "motion/react";
-import { Plus, Bot, Code2, Box } from "lucide-react";
-import { useState } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { Bot, Code2, Database, Network, Sparkles, Zap } from "lucide-react";
+import { useRef, useMemo } from "react";
+import type { ElementType, CSSProperties } from "react";
 
 // ----------------------------------------------------------------------
-// CUSTOM ICONS
+// DATA & THEMATIC COLOR PALETTE (Muted, Professional Tech Colors)
 // ----------------------------------------------------------------------
-const WavesIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 6c.6 0 1.2-.2 1.8-.6L5.4 4C6.5 3.3 7.8 3 9 3s2.5.3 3.6 1l1.6 1.4c.6.4 1.2.6 1.8.6s1.2-.2 1.8-.6L19.4 4c1.1-.7 2.4-1 3.6-1" />
-    <path d="M2 12c.6 0 1.2-.2 1.8-.6L5.4 10c1.1-.7 2.4-1 3.6-1s2.5.3 3.6 1l1.6 1.4c.6.4 1.2.6 1.8.6s1.2-.2 1.8-.6L19.4 10c1.1-.7 2.4-1 3.6-1" />
-    <path d="M2 18c.6 0 1.2-.2 1.8-.6L5.4 16c1.1-.7 2.4-1 3.6-1s2.5.3 3.6 1l1.6 1.4c.6.4 1.2.6 1.8.6s1.2-.2 1.8-.6L19.4 16c1.1-.7 2.4-1 3.6-1" />
-  </svg>
-);
-
-const NetworkIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="10" y="3" width="4" height="4" rx="1" />
-    <rect x="5" y="17" width="4" height="4" rx="1" />
-    <rect x="15" y="17" width="4" height="4" rx="1" />
-    <path d="M12 7v4" />
-    <path d="M7 11h10" />
-    <path d="M7 11v6" />
-    <path d="M17 11v6" />
-  </svg>
-);
-
-const SparkleIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 0C12.5 7 17 11.5 24 12C17 12.5 12.5 17 12 24C11.5 17 7 12.5 0 12C7 11.5 11.5 7 12 0Z" />
-  </svg>
-);
-
-// ----------------------------------------------------------------------
-// DATA
-// ----------------------------------------------------------------------
-const endpoints = [150, 383.33, 616.66, 850];
+const endpoints = [160, 320, 480, 640] as const;
 
 const bottomNodesData = [
   {
     icon: Bot,
     title: "AI Agents",
-    description: "Autonomous task delegation and execution."
+    description: "Autonomous task delegation",
+    color: "#0284c7", // Slate Cyan
   },
   {
     icon: Code2,
     title: "Edge Functions",
-    description: "Low-latency serverless computation."
+    description: "Low-latency computation",
+    color: "#6366f1", // Indigo
   },
   {
-    icon: Box,
+    icon: Database,
     title: "Realtime DB",
-    description: "Instantaneous Postgres synchronization."
+    description: "Postgres synchronization",
+    color: "#0f766e", // Deep Teal
   },
   {
-    icon: WavesIcon,
+    icon: Zap,
     title: "Streamed Data",
-    description: "Lightning fast NDJSON payloads."
-  }
-];
+    description: "NDJSON event payloads",
+    color: "#f59e0b", // Soft Amber
+  },
+] as const;
 
 // ----------------------------------------------------------------------
-// SUB-COMPONENTS
+// MATH & HELPERS (Elegant Symmetric S-Curve)
 // ----------------------------------------------------------------------
-function BottomMorphNode({ x, delay, node }: { x: number; delay: number; node: typeof bottomNodesData[0] }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const Icon = node.icon;
+function generatePath(startX: number, startY: number, endX: number, endY: number) {
+  const midY = startY + (endY - startY) * 0.5;
+  return `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+}
+
+// ----------------------------------------------------------------------
+// SUB-COMPONENTS (Performance Tuned with CSS Variables)
+// ----------------------------------------------------------------------
+interface BottomNodeProps {
+  x: number;
+  y: number;
+  delay: number;
+  node: typeof bottomNodesData[number];
+}
+
+function BottomNode({ x, y, delay, node }: BottomNodeProps) {
+  const Icon = node.icon as ElementType;
+
+  // Utilize CSS Variables to manage styles declaratively, avoiding DOM manipulation overhead
+  const nodeStyles = {
+    "--node-color": node.color,
+    "--node-color-fade": `${node.color}15`,
+    transformStyle: "preserve-3d" as const,
+    transform: "translateZ(30px)",
+  } as CSSProperties;
 
   return (
-    <foreignObject x={x - 100} y="250" width="200" height="160" className="overflow-visible">
-      {/* Mount animation wrapper */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay, type: "spring", stiffness: 200 }}
-        className="w-full flex justify-center"
+    <foreignObject x={x - 75} y={y} width="150" height="130" className="overflow-visible">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6, delay, type: "spring", stiffness: 180, damping: 20 }}
+        style={nodeStyles}
+        className="w-full flex flex-col items-center text-center group cursor-default"
       >
-        <motion.div
-          onHoverStart={() => setIsHovered(true)}
-          onHoverEnd={() => setIsHovered(false)}
-          layout
-          initial={{ borderRadius: 32, width: 64, height: 64 }}
-          animate={{
-            borderRadius: isHovered ? 16 : 32,
-            width: isHovered ? 172 : 64,
-            height: isHovered ? 136 : 64, // Comfortable text and padding height
-          }}
-          transition={{ type: "spring", stiffness: 350, damping: 25 }}
-          className="flex flex-col items-center justify-start overflow-hidden border border-border dark:border-white/10 bg-card/60 dark:bg-white/[0.03] backdrop-blur-xl shadow-xl hover:border-primary/50 dark:hover:border-primary/50 hover:bg-muted/50 dark:hover:bg-white/[0.08] hover:shadow-[0_0_24px_rgba(255,255,255,0.1)] transition-colors cursor-pointer group"
+        {/* Ambient Underglow */}
+        <div 
+          className="absolute top-6 w-12 h-12 rounded-full blur-[20px] opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"
+          style={{ backgroundColor: "var(--node-color)", transform: "translateZ(-30px)" }}
+        />
+
+        {/* Node Icon Box */}
+        <div 
+          className="relative w-12 h-12 rounded-2xl bg-card/60 border border-border/50 backdrop-blur-2xl shadow-md flex items-center justify-center mb-3 transition-all duration-300 ease-out group-hover:-translate-y-1.5 z-10 overflow-hidden border-solid group-hover:border-[var(--node-color)] group-hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] group-hover:bg-[var(--node-color-fade)]"
         >
-          {/* Top fixed area containing the icon */}
-          <motion.div layout className="flex items-center justify-center w-[64px] h-[64px] shrink-0">
-            <Icon className="w-6 h-6 text-muted-foreground group-hover:text-primary dark:group-hover:text-white transition-colors duration-300" />
-          </motion.div>
-          
-          {/* Expandable text area */}
-          <AnimatePresence>
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, filter: "blur(4px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -10, filter: "blur(4px)", transition: { duration: 0.15 } }}
-                className="px-4 pb-5 text-center w-full"
-              >
-                <h4 className="text-sm font-bold text-foreground mb-1 whitespace-nowrap">{node.title}</h4>
-                <p className="text-[10px] text-muted-foreground leading-tight">{node.description}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          <Icon 
+            className="w-5 h-5 text-muted-foreground group-hover:text-[var(--node-color)] transition-colors duration-300" 
+          />
+        </div>
+
+        {/* Text Area */}
+        <div className="space-y-0.5 relative z-10 transition-transform duration-300 group-hover:-translate-y-0.5">
+          <h4 className="text-[11px] font-bold text-foreground tracking-tight">{node.title}</h4>
+          <p className="text-[9px] text-muted-foreground leading-normal px-2 font-medium">{node.description}</p>
+        </div>
       </motion.div>
     </foreignObject>
   );
@@ -118,99 +103,179 @@ function BottomMorphNode({ x, delay, node }: { x: number; delay: number; node: t
 // MAIN COMPONENT
 // ----------------------------------------------------------------------
 export function IntegrationGraph() {
-  const [isTopHovered, setIsTopHovered] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Parallax Mouse Tracking
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Balanced, mature 3D rotation limits (4 degrees max)
+  const rotateX = useTransform(useSpring(mouseY, { stiffness: 120, damping: 25 }), [-0.5, 0.5], ["4deg", "-4deg"]);
+  const rotateY = useTransform(useSpring(mouseX, { stiffness: 120, damping: 25 }), [-0.5, 0.5], ["-4deg", "4deg"]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  const basePaths = useMemo(() => {
+    return endpoints.map(endX => generatePath(400, 50, endX, 150));
+  }, []);
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto h-auto aspect-[1000/430] sm:aspect-auto sm:h-[450px] select-none bg-card/30 dark:bg-black/40 backdrop-blur-xl border border-border/80 dark:border-white/5 rounded-lg shadow-xl p-4 sm:p-8">
-      <svg viewBox="0 0 1000 430" className="w-full h-auto">
+    <div 
+      className="relative w-full max-w-4xl mx-auto py-6 sm:py-10 perspective-[1000px]"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <motion.div 
+        ref={containerRef}
+        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        className="w-full select-none bg-card/10 dark:bg-black/10 backdrop-blur-3xl border border-border/40 dark:border-white/10 rounded-2xl shadow-xl p-4 sm:p-8 overflow-visible relative group"
+      >
+        {/* Crisp Geometric Grid (Subtle low-contrast grid) */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_srgb,var(--border)_15%,transparent)_1px,transparent_1px)] bg-[size:24px_24px] rounded-2xl opacity-20 pointer-events-none" />
         
-        {/* Main Central Trunk */}
-        <line 
-          x1="500" y1="125" 
-          x2="500" y2="180" 
-          stroke="currentColor" strokeWidth="1.5" 
-          className="text-border dark:text-white/10"
-        />
-        
-        {/* Horizontal Bus Line */}
-        <line 
-          x1={endpoints[0]} y1="180" 
-          x2={endpoints[3]} y2="180" 
-          stroke="currentColor" strokeWidth="1.5" 
-          className="text-border dark:text-white/10"
-        />
+        {/* Soft, professional background glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[350px] h-[150px] bg-primary/5 blur-[80px] rounded-full pointer-events-none -z-10" />
 
-        {/* Vertical drops to Bottom Nodes */}
-        {endpoints.map((x, i) => (
-          <g key={`drop-${i}`}>
-            <line 
-              x1={x} 
-              y1="180" 
-              x2={x} 
-              y2="250" 
-              stroke="currentColor" strokeWidth="1.5" 
-              className="text-border dark:text-white/10"
+        <svg viewBox="0 0 800 260" className="w-full h-auto overflow-visible relative z-10" style={{ transformStyle: "preserve-3d" }}>
+          <defs>
+            <linearGradient id="line-base" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="var(--color-border)" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="var(--color-border)" stopOpacity="0.05" />
+            </linearGradient>
+            
+            <filter id="clean-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+
+            {/* Individual Comet Tail Gradients */}
+            {bottomNodesData.map((node, i) => (
+              <linearGradient key={`tail-${i}`} id={`comet-tail-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={node.color} stopOpacity="0" />
+                <stop offset="100%" stopColor={node.color} stopOpacity="0.8" />
+              </linearGradient>
+            ))}
+          </defs>
+
+          {/* Central Pulsating Ring (Muted radar effect) */}
+          <g transform="translate(400, 35)">
+            <circle cx="0" cy="0" r="24" fill="none" stroke="var(--color-primary)" strokeWidth="1" className="opacity-10" />
+            <motion.circle
+              cx="0"
+              cy="0"
+              r="24"
+              fill="none"
+              stroke="var(--color-primary)"
+              strokeWidth="1"
+              initial={{ scale: 1, opacity: 0.3 }}
+              animate={{ scale: 1.8, opacity: 0 }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeOut",
+              }}
             />
           </g>
-        ))}
 
-        {/* --- TOP INTEGRATION NODE (MORPHING) --- */}
-        <foreignObject x="300" y="0" width="400" height="125" className="overflow-visible">
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="relative w-full h-full"
-          >
+          {/* Connection Paths & Smooth Particle Pipelines */}
+          {basePaths.map((pathD, i) => {
+            const color = bottomNodesData[i].color;
+            const duration = 2.8 + i * 0.2; // Staggered slightly to avoid synchronized grouping
+
+            return (
+              <g key={`path-group-${i}`} style={{ transformStyle: "preserve-3d" }}>
+                {/* Clean Base Connector */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="url(#line-base)"
+                  strokeWidth="1.5"
+                />
+                
+                {/* Moving Data Comets */}
+                <g filter="url(#clean-glow)" style={{ transform: "translateZ(10px)" }}>
+                  {/* Trail gradient */}
+                  <path 
+                    d="M -30 0 L 0 0" 
+                    stroke={`url(#comet-tail-${i})`} 
+                    strokeWidth="2.5" 
+                    strokeLinecap="round" 
+                  />
+                  {/* Clean colored head */}
+                  <circle cx="0" cy="0" r="2.5" fill={color} />
+                  
+                  {/* Hardware-accelerated motion along vector paths */}
+                  <animateMotion
+                    dur={`${duration}s`}
+                    repeatCount="indefinite"
+                    path={pathD}
+                    rotate="auto"
+                    calcMode="spline"
+                    keySplines="0.25 1 0.5 1"
+                    keyTimes="0;1"
+                  />
+                  <animate 
+                    attributeName="opacity" 
+                    values="0;1;1;0" 
+                    keyTimes="0;0.1;0.9;1" 
+                    dur={`${duration}s`} 
+                    repeatCount="indefinite" 
+                  />
+                </g>
+              </g>
+            );
+          })}
+
+          {/* --- TOP PIPELINE ENGINE NODE --- */}
+          <foreignObject x="250" y="5" width="300" height="70" className="overflow-visible">
             <motion.div
-              onHoverStart={() => setIsTopHovered(true)}
-              onHoverEnd={() => setIsTopHovered(false)}
-              layout
-              initial={{ borderRadius: 48, width: 260, height: 85 }}
-              animate={{
-                borderRadius: isTopHovered ? 24 : 48,
-                width: isTopHovered ? 340 : 260,
-                height: isTopHovered ? 135 : 85,
-              }}
-              transition={{ type: "spring", stiffness: 350, damping: 25 }}
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col justify-start items-center overflow-hidden border border-border dark:border-white/10 bg-card/60 dark:bg-white/[0.03] backdrop-blur-xl shadow-2xl cursor-pointer group hover:border-primary/50 dark:hover:border-primary/50"
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.8, type: "spring", stiffness: 150 }}
+              style={{ transformStyle: "preserve-3d", transform: "translateZ(50px)" }}
+              className="w-[220px] mx-auto h-11 bg-card border border-border/80 backdrop-blur-2xl rounded-full flex items-center justify-between px-3 cursor-default group/engine relative"
             >
-              {/* Default Pill Header */}
-              <motion.div layout className="flex items-center gap-4 sm:gap-5 px-3.5 h-[85px] w-[260px] shrink-0 justify-center">
-                <div className="bg-[#F8F9FA] text-black w-12 h-12 rounded-md flex items-center justify-center shadow-[0_0_24px_rgba(255,255,255,0.25)] shrink-0">
-                  <SparkleIcon />
-                </div>
-                
-                <Plus className="text-muted-foreground/60 w-4.5 h-4.5 stroke-[3] shrink-0" />
-                
-                <div className="bg-muted dark:bg-[#111111]/90 border border-border dark:border-white/5 text-foreground/85 dark:text-white/90 w-12 h-12 rounded-md flex items-center justify-center shadow-inner shrink-0">
-                  <NetworkIcon />
-                </div>
-              </motion.div>
-
-              {/* Expanded Description */}
-              <AnimatePresence>
-                {isTopHovered && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, y: -10, filter: "blur(4px)", transition: { duration: 0.15 } }}
-                    className="px-6 pb-5 text-center w-full"
-                  >
-                    <h4 className="text-sm font-bold text-foreground mb-1">Orchestration Engine</h4>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                <Network className="w-4 h-4 text-primary" />
+              </div>
+              
+              <span className="text-[12px] font-bold tracking-tight text-foreground/90">
+                Orchestration Pipeline
+              </span>
+              
+              <div className="w-7 h-7 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500/80 group-hover/engine:scale-110 transition-transform duration-300" />
+              </div>
             </motion.div>
-          </motion.div>
-        </foreignObject>
+          </foreignObject>
 
-        {/* --- BOTTOM NODES --- */}
-        {endpoints.map((x, i) => (
-          <BottomMorphNode key={`node-${i}`} x={x} delay={1 + i * 0.1} node={bottomNodesData[i]} />
-        ))}
-
-      </svg>
+          {/* --- BOTTOM ENDPOINT NODES --- */}
+          {endpoints.map((x, i) => (
+            <BottomNode
+              key={`node-${i}`}
+              x={x}
+              y={150}
+              delay={0.3 + i * 0.12}
+              node={bottomNodesData[i]}
+            />
+          ))}
+        </svg>
+      </motion.div>
     </div>
   );
 }

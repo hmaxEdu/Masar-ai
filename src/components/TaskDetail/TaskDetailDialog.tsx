@@ -1,17 +1,14 @@
-// src/components/TaskDetailDialog.tsx (moved to task-detail folder? but keep original location)
+// src/components/TaskDetail/TaskDetailDialog.tsx
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { masarActions, useDependencies, useTask, useTasks } from "@/hooks/use-masar";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
-import { TaskHeader } from "./TaskHeader";
+import TaskHeader from "./TaskHeader";
 import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
 import { SubtaskList } from "./SubtaskList";
 import { TaskMetadata } from "./TaskMetadata";
 import { TaskActionsFooter } from "./TaskActionsFooter";
-
-// Actually we need recursive nesting for subtask editing. We'll keep the dialog inside the same file but simplified.
-// Better: use the same component recursively. We'll keep a separate inner component to avoid circular imports.
 
 export default function TaskDetailDialog({
   taskId,
@@ -64,7 +61,7 @@ export default function TaskDetailDialog({
 
   const handleSubtaskStatusChange = async (subtaskId: string, newStatus: "To Do" | "Done") => {
     const oldStatus = allTasks.find((t) => t.id === subtaskId)?.status;
-    if (!oldStatus) return; // Guard clause guarantees oldStatus is typed as TaskStatus
+    if (!oldStatus) return;
 
     setAllTasks((prev) =>
       prev.map((t) => (t.id === subtaskId ? { ...t, status: newStatus } : t))
@@ -88,10 +85,10 @@ export default function TaskDetailDialog({
     if (!isOpen) return null;
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden">
-          <div className="p-6 space-y-6">
-            <Skeleton className="h-8 w-1/3" />
-            <Skeleton className="h-[200px] w-full" />
+        <DialogContent className="max-w-[420px] p-4 flex flex-col overflow-hidden">
+          <div className="space-y-4">
+            <Skeleton className="h-5 w-1/3" />
+            <Skeleton className="h-[120px] w-full" />
           </div>
         </DialogContent>
       </Dialog>
@@ -103,11 +100,11 @@ export default function TaskDetailDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="min-w-[900px] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
-          <motion.div className="flex-1 overflow-y-auto p-6">
+        <DialogContent className="sm:max-w-[760px] md:max-w-[820px] max-h-[85vh] overflow-hidden flex flex-col p-4 gap-0">
+          <motion.div className="flex-1 overflow-y-auto pr-1">
             <TaskHeader task={task} onUpdate={handleUpdate} />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="md:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="md:col-span-2 space-y-4">
                 <TaskDescriptionEditor description={task.description} onChange={(desc) => handleUpdate({ description: desc })} />
                 <SubtaskList
                   task={task}
@@ -133,7 +130,7 @@ export default function TaskDetailDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Recursive nested task dialog */}
+      {/* Recursive nested subtask dialog */}
       {editingChildId !== null && (
         <TaskDetailDialog
           taskId={editingChildId}
