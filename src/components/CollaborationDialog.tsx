@@ -1,15 +1,15 @@
 // src/components/CollaborationDialog.tsx
-import { useState, useEffect } from 'react';
-import { useProjectMembers, collaborationActions } from '@/hooks/use-masar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, UserX, Shield, ShieldAlert, ShieldCheck, Search, Loader2, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { type ProjectRole, type Profile } from '@/lib/supabase';
+import { collaborationActions, useProjectMembers } from '@/hooks/use-masar';
+import { type Profile, type ProjectRole } from '@/lib/supabase';
+import { Loader2, Search, Shield, ShieldAlert, ShieldCheck, UserPlus, UserX } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useState } from 'react';
 
 interface CollaborationDialogProps {
   projectId: string;
