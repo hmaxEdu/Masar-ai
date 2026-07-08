@@ -19,15 +19,15 @@ export function MarqueeTicker() {
     { src: nokiaLogo, alt: "Nokia" },
     { src: githubLogo, alt: "Github" },
     { src: hpLogo, alt: "HP" },
-
   ];
 
   return (
-    <div className="w-full overflow-hidden flex py-8 relative z-10 border-y border-border/40 bg-muted/10 backdrop-blur-md mt-24">
+    <div className="w-full overflow-hidden flex py-8 relative z-10 border-y border-border/40 bg-muted/10 backdrop-blur-md mt-24 group">
       <motion.div
         animate={{ x: ["0%", "-50%"] }}
         transition={{ duration: 40, ease: "linear", repeat: Infinity }}
-        className="flex whitespace-nowrap gap-16 px-6"
+        // FIX: Pause animation on hover to comply with WCAG 2.2.2 requirements
+        className="flex whitespace-nowrap gap-16 px-6 hover:[animation-play-state:paused]"
       >
         {/* Tripled list ensures seamless looping on ultra-wide screens */}
         {[...items, ...items, ...items].map((item, i) => (
@@ -37,7 +37,9 @@ export function MarqueeTicker() {
           >
             <img
               src={item.src}
-              alt={item.alt}
+              // FIX: Explicitly mark purely decorative duplicated tracking logos so screen readers don't read them endlessly
+              alt=""
+              aria-hidden="true"
               className="h-6 sm:h-7 w-auto object-contain brightness-0 dark:invert opacity-60 hover:opacity-100 transition-opacity duration-300"
               draggable="false"
             />

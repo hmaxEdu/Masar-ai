@@ -416,9 +416,7 @@ export default function FeaturesPage() {
             transition={{ duration: 0.4 }}
             className="space-y-4"
           >
-            <div className="inline-flex items-center justify-center p-2.5 bg-blue-500/10 rounded-md text-blue-500 mb-1 border border-blue-500/20">
-              <Bot className="h-5 w-5" />
-            </div>
+            
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-tight">
               Actionable AI Workspaces
             </h2>

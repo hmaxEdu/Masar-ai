@@ -85,13 +85,11 @@ export default function AIAgent({ projectId }: { projectId: string }) {
   const handleSend = async (text: string, files: any[]) => {
     if ((!text.trim() && files.length === 0) || isLoading) return;
 
-    // Process uploaded images: get base64 portion
     const base64Images = files
       .filter(f => f.mediaType?.startsWith('image/'))
-      .map(f => f.url?.split(',')[1]) // extract base64 from data URL
+      .map(f => f.url?.split(',')[1])
       .filter(Boolean);
 
-    // FIX: Context Bloat - Only send active/relevant tasks, limited to 100 to prevent token/payload explosion
     const activeTasksContext = tasks
       .filter(t => t.status !== 'Done')
       .slice(0, 100)
@@ -115,12 +113,9 @@ export default function AIAgent({ projectId }: { projectId: string }) {
     };
 
     const userMsg: any = { role: 'user', content: text };
-    if (base64Images.length > 0) {
-      userMsg.images = base64Images;
-    }
+    if (base64Images.length > 0) userMsg.images = base64Images;
 
     let currentHistory = [...messages, userMsg];
-
     setMessages(currentHistory);
     setIsLoading(true);
     setAgentStatus("Thinking...");
@@ -131,23 +126,15 @@ export default function AIAgent({ projectId }: { projectId: string }) {
 
       while (!isAgentDone && loopCount < 5) {
         loopCount++;
-        
         let currentContent = "";
         let currentToolCalls: any[] = [];
         
-        // Push a placeholder message for the assistant stream
         setMessages(prev => [...prev, { role: 'assistant', content: '', tool_calls: [] }]);
-        
-        // Consume the stream
         const stream = streamAgentTurn([systemMessage, ...currentHistory]);
         
         for await (const chunk of stream) {
-          if (chunk.message?.content) {
-            currentContent += chunk.message.content;
-          }
-          if (chunk.message?.tool_calls) {
-             currentToolCalls = chunk.message.tool_calls;
-          }
+          if (chunk.message?.content) currentContent += chunk.message.content;
+          if (chunk.message?.tool_calls) currentToolCalls = chunk.message.tool_calls;
           
           setMessages(prev => {
              const newMsgs = [...prev];
@@ -185,16 +172,14 @@ export default function AIAgent({ projectId }: { projectId: string }) {
                     priority: t.priority || 3, 
                     status: 'To Do', 
                     started_at: new Date().toISOString(),
-                    parent_id: t.parentId // Support for sub-tasks
+                    parent_id: t.parentId
                   });
                   if (res.data) created.push({ id: res.data.id, title: t.title });
                 }
                 toolResponseContent = `Created tasks: ${JSON.stringify(created)}`;
               }
               else if (toolName === 'delete_tasks') {
-                for (const id of args.taskIds || []) {
-                  await masarActions.deleteTask(id);
-                }
+                for (const id of args.taskIds || []) await masarActions.deleteTask(id);
                 toolResponseContent = `Deleted tasks successfully.`;
               }
               else if (toolName === 'delete_task') {
@@ -249,164 +234,156 @@ export default function AIAgent({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
-      <motion.div
-        layout
-        className={`relative flex flex-col origin-bottom-right overflow-hidden transition-all duration-500 ease-in-out ${
-          isOpen 
-          ? "w-[calc(100vw-2rem)] sm:w-[420px] h-[650px] max-h-[calc(100vh-6rem)] bg-background/95 backdrop-blur-xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10 shadow-2xl rounded-md"
-          : "w-14 h-14 bg-primary text-primary-foreground cursor-pointer shadow-lg shadow-primary/30 rounded-lg"
-        }`}
-        onClick={() => !isOpen && setIsOpen(true)}
-      >
-        <AnimatePresence mode="wait">
-          {!isOpen ? (
-            <motion.div
-              key="fab"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              className="flex items-center justify-center w-full h-full"
-            >
-              <Sparkles className="h-6 w-6" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="chat"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col w-full h-full"
-            >
-              {/* Header */}
-              <div className="flex justify-between items-center px-4 py-3 border-b border-border/40 shrink-0 bg-muted/30">
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 bg-primary/10 text-primary rounded-full flex items-center justify-center border border-primary/20">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <h3 className="font-semibold text-[13px] leading-tight">Masar AI</h3>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-                      </span>
-                      {agentStatus || "Online"}
-                    </span>
-                  </div>
+    <div className="fixed z-50 font-sans pointer-events-none inset-0">
+      
+      {/* FIX: Eliminated layout prop morphing in favor of completely separate AnimatePresence modes */}
+      {/* 1. Floating Action Button State */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={() => setIsOpen(true)}
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14 bg-primary text-primary-foreground shadow-lg shadow-primary/30 rounded-full flex items-center justify-center hover:scale-105 transition-transform pointer-events-auto"
+          >
+            <Sparkles className="h-6 w-6" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* 2. Open Chat Modal State */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 w-full h-[100dvh] sm:w-[420px] sm:h-[650px] sm:max-h-[calc(100vh-6rem)] bg-background/95 backdrop-blur-xl sm:border border-border/50 sm:ring-1 ring-black/5 dark:ring-white/10 shadow-2xl flex flex-col sm:rounded-xl overflow-hidden pointer-events-auto"
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center px-4 py-3 border-b border-border/40 shrink-0 bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 bg-primary/10 text-primary rounded-full flex items-center justify-center border border-primary/20">
+                  <Sparkles className="h-4 w-4" />
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex flex-col">
+                  <h3 className="font-semibold text-[14px] sm:text-[13px] leading-tight">Masar AI</h3>
+                  <span className="text-[11px] sm:text-[10px] text-muted-foreground flex items-center gap-1.5">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                    </span>
+                    {agentStatus || "Online"}
+                  </span>
+                </div>
               </div>
+              <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-8 sm:w-8 rounded-full text-muted-foreground hover:bg-muted" onClick={() => setIsOpen(false)}>
+                <X className="h-5 w-5 sm:h-4 sm:w-4" />
+              </Button>
+            </div>
 
-              {/* Chat Area using ai-elements */}
-              <Conversation className="flex-1 bg-background/50">
-                <ConversationContent>
-                  {messages.length === 0 && (
-                    <ConversationEmptyState
-                      title="AI Project Assistant"
-                      description="I can manage your board, invite members, edit tasks, or build plans. Ask me anything!"
-                      icon={<Sparkles className="size-8 text-primary/50" />}
-                    />
-                  )}
-
-                  {messages.map((msg, idx) => {
-                    if (msg.role === 'system' || msg.role === 'tool') return null;
-                    const isUser = msg.role === 'user';
-                    const isLatestAssistant = !isUser && idx === messages.length - 1;
-
-                    return (
-                      <div key={idx} className="flex flex-col gap-2 w-full">
-                        {/* Tool Executions */}
-                        {msg.tool_calls?.map((tool: any, tIdx: number) => {
-                          const ui = ToolUI[tool.function.name] || { label: tool.function.name, icon: Wrench };
-                          return (
-                            <Tool key={tIdx} className="w-10/12 ml-4 bg-muted/30">
-                              <ToolHeader
-                                type="dynamic-tool"
-                                state={isLoading && isLatestAssistant ? "input-available" : "output-available"}
-                                toolName={ui.label}
-                                className="py-2.5 px-3"
-                              />
-                            </Tool>
-                          );
-                        })}
-
-                        {/* Standard Message */}
-                        {(msg.content || (msg.images && msg.images.length > 0)) && (
-                          <Message from={msg.role as 'user' | 'assistant'}>
-                            <MessageContent>
-                              {/* Display associated images */}
-                              {msg.images && msg.images.length > 0 && (
-                                <Attachments variant="grid" className="mt-1">
-                                  {msg.images.map((base64: string, i: number) => (
-                                    <Attachment key={i} data={{ type: 'file', mediaType: 'image/jpeg', url: '', id: `img-${i}` }}>
-                                      <Image base64={base64} mediaType="image/jpeg" uint8Array={new Uint8Array()} />
-                                    </Attachment>
-                                  ))}
-                                </Attachments>
-                              )}
-                              
-                              {/* Display text content */}
-                              {isLatestAssistant && isLoading && !msg.content ? (
-                                <Shimmer>Processing response...</Shimmer>
-                              ) : (
-                                msg.content && <MessageResponse>{msg.content}</MessageResponse>
-                              )}
-                            </MessageContent>
-                          </Message>
-                        )}
-                      </div>
-                    );
-                  })}
-                  
-                  {/* Empty Shimmer block if thinking before getting text content */}
-                  {isLoading && agentStatus === "Thinking..." && (!messages.length || messages[messages.length - 1].role === 'user') && (
-                    <Message from="assistant">
-                      <MessageContent>
-                        <Shimmer>Processing response...</Shimmer>
-                      </MessageContent>
-                    </Message>
-                  )}
-                </ConversationContent>
-                <ConversationScrollButton />
-              </Conversation>
-
-              {/* Input Area using ai-elements */}
-              <div className="p-4 bg-background border-t border-border/40 shrink-0">
-                <PromptInput
-                  accept="image/*"
-                  onSubmit={(message) => handleSend(message.text, message.files)}
-                  className="relative flex flex-col w-full overflow-hidden border border-border/50 rounded-md bg-muted/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-sm"
-                >
-                  <InputAttachments />
-                  <PromptInputTextarea 
-                    placeholder="Message Masar AI..." 
-                    className="border-none bg-transparent shadow-none focus-visible:ring-0 min-h-[44px] resize-none px-4 pt-3 pb-2 text-[13px]" 
-                    disabled={isLoading}
+            {/* Chat Area */}
+            <Conversation className="flex-1 bg-background/50">
+              <ConversationContent>
+                {messages.length === 0 && (
+                  <ConversationEmptyState
+                    title="AI Project Assistant"
+                    description="I can manage your board, invite members, edit tasks, or build plans. Ask me anything!"
+                    icon={<Sparkles className="size-8 text-primary/50" />}
                   />
-                  <PromptInputFooter className="px-2 pb-2 pt-0 justify-between items-center bg-transparent border-none shadow-none">
-                    <PromptInputActionMenu>
-                      <PromptInputActionMenuTrigger />
-                      <PromptInputActionMenuContent>
-                        <PromptInputActionAddAttachments />
-                        <PromptInputActionAddScreenshot />
-                      </PromptInputActionMenuContent>
-                    </PromptInputActionMenu>
-                    
-                    <div className="flex-1 text-xs text-muted-foreground text-right mr-2 font-medium">
-                      Press <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border/50 font-sans shadow-sm">Enter</kbd> to send
-                    </div>
-                    <PromptInputSubmit status={isLoading ? "submitted" : undefined} />
-                  </PromptInputFooter>
-                </PromptInput>
-              </div>
+                )}
 
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+                {messages.map((msg, idx) => {
+                  if (msg.role === 'system' || msg.role === 'tool') return null;
+                  const isUser = msg.role === 'user';
+                  const isLatestAssistant = !isUser && idx === messages.length - 1;
+
+                  return (
+                    <div key={idx} className="flex flex-col gap-2 w-full">
+                      {msg.tool_calls?.map((tool: any, tIdx: number) => {
+                        const ui = ToolUI[tool.function.name] || { label: tool.function.name, icon: Wrench };
+                        return (
+                          <Tool key={tIdx} className="w-10/12 ml-4 bg-muted/30">
+                            <ToolHeader
+                              type="dynamic-tool"
+                              state={isLoading && isLatestAssistant ? "input-available" : "output-available"}
+                              toolName={ui.label}
+                              className="py-2.5 px-3"
+                            />
+                          </Tool>
+                        );
+                      })}
+
+                      {(msg.content || (msg.images && msg.images.length > 0)) && (
+                        <Message from={msg.role as 'user' | 'assistant'}>
+                          <MessageContent>
+                            {msg.images && msg.images.length > 0 && (
+                              <Attachments variant="grid" className="mt-1">
+                                {msg.images.map((base64: string, i: number) => (
+                                  <Attachment key={i} data={{ type: 'file', mediaType: 'image/jpeg', url: '', id: `img-${i}` }}>
+                                    <Image base64={base64} mediaType="image/jpeg" uint8Array={new Uint8Array()} />
+                                  </Attachment>
+                                ))}
+                              </Attachments>
+                            )}
+                            
+                            {isLatestAssistant && isLoading && !msg.content ? (
+                              <Shimmer>Processing response...</Shimmer>
+                            ) : (
+                              msg.content && <MessageResponse>{msg.content}</MessageResponse>
+                            )}
+                          </MessageContent>
+                        </Message>
+                      )}
+                    </div>
+                  );
+                })}
+                
+                {isLoading && agentStatus === "Thinking..." && (!messages.length || messages[messages.length - 1].role === 'user') && (
+                  <Message from="assistant">
+                    <MessageContent>
+                      <Shimmer>Processing response...</Shimmer>
+                    </MessageContent>
+                  </Message>
+                )}
+              </ConversationContent>
+              <ConversationScrollButton />
+            </Conversation>
+
+            {/* Input Area */}
+            <div className="p-3 sm:p-4 bg-background border-t border-border/40 shrink-0">
+              <PromptInput
+                accept="image/*"
+                onSubmit={(message) => handleSend(message.text, message.files)}
+                className="relative flex flex-col w-full overflow-hidden border border-border/50 rounded-md bg-muted/30 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-sm"
+              >
+                <InputAttachments />
+                <PromptInputTextarea 
+                  placeholder="Message Masar AI..." 
+                  className="border-none bg-transparent shadow-none focus-visible:ring-0 min-h-[44px] resize-none px-4 pt-3 pb-2 text-[16px] sm:text-[13px]" 
+                  disabled={isLoading}
+                />
+                <PromptInputFooter className="px-2 pb-2 pt-0 justify-between items-center bg-transparent border-none shadow-none">
+                  <PromptInputActionMenu>
+                    <PromptInputActionMenuTrigger />
+                    <PromptInputActionMenuContent>
+                      <PromptInputActionAddAttachments />
+                      <PromptInputActionAddScreenshot />
+                    </PromptInputActionMenuContent>
+                  </PromptInputActionMenu>
+                  
+                  <div className="flex-1 text-[10px] sm:text-xs text-muted-foreground text-right mr-2 font-medium">
+                    Press <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border/50 font-sans shadow-sm">Enter</kbd> to send
+                  </div>
+                  <PromptInputSubmit status={isLoading ? "submitted" : undefined} />
+                </PromptInputFooter>
+              </PromptInput>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

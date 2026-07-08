@@ -1,5 +1,4 @@
-// src/components/TaskDetail/TaskDetailDialog.tsx
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { masarActions, useDependencies, useTask, useTasks } from "@/hooks/use-masar";
 import { motion } from "motion/react";
@@ -9,6 +8,8 @@ import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
 import { SubtaskList } from "./SubtaskList";
 import { TaskMetadata } from "./TaskMetadata";
 import { TaskActionsFooter } from "./TaskActionsFooter";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 export default function TaskDetailDialog({
   taskId,
@@ -85,7 +86,7 @@ export default function TaskDetailDialog({
     if (!isOpen) return null;
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-[420px] p-4 flex flex-col overflow-hidden">
+        <DialogContent className="w-[95vw] sm:max-w-[420px] p-4 flex flex-col overflow-hidden">
           <div className="space-y-4">
             <Skeleton className="h-5 w-1/3" />
             <Skeleton className="h-[120px] w-full" />
@@ -100,8 +101,19 @@ export default function TaskDetailDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[760px] md:max-w-[820px] max-h-[85vh] overflow-hidden flex flex-col p-4 gap-0">
-          <motion.div className="flex-1 overflow-y-auto pr-1">
+        <DialogContent className="w-full h-[100dvh] max-w-none sm:max-w-[760px] md:max-w-[820px] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col p-0 sm:p-4 gap-0 border-0 sm:border rounded-none sm:rounded-lg bg-background">
+          
+          {/* FIX: Native tailwind class instead of missing package */}
+          <DialogTitle className="sr-only">Task Details</DialogTitle>
+
+          <div className="flex sm:hidden items-center justify-between p-3 border-b border-border/40 bg-muted/20 shrink-0">
+            <span className="font-bold text-sm">Task Details</span>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <motion.div className="flex-1 overflow-y-auto p-4 sm:p-0 pr-1">
             <TaskHeader task={task} onUpdate={handleUpdate} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-2 space-y-4">

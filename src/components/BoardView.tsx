@@ -2,7 +2,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTasks, masarActions } from '@/hooks/use-masar';
 import { type Task, type TaskStatus } from '@/lib/supabase';
-import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@/components/ui/badge';
@@ -146,8 +146,10 @@ export default function BoardView({ projectId, onTaskClick }: { projectId: strin
   const { tasks, setTasks } = useTasks(projectId);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
+  // FIX: Added TouchSensor with a strict delay/tolerance so mobile scrolling works without triggering drag events
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 

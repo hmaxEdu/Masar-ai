@@ -36,7 +36,7 @@ import {
   Search,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 interface ListViewProps {
   projectId: string;
@@ -61,41 +61,47 @@ const formatDuration = (
   return `${hours}h ${minutes}m`;
 };
 
-const TaskRowSkeleton = ({ projectId }: { projectId: string }) => (
-  <TableRow>
-    <TableCell className="py-2.5">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-3.5 w-3.5 rounded" />
-        <Skeleton className="h-4 w-[140px] sm:w-[200px]" />
+// FIX: Changed from <TableRow> to <motion.tr> to safely accept layout/exit refs from AnimatePresence
+const TaskRowSkeleton = ({ projectId }: { projectId: string, idx: number }) => (
+  <motion.tr
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="border-b border-border/30 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+  >
+    <TableCell className="py-3 sm:py-2.5">
+      <div className="flex items-center gap-2.5">
+        <Skeleton className="h-4 w-4 rounded" />
+        <Skeleton className="h-4.5 w-[140px] sm:w-[200px]" />
       </div>
     </TableCell>
-    <TableCell className="py-2.5">
+    <TableCell className="py-3 sm:py-2.5">
       <div className="flex items-center gap-1.5">
-        <Skeleton className="h-4.5 w-12 rounded-full" />
-        <Skeleton className="h-4.5 w-4.5 rounded-full" />
+        <Skeleton className="h-5 w-12 rounded-full" />
+        <Skeleton className="h-5 w-5 rounded-full" />
       </div>
     </TableCell>
-    <TableCell className="py-2.5">
-      <Skeleton className="h-4.5 w-14 rounded-full inline-block" />
+    <TableCell className="py-3 sm:py-2.5">
+      <Skeleton className="h-5 w-14 rounded-full inline-block" />
     </TableCell>
-    <TableCell className="py-2.5">
+    <TableCell className="py-3 sm:py-2.5">
       <div className="space-y-1">
-        <Skeleton className="h-1.5 w-full" />
+        <Skeleton className="h-2 w-full" />
         <Skeleton className="h-1.5 w-8" />
       </div>
     </TableCell>
-    <TableCell className="py-2.5 hidden md:table-cell">
-      <Skeleton className="h-3.5 w-16 inline-block" />
+    <TableCell className="py-3 sm:py-2.5 hidden md:table-cell">
+      <Skeleton className="h-4 w-16 inline-block" />
     </TableCell>
     {projectId === "all" && (
-      <TableCell className="py-2.5 hidden xl:table-cell">
-        <Skeleton className="h-4.5 w-16 rounded-full inline-block" />
+      <TableCell className="py-3 sm:py-2.5 hidden xl:table-cell">
+        <Skeleton className="h-5 w-16 rounded-full inline-block" />
       </TableCell>
     )}
-    <TableCell className="py-2.5 hidden lg:table-cell">
-      <Skeleton className="h-3.5 w-8 inline-block" />
+    <TableCell className="py-3 sm:py-2.5 hidden lg:table-cell">
+      <Skeleton className="h-4 w-8 inline-block" />
     </TableCell>
-  </TableRow>
+  </motion.tr>
 );
 
 export default function ListView({ projectId, onTaskClick }: ListViewProps) {
@@ -177,6 +183,7 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
       return 0;
     });
 
+    // Uses flatMap so it resolves to a pure array of `<motion.tr>`, completely avoiding Fragment nesting errors
     return sorted.flatMap((task) => {
       const children = tasks.filter((t) => t.parent_id === task.id);
       const isExpanded = expandedTasks.has(task.id);
@@ -193,23 +200,23 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
           onClick={() => onTaskClick(task.id)}
         >
           <TableCell
-            className="font-medium py-2 sm:py-2.5"
+            className="font-medium py-3 sm:py-2.5"
             style={{ paddingLeft: `${depth * 1.2 + 0.75}rem` }}
           >
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               {children.length > 0 ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-4.5 w-4.5 p-0 hover:bg-muted"
+                      className="h-8 w-8 sm:h-5 sm:w-5 p-0 hover:bg-muted flex items-center justify-center shrink-0"
                       onClick={(e) => toggleExpand(e, task.id)}
                     >
                       {isExpanded ? (
-                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/80" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground/80" />
                       ) : (
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/80" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/80" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -218,24 +225,24 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                   </TooltipContent>
                 </Tooltip>
               ) : (
-                <div className="w-4.5" />
+                <div className="w-8 sm:w-5" />
               )}
               {task.status === "Blocked" && (
-                <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
               )}
-              <span className="text-xs font-semibold text-foreground/90 truncate max-w-[150px] sm:max-w-none group-hover:text-primary transition-colors">
+              <span className="text-sm sm:text-xs font-semibold text-foreground/90 truncate max-w-[150px] sm:max-w-none group-hover:text-primary transition-colors">
                 {task.title}
               </span>
             </div>
           </TableCell>
-          <TableCell className="py-2 sm:py-2.5">
+          <TableCell className="py-3 sm:py-2.5">
             <div className="flex flex-row items-center gap-1.5">
-              <Badge variant="outline" className="text-[10px] px-1 py-0 rounded">
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded font-mono">
                 P{task.priority}
               </Badge>
               {assignee && (
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 bg-muted/60 pl-1 pr-1.5 py-0.5 rounded-full border border-border/20">
-                  <Avatar className="size-4 shrink-0">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/80 bg-muted/60 pl-1 pr-2 py-0.5 rounded-full border border-border/20">
+                  <Avatar className="size-5 shrink-0">
                     <AvatarImage
                       src={assignee.profiles.avatar_url}
                       alt={assignee.profiles.email}
@@ -251,33 +258,30 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
               )}
             </div>
           </TableCell>
-          <TableCell className="py-2 sm:py-2.5">
-            <Badge
-              variant={getStatusVariant(task.status)}
-              className="text-[10px] px-1.5 py-0 rounded-sm"
-            >
+          <TableCell className="py-3 sm:py-2.5">
+            <Badge variant={getStatusVariant(task.status)} className="text-[10px] px-2 py-0.5 rounded-sm">
               {statusMap[task.status] || task.status}
             </Badge>
           </TableCell>
-          <TableCell className="w-[80px] sm:w-[130px] py-2 sm:py-2.5">
-            <div className="flex flex-col gap-0.5">
+          <TableCell className="w-[100px] sm:w-[130px] py-3 sm:py-2.5">
+            <div className="flex flex-col gap-1">
               <div className="flex justify-between text-[10px] font-bold text-muted-foreground/80">
                 <span>{Math.round(taskProgress[task.id] || 0)}%</span>
               </div>
-              <Progress value={taskProgress[task.id] || 0} className="h-1" />
+              <Progress value={taskProgress[task.id] || 0} className="h-1.5" />
             </div>
           </TableCell>
-          <TableCell className="text-muted-foreground/75 text-[10px] py-2 sm:py-2.5 hidden md:table-cell">
+          <TableCell className="text-muted-foreground/75 text-[11px] py-3 sm:py-2.5 hidden md:table-cell">
             {format(new Date(task.created_at), "MMM d, HH:mm")}
           </TableCell>
-          <TableCell className="font-mono text-muted-foreground text-[10px] py-2 sm:py-2.5 hidden lg:table-cell">
+          <TableCell className="font-mono text-muted-foreground text-[11px] py-3 sm:py-2.5 hidden lg:table-cell">
             {formatDuration(task.started_at, task.finished_at)}
           </TableCell>
           {projectId === "all" && (
-            <TableCell className="py-2 sm:py-2.5 hidden xl:table-cell">
+            <TableCell className="py-3 sm:py-2.5 hidden xl:table-cell">
               <Badge
                 variant="outline"
-                className="bg-primary/5 text-[10px] px-1.5 py-0 rounded"
+                className="bg-primary/5 text-[10px] px-2 py-0.5 rounded"
               >
                 {projects.find((p) => p.id === task.project_id)?.name ||
                   "Unknown"}
@@ -320,14 +324,13 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
 
   return (
     <div className="space-y-3.5 flex flex-col h-full overflow-hidden" dir="ltr">
-      {/* High Density Filtering Bar */}
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center shrink-0">
+      {/* Filtering Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center shrink-0">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
           <Input
             placeholder="Search tasks..."
-            style={{ height: "32px" }}
-            className="pl-8 !h-[32px] !py-0 text-xs bg-background/40 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
+            className="pl-9 h-10 sm:h-8 text-[16px] sm:text-xs bg-background/40 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -337,29 +340,28 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
           onValueChange={(v) => setGroupBy(v as "none" | "priority" | "status")}
         >
           <SelectTrigger
-            style={{ height: "32px" }}
-            className="w-full sm:w-40 !h-[32px] !py-0 text-xs bg-background/40 border-border/50 focus:ring-1 focus:ring-primary/30 flex items-center"
+            className="w-full sm:w-44 h-10 sm:h-8 text-[16px] sm:text-xs bg-background/40 border-border/50 focus:ring-1 focus:ring-primary/30 flex items-center"
           >
             <SelectValue placeholder="Group by" />
           </SelectTrigger>
           <SelectContent className="text-xs">
-            <SelectItem value="none" className="text-xs">
+            <SelectItem value="none" className="text-xs py-2 sm:py-1">
               No Grouping
             </SelectItem>
-            <SelectItem value="priority" className="text-xs">
+            <SelectItem value="priority" className="text-xs py-2 sm:py-1">
               By Priority
             </SelectItem>
-            <SelectItem value="status" className="text-xs">
+            <SelectItem value="status" className="text-xs py-2 sm:py-1">
               By Status
             </SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Grid Border Layout */}
+      {/* Grid Table Container */}
       <div className="rounded-lg border border-border/40 bg-card/25 shadow-2xs overflow-auto flex-1">
         <Table>
-          <TableHeader className="sticky top-0 bg-card z-10 hover:bg-transparent">
+          <TableHeader className="sticky top-0 bg-card z-10">
             <TableRow className="hover:bg-transparent border-b border-border/40">
               <TableHead
                 className="cursor-pointer font-bold h-8.5 hover:bg-muted/40 transition-colors"
@@ -434,11 +436,17 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
             <AnimatePresence mode="popLayout" initial={false}>
               {tasksLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TaskRowSkeleton key={i} projectId={projectId} />
+                  <TaskRowSkeleton key={`skeleton-${i}`} idx={i} projectId={projectId} />
                 ))
-              ) : Object.keys(groups).length === 0 ||
-                topLevelFiltered.length === 0 ? (
-                <TableRow className="hover:bg-transparent">
+              ) : Object.keys(groups).length === 0 || topLevelFiltered.length === 0 ? (
+                // FIX: Implemented Empty State as a native `motion.tr` to avoid AnimatePresence breaking refs
+                <motion.tr
+                  key="empty-state"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="hover:bg-transparent border-b border-border/30 transition-colors"
+                >
                   <TableCell colSpan={7} className="py-14 text-center">
                     <div className="flex flex-col items-center justify-center max-w-xs mx-auto">
                       <div className="h-9 w-9 bg-muted/40 border border-border/30 rounded-md flex items-center justify-center text-muted-foreground/60 mb-2.5">
@@ -460,23 +468,30 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               ) : (
-                Object.entries(groups).map(([groupName, groupTasks]) => (
-                  <Fragment key={groupName}>
-                    {groupBy !== "none" && (
-                      <TableRow className="bg-muted/20 hover:bg-muted/20 transition-none border-b border-border/30">
-                        <TableCell
-                          colSpan={7}
-                          className="py-1.5 font-bold text-[10px] uppercase tracking-wider text-primary px-3"
-                        >
-                          {groupName} ({groupTasks.length})
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    {renderTaskRows(groupTasks)}
-                  </Fragment>
-                ))
+                // FIX: Used flatMap instead of map to avoid wrapping rows in <Fragment>
+                Object.entries(groups).flatMap(([groupName, groupTasks]) => {
+                  const headerRow = groupBy !== "none" ? [(
+                    <motion.tr
+                      key={`group-${groupName}`}
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="bg-muted/20 hover:bg-muted/20 transition-none border-b border-border/30"
+                    >
+                      <TableCell
+                        colSpan={7}
+                        className="py-1.5 font-bold text-[10px] uppercase tracking-wider text-primary px-3"
+                      >
+                        {groupName} ({groupTasks.length})
+                      </TableCell>
+                    </motion.tr>
+                  )] : [];
+
+                  return [...headerRow, ...renderTaskRows(groupTasks)];
+                })
               )}
             </AnimatePresence>
           </TableBody>

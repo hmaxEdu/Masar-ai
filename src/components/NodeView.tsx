@@ -30,7 +30,7 @@ function TaskNode({ data }: { data: { task: Task; onTaskClick: (id: string) => v
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 350, damping: 25 }}
       onClick={() => onTaskClick(task.id)}
-      className={`bg-card border-2 rounded-lg p-3 shadow-md w-[220px] cursor-pointer transition-colors hover:shadow-lg ${
+      className={`bg-card border-2 rounded-lg p-3.5 shadow-md w-[240px] cursor-pointer transition-colors hover:shadow-lg ${
         isDone 
           ? "border-emerald-500/30" 
           : isBlocked 
@@ -38,26 +38,30 @@ function TaskNode({ data }: { data: { task: Task; onTaskClick: (id: string) => v
           : "border-border hover:border-primary/50"
       }`}
     >
-      <Handle type="target" position={Position.Left} className="w-2 h-2 !bg-muted-foreground border-none" />
-      <div className="flex justify-between items-start mb-2">
-        <h4 className="text-sm font-semibold line-clamp-2 leading-tight">{task.title}</h4>
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 !bg-muted-foreground border-none" />
+      
+      <div className="flex justify-between items-start mb-2.5">
+        {/* FIX: Improved line clamp and text size from text-sm to a more legible weight */}
+        <h4 className="text-sm font-bold line-clamp-3 leading-snug text-foreground/90">{task.title}</h4>
       </div>
-      <div className="flex items-center justify-between mt-3">
-        <Badge variant="outline" className="text-[10px]">
+      
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/40">
+        {/* FIX: Accessibility bump from text-[10px] to text-xs */}
+        <Badge variant="outline" className="text-xs px-1.5 py-0 font-mono">
           P{task.priority}
         </Badge>
-        <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {isDone ? (
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           ) : isBlocked ? (
-            <AlertCircle className="w-3.5 h-3.5 text-destructive" />
+            <AlertCircle className="w-4 h-4 text-destructive" />
           ) : (
-            <CircleDashed className="w-3.5 h-3.5" />
+            <CircleDashed className="w-4 h-4" />
           )}
           {task.status}
         </div>
       </div>
-      <Handle type="source" position={Position.Right} className="w-2 h-2 !bg-muted-foreground border-none" />
+      <Handle type="source" position={Position.Right} className="w-2.5 h-2.5 !bg-muted-foreground border-none" />
     </motion.div>
   );
 }
@@ -95,7 +99,6 @@ export default function NodeView({ projectId, onTaskClick }: { projectId: string
       inDegree.set(t.id, 0);
     });
 
-    // Register blocking dependencies
     dependencies.forEach(d => {
       if (adj.has(d.blocking_task_id) && adj.has(d.blocked_task_id)) {
         adj.get(d.blocking_task_id)!.push(d.blocked_task_id);
@@ -103,7 +106,6 @@ export default function NodeView({ projectId, onTaskClick }: { projectId: string
       }
     });
 
-    // Register parent-child relations as layout edges
     tasks.forEach(t => {
       if (t.parent_id && adj.has(t.parent_id)) {
         adj.get(t.parent_id)!.push(t.id);
@@ -111,7 +113,6 @@ export default function NodeView({ projectId, onTaskClick }: { projectId: string
       }
     });
 
-    // Standard topological sort (BFS) to determine depth layers for layout spacing
     const depth = new Map<string, number>();
     const queue: string[] = [];
 
@@ -133,29 +134,24 @@ export default function NodeView({ projectId, onTaskClick }: { projectId: string
       }
     }
 
-    // Catch cycle stragglers arbitrarily
     for (const [id, deg] of inDegree.entries()) {
       if (deg > 0 && !depth.has(id)) depth.set(id, 0);
     }
 
-    // Collect columns by depth
     const depthGroups = new Map<number, string[]>();
     for (const [id, d] of depth.entries()) {
       if (!depthGroups.has(d)) depthGroups.set(d, []);
       depthGroups.get(d)!.push(id);
     }
 
-    // Assign final XY locations
     const positions = new Map<string, { x: number; y: number }>();
     for (const [d, ids] of depthGroups.entries()) {
-      // Sort vertically inside column: High priority tasks at the top
       ids.sort((a, b) => {
         const ta = tasks.find(t => t.id === a);
         const tb = tasks.find(t => t.id === b);
         return (ta?.priority || 3) - (tb?.priority || 3);
       });
 
-      // Vertically center the column group
       const startY = -((ids.length - 1) * 160) / 2;
 
       ids.forEach((id, index) => {
@@ -163,13 +159,11 @@ export default function NodeView({ projectId, onTaskClick }: { projectId: string
       });
     }
 
-    // Form final mapped Nodes
     const newNodes: Node[] = tasks.map(task => ({
       id: task.id,
       type: 'taskNode',
       position: positions.get(task.id) || { x: 0, y: 0 },
       data: { task, onTaskClick },
-      // Allows smooth positional transitions when layout recalculates
       style: { transition: "transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)" } 
     }));
 
@@ -178,7 +172,6 @@ export default function NodeView({ projectId, onTaskClick }: { projectId: string
     const parentEdgeColor = isDark ? "#555" : "#ccc";
     const blockEdgeColor = isDark ? "#ff5c5c" : "#e11d48";
 
-    // Form Edges (Blockers - Solid Red)
     dependencies.forEach(d => {
       if (tasks.find(t => t.id === d.blocking_task_id) && tasks.find(t => t.id === d.blocked_task_id)) {
         newEdges.push({
@@ -192,7 +185,6 @@ export default function NodeView({ projectId, onTaskClick }: { projectId: string
       }
     });
 
-    // Form Edges (Parent/Child - Dashed Grey)
     tasks.forEach(t => {
       if (t.parent_id && tasks.find(pt => pt.id === t.parent_id)) {
         newEdges.push({

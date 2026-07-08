@@ -44,24 +44,26 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateT
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <AnimatePresence>
         {isOpen && (
-          <DialogContent className="sm:max-w-[340px] p-4 gap-0">
+          // FIX: Full width responsive sizing on mobile, rounded card styling (w-[95vw] sm:max-w-[360px])
+          <DialogContent className="w-[95vw] sm:max-w-[360px] p-5 sm:p-4 gap-0 rounded-xl sm:rounded-lg">
             <motion.div
               initial={{ opacity: 0, scale: 0.98, y: 5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: 5 }}
-              className="space-y-4"
+              className="space-y-4 sm:space-y-3.5"
             >
               <DialogHeader>
-                <DialogTitle className="text-sm font-semibold tracking-tight text-foreground/90">
+                <DialogTitle className="text-base sm:text-sm font-semibold tracking-tight text-foreground/90">
                   Create New Task
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-3.5">
-                <div className="space-y-1.5">
+              <div className="space-y-4 sm:space-y-3.5">
+                <div className="space-y-2 sm:space-y-1.5">
                   <Label htmlFor="title" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
                     Task Title
                   </Label>
+                  {/* FIX: text-[16px] on mobile touch screens to prevent automatic browser zoom */}
                   <Input
                     id="title"
                     placeholder="What needs to be done?"
@@ -70,35 +72,36 @@ export default function CreateTaskDialog({ projectId, isOpen, onClose }: CreateT
                     onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                     autoFocus
                     disabled={loading}
-                    className="h-8 text-xs bg-background/50 border-border/60 focus-visible:ring-1 focus-visible:ring-primary/30"
+                    className="h-10 sm:h-8 text-[16px] sm:text-xs bg-background/50 border-border/60 focus-visible:ring-1 focus-visible:ring-primary/30"
                   />
                 </div>
                 
-                <div className="space-y-1.5">
+                <div className="space-y-2 sm:space-y-1.5">
                   <Label htmlFor="priority" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
                     Priority
                   </Label>
                   <Select value={priority} onValueChange={setPriority} disabled={loading}>
-                    <SelectTrigger id="priority" className="h-8 text-xs bg-background/50 border-border/60 focus:ring-1 focus:ring-primary/30">
+                    {/* FIX: Raised mobile trigger text size limit */}
+                    <SelectTrigger id="priority" className="h-10 sm:h-8 text-[16px] sm:text-xs bg-background/50 border-border/60 focus:ring-1 focus:ring-primary/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="text-xs">
-                      <SelectItem value="1" className="text-xs">1 - Critical</SelectItem>
-                      <SelectItem value="2" className="text-xs">2 - High</SelectItem>
-                      <SelectItem value="3" className="text-xs">3 - Medium</SelectItem>
-                      <SelectItem value="4" className="text-xs">4 - Low</SelectItem>
-                      <SelectItem value="5" className="text-xs">5 - Backlog</SelectItem>
+                      <SelectItem value="1" className="text-xs py-2.5 sm:py-1">1 - Critical</SelectItem>
+                      <SelectItem value="2" className="text-xs py-2.5 sm:py-1">2 - High</SelectItem>
+                      <SelectItem value="3" className="text-xs py-2.5 sm:py-1">3 - Medium</SelectItem>
+                      <SelectItem value="4" className="text-xs py-2.5 sm:py-1">4 - Low</SelectItem>
+                      <SelectItem value="5" className="text-xs py-2.5 sm:py-1">5 - Backlog</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <DialogFooter className="gap-1.5 flex flex-row justify-end pt-1">
-                <Button variant="outline" size="sm" onClick={onClose} disabled={loading} className="h-8 text-xs">
+              <DialogFooter className="gap-2 flex flex-row justify-end pt-2">
+                <Button variant="outline" size="sm" onClick={onClose} disabled={loading} className="h-10 sm:h-8 text-sm sm:text-xs flex-1 sm:flex-none">
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleCreate} disabled={!title.trim() || loading} className="h-8 text-xs">
-                  {loading && <Loader2 className="h-3 w-3 animate-spin mr-1.5" />}
+                <Button size="sm" onClick={handleCreate} disabled={!title.trim() || loading} className="h-10 sm:h-8 text-sm sm:text-xs flex-1 sm:flex-none">
+                  {loading && <Loader2 className="h-4 w-4 sm:h-3 sm:w-3 animate-spin mr-1.5" />}
                   Create
                 </Button>
               </DialogFooter>
