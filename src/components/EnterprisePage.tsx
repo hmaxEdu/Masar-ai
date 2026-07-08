@@ -171,11 +171,11 @@ export default function EnterprisePage() {
               >
                 <div className="space-y-4">
                   <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Isolated Compute & Custom Models</h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  <p className="text-lg text-muted-foreground leading-relaxed font-normal">
                     Deploy Masar into a dedicated, single-tenant Virtual Private Cloud. Maintain total data sovereignty and ensure your proprietary workflows never share resources with public tenants.
                   </p>
                 </div>
-                <div className="space-y-4 pt-4 border-t border-border/40">
+                <div className="space-y-3.5 pt-4 border-t border-border/40">
                   {[
                     "Bring Your Own Key (BYOK) for LLMs",
                     "Dedicated Postgres instances",
@@ -183,8 +183,8 @@ export default function EnterprisePage() {
                     "Geographic data region selection"
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-foreground mt-0.5" />
-                      <span className="text-foreground font-medium">{item}</span>
+                      <Check className="w-4 h-4 text-primary mt-1 shrink-0" />
+                      <span className="text-foreground text-sm font-medium">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -226,11 +226,11 @@ export default function EnterprisePage() {
               >
                 <div className="space-y-4">
                   <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">Identity & Access Management</h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  <p className="text-lg text-muted-foreground leading-relaxed font-normal">
                     Enforce organizational security policies natively. Masar integrates directly with your existing Identity Provider (IdP) for frictionless, secure access.
                   </p>
                 </div>
-                <div className="space-y-4 pt-4 border-t border-border/40">
+                <div className="space-y-3.5 pt-4 border-t border-border/40">
                   {[
                     "SAML 2.0 and OIDC Support",
                     "Okta, Azure AD, and Google Workspace",
@@ -238,8 +238,8 @@ export default function EnterprisePage() {
                     "Enforced Two-Factor Authentication (2FA)"
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-foreground mt-0.5" />
-                      <span className="text-foreground font-medium">{item}</span>
+                      <Check className="w-4 h-4 text-primary mt-1 shrink-0" />
+                      <span className="text-foreground text-sm font-medium">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -252,37 +252,60 @@ export default function EnterprisePage() {
         {/* --- SERVICES GRID --- */}
         <section className="py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-16">Dedicated Services</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-16">
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-12 text-center md:text-left">
+              Dedicated Services
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               
-              <div className="space-y-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                  <Server className="w-5 h-5" />
+              {/* Migration Engineering */}
+              <div className="group flex flex-col justify-between rounded-lg border border-border/40 p-5 bg-card/15 backdrop-blur-md hover:bg-card/35 hover:border-primary/25 transition-all text-left">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-105">
+                      <Server className="h-4.5 w-4.5" />
+                    </div>
+                    <h3 className="text-sm sm:text-base font-semibold tracking-tight text-foreground/95">
+                      Migration Engineering
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground/80 leading-relaxed font-normal">
+                    Our solutions architects work directly with your IT team to script, map, and execute data migrations from legacy systems like Jira, Asana, or customized internal tooling with zero downtime.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold">Migration Engineering</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Our solutions architects work directly with your IT team to script, map, and execute data migrations from legacy systems like Jira, Asana, or customized internal tooling with zero downtime.
-                </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                  <Headset className="w-5 h-5" />
+              {/* Technical Account Manager */}
+              <div className="group flex flex-col justify-between rounded-lg border border-border/40 p-5 bg-card/15 backdrop-blur-md hover:bg-card/35 hover:border-primary/25 transition-all text-left">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-105">
+                      <Headset className="h-4.5 w-4.5" />
+                    </div>
+                    <h3 className="text-sm sm:text-base font-semibold tracking-tight text-foreground/95">
+                      Technical Account Manager
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground/80 leading-relaxed font-normal">
+                    You are assigned a dedicated TAM who understands your specific architecture, custom deployment, and business goals to ensure continuous operational success.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold">Technical Account Manager</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  You are assigned a dedicated TAM who understands your specific architecture, custom deployment, and business goals to ensure continuous operational success.
-                </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                  <FileText className="w-5 h-5" />
+              {/* Advanced Audit Logging */}
+              <div className="group flex flex-col justify-between rounded-lg border border-border/40 p-5 bg-card/15 backdrop-blur-md hover:bg-card/35 hover:border-primary/25 transition-all text-left">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-105">
+                      <FileText className="h-4.5 w-4.5" />
+                    </div>
+                    <h3 className="text-sm sm:text-base font-semibold tracking-tight text-foreground/95">
+                      Advanced Audit Logging
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground/80 leading-relaxed font-normal">
+                    Access immutable logs of every workspace action. Export streams directly to your internal SIEM (Splunk, Datadog) for real-time compliance monitoring.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold">Advanced Audit Logging</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Access immutable logs of every workspace action. Export streams directly to your internal SIEM (Splunk, Datadog) for real-time compliance monitoring.
-                </p>
               </div>
 
             </div>

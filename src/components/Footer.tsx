@@ -29,6 +29,13 @@ export function Footer() {
   function handleLinkClick() {
     window.scrollTo(0, 0);
   }
+
+  // FIX: Helper to handle placeholder links without anchor jumping
+  function handlePlaceholderClick(e: React.MouseEvent) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   const productLinks = [
     { label: "Features", path: "/features" },
     { label: "Integrations", path: "/integrations" },
@@ -70,7 +77,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 mb-10">
           {/* Brand/Logo Section */}
           <div className="md:col-span-5 space-y-4">
-            <Link to="/" className="flex items-center gap-2 w-fit">
+            <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2 w-fit">
               <Logo className="w-5 h-5 brightness-0 dark:invert" />
               <span className="font-bold text-sm text-foreground tracking-tight">
                 Masar
@@ -89,9 +96,9 @@ export function Footer() {
               >
                 <Github className="w-4 h-4 text-muted-foreground/60 hover:text-foreground transition-colors" />
               </a>
-              <a href="#" aria-label="X">
+              <button aria-label="X" onClick={handlePlaceholderClick}>
                 <XIcon />
-              </a>
+              </button>
               <a
                 href="https://www.linkedin.com/in/albaraa-qajjah-1b5030271"
                 target="_blank"
@@ -153,7 +160,6 @@ export function Footer() {
                 <li key={link.label}>
                   {link.isExternal ? (
                     <a
-                      onClick={handleLinkClick}
                       href={link.path}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -183,15 +189,15 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-muted-foreground/80 font-medium">
           <div>© 2026 Masar Inc. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <a href="#" className="hover:text-foreground transition-colors">
+            <button onClick={handlePlaceholderClick} className="hover:text-foreground transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </button>
+            <button onClick={handlePlaceholderClick} className="hover:text-foreground transition-colors">
               Terms of Service
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </button>
+            <button onClick={handlePlaceholderClick} className="hover:text-foreground transition-colors">
               Cookie Policy
-            </a>
+            </button>
           </div>
         </div>
       </div>

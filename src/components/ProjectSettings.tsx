@@ -50,6 +50,9 @@ export default function ProjectSettings() {
   const [visibility, setVisibility] = useState<ProjectVisibility>('private');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  
+  // FIX: UX improvement over `window.confirm()`
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   useEffect(() => {
     if (project) {
@@ -277,22 +280,43 @@ export default function ProjectSettings() {
               <AlertTriangle className="h-3.5 w-3.5" />
               Danger Zone
             </div>
-            <p className="text-[10px] text-muted-foreground/80 leading-normal">
+            <p className="text-[10px] text-muted-foreground/80 leading-normal mb-1">
               Deleting this project will permanently remove all tasks, subtasks, and dependencies.
             </p>
-            <Button 
-              variant="destructive" 
-              size="sm" 
-              className="w-full h-8.5 text-xs font-bold bg-destructive/90 hover:bg-destructive"
-              onClick={async () => {
-                 if (confirm('Permanently delete project?')) {
-                   await masarActions.deleteProject(projectId);
-                   navigate('/projects/all');
-                 }
-              }}
-            >
-              Delete Project
-            </Button>
+
+            {/* FIX: Improved inline confirmation instead of `window.confirm()` */}
+            {!isConfirmingDelete ? (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                className="w-full h-8.5 text-xs font-bold bg-destructive/90 hover:bg-destructive"
+                onClick={() => setIsConfirmingDelete(true)}
+              >
+                Delete Project
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full h-8.5 text-xs font-bold"
+                  onClick={() => setIsConfirmingDelete(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="w-full h-8.5 text-xs font-bold bg-destructive/90 hover:bg-destructive"
+                  onClick={async () => {
+                     await masarActions.deleteProject(projectId);
+                     navigate('/projects/all');
+                  }}
+                >
+                  Confirm
+                </Button>
+              </div>
+            )}
           </motion.div>
         </div>
 

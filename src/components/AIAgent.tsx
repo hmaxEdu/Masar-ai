@@ -47,7 +47,7 @@ const ToolUI: Record<string, { icon: React.ElementType, label: string }> = {
   update_task_status: { icon: LayoutDashboard, label: 'Updating board' },
   set_dependency: { icon: LinkIcon, label: 'Linking dependencies' },
   delete_tasks: { icon: Trash2, label: 'Removing tasks' },
-  delete_task: { icon: Trash2, label: 'Removing task' }, // Fallback just in case
+  delete_task: { icon: Trash2, label: 'Removing task' },
   assign_task: { icon: Wrench, label: 'Assigning task' },
   update_task_title: { icon: Type, label: 'Renaming task' },
   update_task_priority: { icon: ArrowUpCircle, label: 'Changing priority' },
@@ -91,15 +91,20 @@ export default function AIAgent({ projectId }: { projectId: string }) {
       .map(f => f.url?.split(',')[1]) // extract base64 from data URL
       .filter(Boolean);
 
-    // AI Context: Include parent_id so the AI knows task hierarchies
-    const projectContext = JSON.stringify({
-      tasks: tasks.map(t => ({ 
+    // FIX: Context Bloat - Only send active/relevant tasks, limited to 100 to prevent token/payload explosion
+    const activeTasksContext = tasks
+      .filter(t => t.status !== 'Done')
+      .slice(0, 100)
+      .map(t => ({ 
         id: t.id, 
         title: t.title, 
         status: t.status, 
         priority: t.priority,
         parent_id: t.parent_id 
-      })),
+      }));
+
+    const projectContext = JSON.stringify({
+      tasks: activeTasksContext,
       team: members.map(m => ({ id: m.profiles.id, email: m.profiles.email, role: m.role })) 
     });
 
@@ -192,7 +197,6 @@ export default function AIAgent({ projectId }: { projectId: string }) {
                 }
                 toolResponseContent = `Deleted tasks successfully.`;
               }
-              // Fallback just in case the model hallucinates the old singular tool
               else if (toolName === 'delete_task') {
                 await masarActions.deleteTask(args.taskId);
                 toolResponseContent = `Deleted task ${args.taskId}`;

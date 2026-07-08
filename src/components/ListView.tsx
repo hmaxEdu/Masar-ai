@@ -230,17 +230,17 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
           </TableCell>
           <TableCell className="py-2 sm:py-2.5">
             <div className="flex flex-row items-center gap-1.5">
-              <Badge variant="outline" className="text-[9px] px-1 py-0 rounded">
+              <Badge variant="outline" className="text-[10px] px-1 py-0 rounded">
                 P{task.priority}
               </Badge>
               {assignee && (
-                <div className="flex items-center gap-1 text-[9px] text-muted-foreground/80 bg-muted/60 pl-1 pr-1.5 py-0.5 rounded-full border border-border/20">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 bg-muted/60 pl-1 pr-1.5 py-0.5 rounded-full border border-border/20">
                   <Avatar className="size-4 shrink-0">
                     <AvatarImage
                       src={assignee.profiles.avatar_url}
                       alt={assignee.profiles.email}
                     />
-                    <AvatarFallback className="text-[7px] bg-primary/10 text-primary font-bold">
+                    <AvatarFallback className="text-[8px] bg-primary/10 text-primary font-bold">
                       {assignee.profiles.email[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -254,14 +254,14 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
           <TableCell className="py-2 sm:py-2.5">
             <Badge
               variant={getStatusVariant(task.status)}
-              className="text-[9px] px-1.5 py-0 rounded-sm"
+              className="text-[10px] px-1.5 py-0 rounded-sm"
             >
               {statusMap[task.status] || task.status}
             </Badge>
           </TableCell>
           <TableCell className="w-[80px] sm:w-[130px] py-2 sm:py-2.5">
             <div className="flex flex-col gap-0.5">
-              <div className="flex justify-between text-[8px] font-bold text-muted-foreground/80">
+              <div className="flex justify-between text-[10px] font-bold text-muted-foreground/80">
                 <span>{Math.round(taskProgress[task.id] || 0)}%</span>
               </div>
               <Progress value={taskProgress[task.id] || 0} className="h-1" />
@@ -277,7 +277,7 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
             <TableCell className="py-2 sm:py-2.5 hidden xl:table-cell">
               <Badge
                 variant="outline"
-                className="bg-primary/5 text-[9px] px-1 py-0 rounded"
+                className="bg-primary/5 text-[10px] px-1.5 py-0 rounded"
               >
                 {projects.find((p) => p.id === task.project_id)?.name ||
                   "Unknown"}
@@ -359,13 +359,13 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
       {/* Grid Border Layout */}
       <div className="rounded-lg border border-border/40 bg-card/25 shadow-2xs overflow-auto flex-1">
         <Table>
-          <TableHeader className="sticky top-0 bg-card z-10">
+          <TableHeader className="sticky top-0 bg-card z-10 hover:bg-transparent">
             <TableRow className="hover:bg-transparent border-b border-border/40">
               <TableHead
-                className="cursor-pointer font-bold h-8.5"
+                className="cursor-pointer font-bold h-8.5 hover:bg-muted/40 transition-colors"
                 onClick={() => handleSort("title")}
               >
-                <div className="flex items-center gap-1 text-[10px]   tracking-wider text-muted-foreground/60">
+                <div className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground/80">
                   Title
                   {sortField === "title" &&
                     (sortOrder === "asc" ? (
@@ -376,10 +376,10 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="cursor-pointer font-bold h-8.5"
+                className="cursor-pointer font-bold h-8.5 hover:bg-muted/40 transition-colors"
                 onClick={() => handleSort("priority")}
               >
-                <div className="flex items-center gap-1 text-[10px]   tracking-wider text-muted-foreground/60">
+                <div className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground/80">
                   Priority
                   {sortField === "priority" &&
                     (sortOrder === "asc" ? (
@@ -390,10 +390,10 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="cursor-pointer font-bold h-8.5"
+                className="cursor-pointer font-bold h-8.5 hover:bg-muted/40 transition-colors"
                 onClick={() => handleSort("status")}
               >
-                <div className="flex items-center gap-1 text-[10px]   tracking-wider text-muted-foreground/60">
+                <div className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground/80">
                   Status
                   {sortField === "status" &&
                     (sortOrder === "asc" ? (
@@ -403,11 +403,11 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                     ))}
                 </div>
               </TableHead>
-              <TableHead className="font-bold h-8.5 text-[10px]   tracking-wider text-muted-foreground/60">
+              <TableHead className="font-bold h-8.5 text-[11px] uppercase tracking-wider text-muted-foreground/80">
                 Progress
               </TableHead>
               <TableHead
-                className="cursor-pointer font-bold h-8.5 text-[10px]   tracking-wider text-muted-foreground/60 hidden md:table-cell"
+                className="cursor-pointer font-bold h-8.5 text-[11px] uppercase tracking-wider text-muted-foreground/80 hidden md:table-cell hover:bg-muted/40 transition-colors"
                 onClick={() => handleSort("created_at")}
               >
                 <div className="flex items-center gap-1">
@@ -421,11 +421,11 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                 </div>
               </TableHead>
               {projectId === "all" && (
-                <TableHead className="font-bold h-8.5 text-[10px]   tracking-wider text-muted-foreground/60 hidden xl:table-cell">
+                <TableHead className="font-bold h-8.5 text-[11px] uppercase tracking-wider text-muted-foreground/80 hidden xl:table-cell">
                   Project
                 </TableHead>
               )}
-              <TableHead className="font-bold h-8.5 text-[10px]   tracking-wider text-muted-foreground/60 hidden lg:table-cell">
+              <TableHead className="font-bold h-8.5 text-[11px] uppercase tracking-wider text-muted-foreground/80 hidden lg:table-cell">
                 Duration
               </TableHead>
             </TableRow>
@@ -438,7 +438,6 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                 ))
               ) : Object.keys(groups).length === 0 ||
                 topLevelFiltered.length === 0 ? (
-                /* High-Density Inline Empty State */
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={7} className="py-14 text-center">
                     <div className="flex flex-col items-center justify-center max-w-xs mx-auto">
@@ -452,7 +451,7 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                         Try adjusting your search query or filters.
                       </p>
                       <Button
-                        size="xs"
+                        size="sm"
                         variant="outline"
                         className="h-7 text-[10px] px-2.5 font-bold"
                         onClick={() => setSearch("")}
@@ -469,7 +468,7 @@ export default function ListView({ projectId, onTaskClick }: ListViewProps) {
                       <TableRow className="bg-muted/20 hover:bg-muted/20 transition-none border-b border-border/30">
                         <TableCell
                           colSpan={7}
-                          className="py-1.5 font-bold text-[9px]  tracking-wider text-primary px-3"
+                          className="py-1.5 font-bold text-[10px] uppercase tracking-wider text-primary px-3"
                         >
                           {groupName} ({groupTasks.length})
                         </TableCell>

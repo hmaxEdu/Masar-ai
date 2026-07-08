@@ -45,16 +45,17 @@ import {
   Sun,
   Users
 } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import EmptyState from "./EmptyState";
 import { Logo } from "./Logo";
+import { useTheme } from "./theme-provider"; // <-- Imported Theme Provider
 
 // Lazily load nested dashboard modules
 const AIAgent = lazy(() => import("@/components/AIAgent"));
 const BoardView = lazy(() => import("@/components/BoardView"));
-const NodeView = lazy(() => import("@/components/NodeView")); // <-- Added NodeView
+const NodeView = lazy(() => import("@/components/NodeView"));
 const CollaborationDialog = lazy(
   () => import("@/components/CollaborationDialog"),
 );
@@ -87,7 +88,7 @@ function ProjectMembersAvatars({ projectId }: { projectId: string }) {
             <AvatarGroup>
               <Avatar className="h-6 w-6 ring-1 ring-background shadow-xs">
                 <AvatarImage src={m.profiles?.avatar_url} />
-                <AvatarFallback className="text-[8px]">
+                <AvatarFallback className="text-[10px]">
                   {m.profiles?.email?.[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -100,7 +101,7 @@ function ProjectMembersAvatars({ projectId }: { projectId: string }) {
       ))}
       {members.length > 3 && (
         <Avatar className="h-6 w-6 ring-1 ring-background shadow-xs">
-          <AvatarFallback className="text-[8px] bg-muted">{`+${members.length - 3}`}</AvatarFallback>
+          <AvatarFallback className="text-[10px] bg-muted">{`+${members.length - 3}`}</AvatarFallback>
         </Avatar>
       )}
     </div>
@@ -112,13 +113,10 @@ export default function MainContent({ session }: { session: Session }) {
   const navigate = useNavigate();
   const { projects, loading: projectsLoading } = useProjects(session.user.id);
   const myRole = useMyRole(activeProjectId);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem("theme");
-    return (
-      saved === "dark" ||
-      (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    );
-  });
+  
+  // FIX: Using global theme context instead of desynced local storage duplication
+  const { theme, setTheme } = useTheme();
+  const isDarkMode = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
@@ -126,10 +124,7 @@ export default function MainContent({ session }: { session: Session }) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
-  // <-- Updated ViewMode Type state tracking
-  const [viewMode, setViewMode] = useState<"list" | "board" | "dashboard" | "node">(
-    "dashboard",
-  );
+  const [viewMode, setViewMode] = useState<"list" | "board" | "dashboard" | "node">("dashboard");
 
   const [projectDialog, setProjectDialog] = useState<{
     isOpen: boolean;
@@ -137,11 +132,6 @@ export default function MainContent({ session }: { session: Session }) {
     projectId?: string;
     initialName?: string;
   }>({ isOpen: false, mode: "create" });
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
-    localStorage.setItem("theme", isDarkMode ? "dark" : "light");
-  }, [isDarkMode]);
 
   const handleCreateProject = () =>
     setProjectDialog({ isOpen: true, mode: "create", initialName: "" });
@@ -152,13 +142,14 @@ export default function MainContent({ session }: { session: Session }) {
   };
 
   const canManage = myRole === "owner" || myRole === "admin";
+  const hasNoProjects = projects.length === 0;
 
   if (projectsLoading) return null;
 
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
-        {/* --- LEFT SIDEBAR (App Shell — Clean, Compact) --- */}
+        {/* --- LEFT SIDEBAR --- */}
         <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card/10 backdrop-blur-md shrink-0">
           <div
             className="h-12 flex items-center gap-2 px-4 border-b border-border/40 cursor-pointer hover:bg-muted/20 transition-colors"
@@ -210,7 +201,7 @@ export default function MainContent({ session }: { session: Session }) {
               </Select>
             </div>
 
-            {activeProjectId && activeProjectId !== "all" && (
+            {activeProjectId && activeProjectId !== "all" && !hasNoProjects && (
               <div className="space-y-0.5">
                 <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1 block">
                   Views
@@ -236,7 +227,6 @@ export default function MainContent({ session }: { session: Session }) {
                 >
                   <KanbanSquare className="mr-2 h-3.5 w-3.5" /> Board
                 </Button>
-                {/* <-- Node Graph View Link --> */}
                 <Button
                   variant={viewMode === "node" ? "secondary" : "ghost"}
                   className={`w-full justify-start text-xs h-8 px-2 ${viewMode === "node" ? "bg-muted/80 text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
@@ -249,7 +239,7 @@ export default function MainContent({ session }: { session: Session }) {
           </div>
 
           <div className="p-3 border-t border-border/40 space-y-0.5 bg-muted/5">
-            {activeProjectId && activeProjectId !== "all" && (
+            {activeProjectId && activeProjectId !== "all" && !hasNoProjects && (
               <>
                 <Button
                   variant="ghost"
@@ -281,7 +271,7 @@ export default function MainContent({ session }: { session: Session }) {
             <Button
               variant="ghost"
               className="w-full justify-start text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
-              onClick={() => setIsDarkMode(!isDarkMode)}
+              onClick={() => setTheme(isDarkMode ? "light" : "dark")}
             >
               {isDarkMode ? (
                 <Sun className="mr-2 h-3.5 w-3.5" />
@@ -300,7 +290,7 @@ export default function MainContent({ session }: { session: Session }) {
           </div>
         </aside>
 
-        {/* --- MAIN CONTENT (Sleek Viewport) --- */}
+        {/* --- MAIN CONTENT --- */}
         <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
           {/* Mobile Header */}
           <header className="md:hidden h-12 border-b border-border/40 flex items-center justify-between px-3 bg-card/20 backdrop-blur-md z-10 shrink-0">
@@ -321,7 +311,7 @@ export default function MainContent({ session }: { session: Session }) {
                 <DropdownMenuItem onClick={() => navigate("/projects/all")}>
                   All Projects
                 </DropdownMenuItem>
-                {activeProjectId && activeProjectId !== "all" && (
+                {activeProjectId && activeProjectId !== "all" && !hasNoProjects && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setViewMode("dashboard")}>
@@ -358,7 +348,7 @@ export default function MainContent({ session }: { session: Session }) {
                 <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
                   <Settings className="mr-2 h-3.5 w-3.5" /> App Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsDarkMode(!isDarkMode)}>
+                <DropdownMenuItem onClick={() => setTheme(isDarkMode ? "light" : "dark")}>
                   {isDarkMode ? (
                     <Sun className="mr-2 h-3.5 w-3.5" />
                   ) : (
@@ -376,7 +366,7 @@ export default function MainContent({ session }: { session: Session }) {
             </DropdownMenu>
           </header>
 
-          {/* Desktop Compact Header (h-12) */}
+          {/* Desktop Compact Header */}
           <header className="h-12 hidden md:flex items-center justify-between px-4 border-b border-border/40 shrink-0 z-10 bg-background/30 backdrop-blur-xs">
             <div className="flex items-center gap-3">
               <h2 className="text-sm font-semibold tracking-tight text-foreground/90">
@@ -385,7 +375,7 @@ export default function MainContent({ session }: { session: Session }) {
                   : projects.find((p) => p.id === activeProjectId)?.name ||
                     "Project"}
               </h2>
-              {activeProjectId !== "all" && (
+              {activeProjectId !== "all" && !hasNoProjects && (
                 <>
                   <div className="h-3 w-px bg-border/40" />
                   <ProjectMembersAvatars projectId={activeProjectId!} />
@@ -393,7 +383,7 @@ export default function MainContent({ session }: { session: Session }) {
               )}
             </div>
 
-            {activeProjectId && activeProjectId !== "all" && (
+            {activeProjectId && activeProjectId !== "all" && !hasNoProjects && (
               <div className="flex items-center gap-1.5">
                 <Button
                   onClick={() => setIsInsightsOpen(true)}
@@ -416,7 +406,7 @@ export default function MainContent({ session }: { session: Session }) {
             )}
           </header>
 
-          {/* High Density Padding Container (p-3 sm:p-4) */}
+          {/* Container */}
           <div className="flex-1 overflow-hidden p-3 sm:p-4">
             <Routes>
               <Route
@@ -436,7 +426,25 @@ export default function MainContent({ session }: { session: Session }) {
               <Route
                 path="/"
                 element={
-                  activeProjectId ? (
+                  hasNoProjects ? (
+                    // FIX: Show empty state reliably when no projects exist
+                    <div className="flex-1 flex items-center justify-center h-full">
+                      <EmptyState
+                        icon={Sparkles}
+                        title="Initialize Workspace"
+                        description="You don't have any projects yet. Create a project to start planning with AI."
+                        actionLabel="Create Project"
+                        onAction={handleCreateProject}
+                        secondaryActionLabel="Try AI Demo"
+                        onSecondaryAction={() =>
+                          toast.info(
+                            "Ask the AI Agent in the bottom right to 'Build a marketing plan'!",
+                          )
+                        }
+                        className="max-w-md w-full border-none bg-transparent"
+                      />
+                    </div>
+                  ) : activeProjectId ? (
                     <Suspense
                       fallback={
                         <div className="flex h-full items-center justify-center">
@@ -464,24 +472,7 @@ export default function MainContent({ session }: { session: Session }) {
                         />
                       )}
                     </Suspense>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center h-full">
-                      <EmptyState
-                        icon={Sparkles}
-                        title="Initialize Workspace"
-                        description="You don't have any projects yet. Create a project to start planning with AI."
-                        actionLabel="Create Project"
-                        onAction={handleCreateProject}
-                        secondaryActionLabel="Try AI Demo"
-                        onSecondaryAction={() =>
-                          toast.info(
-                            "Ask the AI Agent in the bottom right to 'Build a marketing plan'!",
-                          )
-                        }
-                        className="max-w-md w-full border-none bg-transparent"
-                      />
-                    </div>
-                  )
+                  ) : null
                 }
               />
             </Routes>

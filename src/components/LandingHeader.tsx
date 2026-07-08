@@ -1,6 +1,6 @@
 // src/components/LandingHeader.tsx
 import { useState } from "react";
-import { Link } from "react-router-dom"; // <-- Ensure this is imported
+import { Link } from "react-router-dom";
 import { ChevronDown, Menu, X, Globe, Laptop, HelpCircle, Code, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
@@ -26,7 +26,6 @@ interface LandingHeaderProps {
   navItems?: NavItem[];
 }
 
-// Update the default routing paths to match the new pages
 const defaultNavItems: NavItem[] = [
   {
     label: "Product",
@@ -41,14 +40,14 @@ const defaultNavItems: NavItem[] = [
     dropdownItems: [
       { label: "Marketing Teams", description: "Coordinate campaigns", icon: Globe, href: "/marketing-teams" },
       { label: "Engineering", description: "Sprint boards & backlog managers", icon: Code, href: "/engineering" },
-      { label: "Product Management", description: "Roadmaps & feature specs", icon: Laptop, href: "#" },
+      { label: "Product Management", description: "Roadmaps & feature specs", icon: Laptop, href: "/features" },
     ],
   },
   {
     label: "Learn",
     dropdownItems: [
-      { label: "Documentation", description: "Guides & setup documentation", icon: HelpCircle, href: "#" },
-      { label: "Community", description: "Join our active community", icon: Globe, href: "#" },
+      { label: "Documentation", description: "Guides & setup documentation", icon: HelpCircle, href: "/features" },
+      { label: "Community", description: "Join our active community", icon: Globe, href: "/features" },
     ],
   },
   { label: "Pricing", href: "/pricing" },
@@ -63,13 +62,16 @@ export function LandingHeader({
 }: LandingHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Helper to close mobile menu on navigation
+  const handleMobileNav = () => setMobileMenuOpen(false);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/60 backdrop-blur-xl transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
           <div className="flex items-center gap-12">
-            <Link to="/" className="flex items-center gap-3 shrink-0">
+            <Link to="/" className="flex items-center gap-3 shrink-0" onClick={handleMobileNav}>
               <Logo className="w-9 h-9 brightness-0 dark:invert" />
               <span className="font-bold text-xl tracking-tight text-foreground hidden sm:block">
                 Masar
@@ -123,7 +125,7 @@ export function LandingHeader({
                 return (
                   <Link
                     key={idx}
-                    to={item.href || "#"}
+                    to={item.href || "/"}
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-4"
                   >
                     {item.label}
@@ -176,16 +178,27 @@ export function LandingHeader({
         <div className="lg:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 pt-4 pb-6 space-y-3">
           {navItems.map((item, idx) => (
             <div key={idx} className="space-y-1.5">
-              <div className="text-sm font-bold text-foreground/80 px-2">
-                {item.label}
-              </div>
+              {item.href ? (
+                 <Link 
+                   to={item.href} 
+                   onClick={handleMobileNav}
+                   className="block text-sm font-bold text-foreground/80 px-2"
+                 >
+                   {item.label}
+                 </Link>
+              ) : (
+                <div className="text-sm font-bold text-foreground/80 px-2">
+                  {item.label}
+                </div>
+              )}
               {item.dropdownItems && (
                 <div className="pl-4 space-y-1">
                   {item.dropdownItems.map((subItem, subIdx) => (
                     <Link
                       key={subIdx}
                       to={subItem.href}
-                      className="block text-xs font-semibold text-muted-foreground hover:text-foreground py-1 px-2 rounded-md hover:bg-muted/50"
+                      onClick={handleMobileNav}
+                      className="block text-xs font-semibold text-muted-foreground hover:text-foreground py-2 px-2 rounded-md hover:bg-muted/50"
                     >
                       {subItem.label}
                     </Link>
@@ -195,13 +208,13 @@ export function LandingHeader({
             </div>
           ))}
           <div className="pt-4 border-t border-border/40 flex flex-col gap-3">
-            <Button variant="ghost" className="w-full text-left justify-start" onClick={onDemoClick}>
+            <Button variant="ghost" className="w-full text-left justify-start" onClick={() => { onDemoClick(); handleMobileNav(); }}>
               Get a Demo
             </Button>
-            <Button variant="outline" className="w-full" onClick={onLoginClick}>
+            <Button variant="outline" className="w-full" onClick={() => { onLoginClick(); handleMobileNav(); }}>
               Login
             </Button>
-            <Button className="w-full" onClick={onSignUpClick}>
+            <Button className="w-full" onClick={() => { onSignUpClick(); handleMobileNav(); }}>
               Sign Up
             </Button>
           </div>

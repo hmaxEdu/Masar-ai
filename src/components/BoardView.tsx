@@ -1,5 +1,5 @@
 // src/components/BoardView.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTasks, masarActions } from '@/hooks/use-masar';
 import { type Task, type TaskStatus } from '@/lib/supabase';
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, useDroppable } from '@dnd-kit/core';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 const COLUMNS: TaskStatus[] = ['To Do', 'Doing', 'Done', 'Blocked'];
 
 // ============================================================================
-// SORTABLE TASK CARD (Extracted to root scope to prevent re-render re-mounts)
+// SORTABLE TASK CARD 
 // ============================================================================
 function SortableTaskCard({ task, onClick }: { task: Task; onClick: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
@@ -51,7 +51,7 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick: (id: string)
         </div>
       </div>
       <div className="flex items-center justify-between mt-0.5">
-        <Badge variant="outline" className="text-[9px] px-1 py-0 rounded-xs">P{task.priority}</Badge>
+        <Badge variant="outline" className="text-[10px] px-1 py-0 rounded-xs">P{task.priority}</Badge>
         {task.status === 'Blocked' && <AlertCircle className="h-3 w-3 text-destructive animate-pulse" />}
       </div>
     </div>
@@ -59,33 +59,38 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick: (id: string)
 }
 
 // ============================================================================
-// COLUMN DROP AREA (Extracted to root scope to prevent re-render re-mounts)
+// COLUMN DROP AREA 
 // ============================================================================
 function ColumnDropArea({ id, tasks, onTaskClick, projectId }: { id: TaskStatus, tasks: Task[], onTaskClick: (id: string) => void, projectId: string }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
+  const saveTask = useCallback(async (title: string) => {
+    if (!title.trim()) {
+      setIsAdding(false);
+      return;
+    }
+    try {
+      await masarActions.addTask({
+        project_id: projectId,
+        title: title,
+        description: '',
+        started_at: new Date().toISOString(),
+        priority: 3,
+        status: id
+      });
+      setNewTaskTitle("");
+      setIsAdding(false);
+      toast.success("Task added successfully");
+    } catch (err) {
+      toast.error("Failed to add task");
+    }
+  }, [projectId, id]);
+
   const handleQuickAdd = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      if (!newTaskTitle.trim()) {
-        setIsAdding(false);
-        return;
-      }
-      try {
-        await masarActions.addTask({
-          project_id: projectId,
-          title: newTaskTitle,
-          description: '',
-          started_at: new Date().toISOString(),
-          priority: 3,
-          status: id
-        });
-        setNewTaskTitle("");
-        toast.success("Task added successfully");
-      } catch (err) {
-        toast.error("Failed to add task");
-      }
+      saveTask(newTaskTitle);
     } else if (e.key === 'Escape') {
       setIsAdding(false);
       setNewTaskTitle("");
@@ -95,8 +100,8 @@ function ColumnDropArea({ id, tasks, onTaskClick, projectId }: { id: TaskStatus,
   return (
     <div className={`flex flex-col w-[260px] min-w-[240px] h-full rounded-lg border overflow-hidden shrink-0 transition-all ${isOver ? 'bg-primary/5 border-primary/25 shadow-xs' : 'bg-muted/10 border-border/45'}`}>
       <div className="p-2.5 border-b border-border/30 bg-muted/20 flex items-center justify-between shrink-0">
-        <h3 className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground/60">{id}</h3>
-        <span className="text-[10px] font-bold text-muted-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-full">{tasks.length}</span>
+        <h3 className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground/60">{id}</h3>
+        <span className="text-[11px] font-bold text-muted-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-full">{tasks.length}</span>
       </div>
       
       <div ref={setNodeRef} className="flex-1 p-2.5 overflow-y-auto">
@@ -106,7 +111,7 @@ function ColumnDropArea({ id, tasks, onTaskClick, projectId }: { id: TaskStatus,
               <SortableTaskCard key={task.id} task={task} onClick={onTaskClick} />
             ))}
             
-            {/* INLINE QUICK ADD (High-Density) */}
+            {/* FIX: Improved UX onBlur handling saves work instead of deleting */}
             {isAdding ? (
               <div className="p-1.5 bg-card rounded-md border border-primary/40 shadow-2xs flex items-center mt-1">
                 <Input 
@@ -115,7 +120,10 @@ function ColumnDropArea({ id, tasks, onTaskClick, projectId }: { id: TaskStatus,
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   onKeyDown={handleQuickAdd}
-                  onBlur={() => { setIsAdding(false); setNewTaskTitle(""); }}
+                  onBlur={() => {
+                     if (newTaskTitle.trim()) saveTask(newTaskTitle);
+                     else setIsAdding(false);
+                  }}
                   className="h-7 text-xs border-none bg-transparent shadow-none focus-visible:ring-0 px-1 py-0"
                 />
               </div>
@@ -134,9 +142,6 @@ function ColumnDropArea({ id, tasks, onTaskClick, projectId }: { id: TaskStatus,
   );
 }
 
-// ============================================================================
-// MAIN BOARD VIEW COMPONENT
-// ============================================================================
 export default function BoardView({ projectId, onTaskClick }: { projectId: string; onTaskClick: (taskId: string) => void }) {
   const { tasks, setTasks } = useTasks(projectId);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -182,7 +187,6 @@ export default function BoardView({ projectId, onTaskClick }: { projectId: strin
       }
       
       const oldStatus = activeTask.status;
-
       setTasks(prevTasks => prevTasks.map(t => t.id === activeId ? { ...t, status: newStatus } : t));
 
       try {
@@ -232,7 +236,7 @@ export default function BoardView({ projectId, onTaskClick }: { projectId: strin
           {activeTask ? (
             <div className="p-2.5 bg-card rounded-md shadow-md border border-primary rotate-1.5 scale-[1.02] cursor-grabbing opacity-90 z-50">
               <h4 className="text-xs font-semibold leading-normal text-foreground/90">{activeTask.title}</h4>
-              <Badge variant="outline" className="mt-1.5 text-[9px] px-1 py-0">P{activeTask.priority}</Badge>
+              <Badge variant="outline" className="mt-1.5 text-[10px] px-1 py-0">P{activeTask.priority}</Badge>
             </div>
           ) : null}
         </DragOverlay>

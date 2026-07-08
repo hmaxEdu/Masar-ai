@@ -39,9 +39,8 @@ const item: Variants = {
 };
 
 // ============================================================================
-// DYNAMIC VISUAL 1: CASCADING DEPENDENCY PIPELINE (High-Density)
+// DYNAMIC VISUAL 1: CASCADING DEPENDENCY PIPELINE 
 // ============================================================================
-// Helper components extracted outside of the render function
 const NodeCard = ({ title, status, icon: Icon }: { title: string; status: string; icon: any }) => {
   const isError = status === "error";
   const isDoing = status === "doing";
@@ -49,32 +48,32 @@ const NodeCard = ({ title, status, icon: Icon }: { title: string; status: string
   return (
     <motion.div 
       layout
-      className={`relative w-full sm:w-36 p-3 rounded-lg border shadow-2xs flex flex-col gap-2 transition-colors duration-500 z-10 bg-card ${
+      className={`relative w-full sm:w-36 p-3.5 rounded-lg border shadow-2xs flex flex-col gap-2.5 transition-colors duration-500 z-10 bg-card ${
         isError ? "border-destructive/60 shadow-destructive/10" : 
         isDoing ? "border-primary/40 shadow-primary/5" : "border-border/60 shadow-black/5"
       }`}
     >
       <div className="flex items-center justify-between">
-        <div className={`h-7 w-7 rounded-md flex items-center justify-center transition-colors duration-500 ${
+        <div className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors duration-500 ${
           isError ? "bg-destructive/10 text-destructive" : 
           isDoing ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
         }`}>
-          <Icon className="w-3.5 h-3.5" />
+          <Icon className="w-4 h-4" />
         </div>
-        <div className="flex gap-0.5">
-          <div className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-          <div className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+        <div className="flex gap-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
         </div>
       </div>
       <div>
         <h4 className="text-xs font-bold text-foreground truncate">{title}</h4>
-        <div className="flex items-center gap-1 mt-1">
+        <div className="flex items-center gap-1 mt-1.5">
           {isError ? (
-            <Badge variant="destructive" className="text-[8px] px-1 py-0 rounded-sm font-bold tracking-wider uppercase">Blocked</Badge>
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 rounded-sm font-bold tracking-wider uppercase">Blocked</Badge>
           ) : isDoing ? (
-            <Badge variant="outline" className="text-[8px] px-1 py-0 rounded-sm font-bold tracking-wider uppercase border-primary/45 text-primary">Doing</Badge>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm font-bold tracking-wider uppercase border-primary/45 text-primary">Doing</Badge>
           ) : (
-            <Badge variant="secondary" className="text-[8px] px-1 py-0 rounded-sm font-bold tracking-wider uppercase text-muted-foreground/85">Pending</Badge>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-sm font-bold tracking-wider uppercase text-muted-foreground/85">Pending</Badge>
           )}
         </div>
       </div>
@@ -85,7 +84,7 @@ const NodeCard = ({ title, status, icon: Icon }: { title: string; status: string
 const PipelinePath = ({ status }: { status: string }) => {
   const isError = status === "error";
   return (
-    <div className="relative flex-1 h-8 sm:h-1 sm:w-12 mx-auto sm:mx-0 bg-muted rounded-full overflow-hidden">
+    <div className="relative flex-1 h-8 sm:h-1.5 sm:w-12 mx-auto sm:mx-0 bg-muted rounded-full overflow-hidden">
       <motion.div 
         className={`absolute inset-0 ${isError ? 'bg-destructive' : 'bg-primary/30'}`}
         initial={{ x: "-100%" }}
@@ -114,7 +113,7 @@ function DependencyPipelineVisual() {
 
   return (
     <div className="relative w-full h-full min-h-[300px] flex flex-col sm:flex-row items-center justify-center p-4 bg-muted/20 border border-border/40 rounded-lg overflow-hidden">
-      <div className="flex flex-col sm:flex-row items-center w-full max-w-xl relative z-10 gap-1.5 sm:gap-0">
+      <div className="flex flex-col sm:flex-row items-center w-full max-w-xl relative z-10 gap-2.5 sm:gap-0">
         <NodeCard title="DB Migrations" status={n1Status} icon={Database} />
         <PipelinePath status={p1Status} />
         <NodeCard title="Auth APIs" status={n2Status} icon={TerminalSquare} />
@@ -128,9 +127,9 @@ function DependencyPipelineVisual() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-destructive/10 border border-destructive/30 text-destructive text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md backdrop-blur-md"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-destructive/10 border border-destructive/30 text-destructive text-[11px] font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-md backdrop-blur-md"
           >
-            <AlertCircle className="w-3.5 h-3.5" /> Pipeline chain halted
+            <AlertCircle className="w-4 h-4" /> Pipeline chain halted
           </motion.div>
         )}
       </AnimatePresence>
@@ -138,7 +137,7 @@ function DependencyPipelineVisual() {
   );
 } 
 // ============================================================================
-// DYNAMIC VISUAL 2: AI AGENT GENERATING TASKS (High-Density)
+// DYNAMIC VISUAL 2: AI AGENT GENERATING TASKS 
 // ============================================================================
 function AIGeneratorVisual() {
   const [step, setStep] = useState(0);
@@ -151,17 +150,17 @@ function AIGeneratorVisual() {
   }, []);
 
   return (
-    <div className="relative w-full h-full min-h-[300px] flex flex-col p-4 bg-muted/20 border border-border/40 rounded-lg overflow-hidden justify-center">
+    <div className="relative w-full h-full min-h-[320px] flex flex-col p-4 bg-muted/20 border border-border/40 rounded-lg overflow-hidden justify-center">
       <div className="absolute inset-0 bg-grid-white/[0.01] bg-[size:16px_16px] pointer-events-none" />
 
       {/* Mock Chat Window */}
-      <div className="w-full max-w-xs mx-auto flex flex-col justify-end gap-3 relative z-10">
+      <div className="w-full max-w-sm mx-auto flex flex-col justify-end gap-4 relative z-10">
         
         {/* User Prompt */}
         <motion.div 
           initial={{ opacity: 0, x: 10, scale: 0.95 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
-          className="self-end bg-primary text-primary-foreground text-xs font-medium px-3 py-2 rounded-lg rounded-br-sm shadow-sm max-w-[85%]"
+          className="self-end bg-primary text-primary-foreground text-sm font-medium px-3 py-2 rounded-lg rounded-br-sm shadow-sm max-w-[85%]"
         >
           Break down auth module into tasks.
         </motion.div>
@@ -172,14 +171,14 @@ function AIGeneratorVisual() {
             <motion.div 
               initial={{ opacity: 0, x: -10, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              className="self-start bg-card border border-border/50 text-foreground text-xs font-medium p-3 rounded-lg rounded-bl-sm shadow-2xs max-w-[90%] flex flex-col gap-2.5"
+              className="self-start bg-card border border-border/50 text-foreground text-sm font-medium p-4 rounded-lg rounded-bl-sm shadow-2xs w-[90%] flex flex-col gap-3"
             >
-              <div className="flex items-center gap-1.5 text-primary font-bold text-[10px] uppercase tracking-wider">
-                <Bot className="w-3 h-3" /> Masar Agent
+              <div className="flex items-center gap-1.5 text-primary font-bold text-xs uppercase tracking-wider">
+                <Bot className="w-4 h-4" /> Masar Agent
               </div>
-              <p className="text-muted-foreground text-xs leading-normal">
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 {step === 1 ? (
-                  <span className="flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Analyzing requirements...</span>
+                  <span className="flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing requirements...</span>
                 ) : (
                   "Generated authentication roadmap tasks directly on your board:"
                 )}
@@ -187,7 +186,7 @@ function AIGeneratorVisual() {
 
               {/* Generated Task Cards popping in */}
               {step >= 2 && (
-                <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2">
+                <div className="flex flex-col gap-2 border-t border-border/30 pt-3">
                   {[
                     { title: "Implement JWT Strategy" },
                     { title: "Create Login UI Component" },
@@ -199,13 +198,13 @@ function AIGeneratorVisual() {
                           initial={{ opacity: 0, height: 0, scale: 0.9 }}
                           animate={{ opacity: 1, height: "auto", scale: 1 }}
                           transition={{ type: "spring", bounce: 0.2 }}
-                          className="bg-background border border-border/40 rounded p-1.5 flex items-center justify-between gap-3"
+                          className="bg-background border border-border/40 rounded p-2 flex items-center justify-between gap-3"
                         >
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <CheckCircle2 className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-                            <span className="text-[10px] font-bold truncate">{task.title}</span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <CheckCircle2 className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                            <span className="text-xs font-bold truncate">{task.title}</span>
                           </div>
-                          <Badge variant="secondary" className="text-[8px] px-1 py-0 rounded-sm shrink-0">To Do</Badge>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-sm shrink-0">To Do</Badge>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -219,7 +218,6 @@ function AIGeneratorVisual() {
     </div>
   );
 }
-
 
 // ============================================================================
 // MAIN PAGE COMPONENT
@@ -248,8 +246,8 @@ export default function FeaturesPage() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="flex flex-col items-center"
           >
-            <Badge variant="outline" className="px-3 py-1 mb-4 text-[10px] tracking-widest uppercase bg-primary/5 text-primary border-primary/20 backdrop-blur-md rounded-md">
-              <Sparkles className="w-3 h-3 mr-1.5" /> Platform Capabilities
+            <Badge variant="outline" className="px-3 py-1 mb-4 text-xs tracking-widest uppercase bg-primary/5 text-primary border-primary/20 backdrop-blur-md rounded-md">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Platform Capabilities
             </Badge>
             <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground mb-4 leading-tight">
               Features engineered for <br className="hidden md:block" />
@@ -272,59 +270,56 @@ export default function FeaturesPage() {
           viewport={{ once: true, margin: "-100px" }}
           className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[110px] sm:auto-rows-[140px] mb-20 sm:mb-24"
         >
-          {/* BENTO 1: AI Agent (Updated Inline Header) */}
+          {/* BENTO 1: AI Agent */}
           <motion.div variants={item} className="md:col-span-2 md:row-span-2 group relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-card/85 to-background/40 backdrop-blur-md hover:border-primary/30 transition-colors flex flex-col justify-between">
             <div className="p-5 pb-0">
-              {/* Inline Icon & Title */}
               <div className="flex items-center gap-2.5 mb-2.5">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
                   <Bot className="h-4.5 w-4.5" />
                 </div>
                 <h3 className="text-base font-bold tracking-tight text-foreground/95">Streaming AI Agents</h3>
               </div>
-              <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-xs">
+              <p className="text-sm text-muted-foreground/80 leading-relaxed max-w-xs">
                 Interact with context-aware AI that autonomously plans tasks, checks bottlenecks, and modifies database entities inline.
               </p>
             </div>
 
-            {/* Tightened Visual Preview */}
             <div className="relative flex-1 w-[90%] mx-auto mt-3 bg-background/90 border border-border/40 shadow-xl rounded-t-md flex flex-col overflow-hidden">
               <div className="h-8 border-b border-border/40 bg-muted/30 flex items-center px-3 gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <div className="h-1.5 w-14 bg-muted-foreground/20 rounded-xs" />
+                <div className="h-2 w-16 bg-muted-foreground/20 rounded-xs" />
               </div>
-              <div className="p-3 space-y-3">
+              <div className="p-4 space-y-3">
                  <div className="flex gap-2">
-                   <div className="w-5 h-5 rounded bg-muted shrink-0" />
-                   <div className="space-y-1.5 flex-1 pt-0.5">
-                     <div className="h-1.5 w-2/3 bg-muted rounded-xs" />
-                     <div className="h-1.5 w-1/3 bg-muted rounded-xs" />
+                   <div className="w-6 h-6 rounded bg-muted shrink-0" />
+                   <div className="space-y-1.5 flex-1 pt-1">
+                     <div className="h-2 w-2/3 bg-muted rounded-xs" />
+                     <div className="h-2 w-1/3 bg-muted rounded-xs" />
                    </div>
                  </div>
                  <div className="flex gap-2">
-                   <div className="w-5 h-5 rounded bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                     <Bot className="w-3 h-3" />
+                   <div className="w-6 h-6 rounded bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                     <Bot className="w-3.5 h-3.5" />
                    </div>
-                   <div className="space-y-1.5 flex-1 bg-muted/20 border border-border/40 p-2.5 rounded">
-                     <div className="h-1.5 w-full bg-primary/30 rounded-xs" />
-                     <div className="h-1.5 w-5/6 bg-primary/15 rounded-xs" />
+                   <div className="space-y-1.5 flex-1 bg-muted/20 border border-border/40 p-3 rounded">
+                     <div className="h-2 w-full bg-primary/30 rounded-xs" />
+                     <div className="h-2 w-5/6 bg-primary/15 rounded-xs" />
                    </div>
                  </div>
               </div>
             </div>
           </motion.div>
 
-          {/* BENTO 2: Kanban / Multi-View (Updated Inline Header) */}
+          {/* BENTO 2: Kanban / Multi-View */}
           <motion.div variants={item} className="md:col-span-2 md:row-span-1 group relative overflow-hidden rounded-lg border border-border/40 bg-gradient-to-br from-card/85 to-background/40 backdrop-blur-md hover:border-blue-500/30 transition-colors flex flex-col sm:flex-row">
             <div className="w-full sm:w-1/2 p-5 flex flex-col justify-center">
-              {/* Inline Icon & Title */}
               <div className="flex items-center gap-2.5 mb-2.5">
                 <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20 shrink-0">
                   <LayoutDashboard className="h-4 w-4" />
                 </div>
                 <h3 className="text-base font-bold tracking-tight text-foreground/95">Multi-View Workspace</h3>
               </div>
-              <p className="text-xs text-muted-foreground/80 leading-normal">
+              <p className="text-sm text-muted-foreground/80 leading-normal">
                 Toggle seamlessly between boards, nested tree-lists, and analytics without losing filter states.
               </p>
             </div>
@@ -377,17 +372,17 @@ export default function FeaturesPage() {
             className="space-y-4 order-2 lg:order-1"
           >
             <div className="inline-flex items-center justify-center p-2.5 bg-primary/10 rounded-md text-primary mb-1 border border-primary/20">
-              <Network className="h-4.5 w-4.5" />
+              <Network className="h-5 w-5" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-tight">
               Symmetric Dependency Protection
             </h2>
-            <p className="text-sm text-muted-foreground/85 leading-relaxed font-normal">
+            <p className="text-sm sm:text-base text-muted-foreground/85 leading-relaxed font-normal">
               Stop guessing what is stalling deliveries. Masar enforces graph traversal limits to prevent cyclic dependency errors and automatically propagates blocker statuses.
             </p>
             <ul className="space-y-2 pt-1.5">
               {['Auto-flag downstream tasks', 'Block editing until prerequisites clear', 'Traverse pipelines dynamically'].map((feat, i) => (
-                <li key={i} className="flex items-center gap-2 font-medium text-foreground/80 text-xs">
+                <li key={i} className="flex items-center gap-2 font-medium text-foreground/80 text-sm">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> {feat}
                 </li>
               ))}
@@ -422,21 +417,21 @@ export default function FeaturesPage() {
             className="space-y-4"
           >
             <div className="inline-flex items-center justify-center p-2.5 bg-blue-500/10 rounded-md text-blue-500 mb-1 border border-blue-500/20">
-              <Bot className="h-4.5 w-4.5" />
+              <Bot className="h-5 w-5" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground leading-tight">
               Actionable AI Workspaces
             </h2>
-            <p className="text-sm text-muted-foreground/85 leading-relaxed font-normal">
+            <p className="text-sm sm:text-base text-muted-foreground/85 leading-relaxed font-normal">
               Masar's AI agent does not just chat; it executes. Streamed NDJSON parsers enable the model to make structured board updates—changing priorities, assigning members, and breaking down subtasks mid-generation.
             </p>
-            <Button variant="outline" className="mt-2 text-xs font-semibold h-9 rounded-md" onClick={() => navigate("/pricing")}>
-              View Technical Specs <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            <Button variant="outline" className="mt-2 text-sm font-semibold h-10 rounded-md" onClick={() => navigate("/pricing")}>
+              View Technical Specs <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </motion.div>
         </section>
 
-        {/* --- CTA SECTION (Clean, Minimalist Frame) --- */}
+        {/* --- CTA SECTION --- */}
         <motion.section
           initial={{ opacity: 0, scale: 0.98, y: 10 }}
           whileInView={{ opacity: 1, scale: 1, y: 0 }}
@@ -447,14 +442,14 @@ export default function FeaturesPage() {
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Ready to upgrade your workflow?
             </h2>
-            <p className="text-muted-foreground text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
               Join engineers and product managers building the future with Masar. Setup takes less than 30 seconds.
             </p>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button size="sm" className="h-9 px-4 text-xs font-semibold w-full sm:w-auto rounded-md shadow-sm" onClick={() => navigate("/login")}>
+              <Button size="sm" className="h-10 px-5 text-sm font-semibold w-full sm:w-auto rounded-md shadow-sm" onClick={() => navigate("/login")}>
                 Start building for free
               </Button>
-              <Button size="sm" variant="secondary" className="h-9 px-4 text-xs font-semibold w-full sm:w-auto rounded-md" onClick={() => navigate("/pricing")}>
+              <Button size="sm" variant="secondary" className="h-10 px-5 text-sm font-semibold w-full sm:w-auto rounded-md" onClick={() => navigate("/pricing")}>
                 Compare plans
               </Button>
             </div>

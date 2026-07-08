@@ -91,7 +91,6 @@ const faqs = [
   },
 ];
 
-// Helper Chevron Icon Component (Declared at module scope)
 function ChevronDownIcon({ className, ...props }: any) {
   return (
     <svg
@@ -124,7 +123,6 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen text-foreground bg-background overflow-x-hidden selection:bg-primary/20 font-sans relative" dir="ltr">
       
-      {/* Subtle Background */}
       <Suspense fallback={null}>
         <WebGLBackground />
       </Suspense>
@@ -141,13 +139,12 @@ export default function PricingPage() {
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
             Simple, transparent pricing.
           </h1>
-          <p className="text-muted-foreground text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+          <p className="text-muted-foreground text-sm max-w-xl mx-auto leading-relaxed">
             Deploy Masar across your teams. No hidden overheads, no credit card required to start organizing with AI.
           </p>
 
-          {/* Compact Billing Switcher */}
           <div className="flex items-center justify-center gap-2.5 pt-4">
-            <span className={`text-xs font-semibold transition-colors ${!isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
+            <span className={`text-sm font-semibold transition-colors ${!isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
               Monthly
             </span>
             <button
@@ -162,9 +159,9 @@ export default function PricingPage() {
                 animate={{ x: isAnnual ? 20 : 0 }}
               />
             </button>
-            <span className={`text-xs font-semibold transition-colors flex items-center gap-1 ${isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
+            <span className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
               Annually 
-              <span className="text-[9px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                 Save 20%
               </span>
             </span>
@@ -189,53 +186,48 @@ export default function PricingPage() {
                     : "border-border/60 hover:border-border hover:bg-card/65"
                 }`}
               >
-                {/* Most Popular Badge */}
                 {plan.badge && (
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[8px] uppercase font-bold tracking-widest px-3 py-0.5 rounded-full shadow-md shadow-primary/20">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] uppercase font-bold tracking-widest px-3 py-0.5 rounded-full shadow-md shadow-primary/20">
                     {plan.badge}
                   </div>
                 )}
 
                 <div className="space-y-5">
-                  {/* Plan Name & Desc */}
                   <div>
-                    <h3 className="text-base font-bold tracking-tight text-foreground">{plan.name}</h3>
-                    <p className="text-xs text-muted-foreground/80 mt-1 leading-normal min-h-[35px]">
+                    <h3 className="text-lg font-bold tracking-tight text-foreground">{plan.name}</h3>
+                    <p className="text-sm text-muted-foreground/80 mt-1 leading-normal min-h-[40px]">
                       {plan.description}
                     </p>
                   </div>
 
-                  {/* Price */}
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-foreground">
+                    <span className="text-4xl font-black text-foreground">
                       ${price}
                     </span>
-                    <span className="text-[11px] font-semibold text-muted-foreground">
+                    <span className="text-xs font-semibold text-muted-foreground">
                       / month
                     </span>
                   </div>
 
-                  {/* CTA Button */}
                   <Button
                     onClick={() => handleCta(plan)}
                     variant={plan.ctaVariant}
-                    className={`w-full h-9 text-xs font-bold rounded-md transition-transform active:scale-[0.98] ${
+                    className={`w-full h-10 text-sm font-bold rounded-md transition-transform active:scale-[0.98] ${
                       isPro ? "shadow-md shadow-primary/20" : ""
                     }`}
                   >
                     {plan.ctaText}
-                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Button>
 
-                  {/* Feature Lists */}
-                  <div className="space-y-2.5 pt-3.5 border-t border-border/40">
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground/60">
+                  <div className="space-y-3 pt-4 border-t border-border/40">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">
                       What's Included
                     </span>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2.5">
                       {plan.features.map((feature, fIdx) => (
-                        <li key={fIdx} className="flex items-start gap-2 text-[11px] font-medium">
-                          <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                        <li key={fIdx} className="flex items-start gap-2.5 text-sm font-medium">
+                          <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                           <span className="text-foreground/80 leading-snug">{feature}</span>
                         </li>
                       ))}
@@ -248,63 +240,66 @@ export default function PricingPage() {
         </section>
 
         {/* --- PLAN COMPARISON MATRIX --- */}
-        <section className="mb-20 hidden md:block">
+        {/* FIX: Removed 'hidden md:block', added overflow-x-auto for mobile users */}
+        <section className="mb-20">
           <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60 text-center mb-8">Compare All Features</h2>
-          <div className="border border-border/40 rounded-xl overflow-hidden bg-card/25 backdrop-blur-md">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border/30 bg-muted/15">
-                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Feature</th>
-                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Hobby</th>
-                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Pro</th>
-                  <th className="p-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-bold">Enterprise</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/20 text-xs font-medium">
-                <tr>
-                  <td className="p-3 text-foreground/90">Active Workspaces</td>
-                  <td className="p-3 text-muted-foreground">1</td>
-                  <td className="p-3 text-foreground">Unlimited</td>
-                  <td className="p-3 text-foreground">Unlimited</td>
-                </tr>
-                <tr>
-                  <td className="p-3 text-foreground/90">Collaborative Members</td>
-                  <td className="p-3 text-muted-foreground">Solo</td>
-                  <td className="p-3 text-foreground">Unlimited</td>
-                  <td className="p-3 text-foreground">Unlimited</td>
-                </tr>
-                <tr>
-                  <td className="p-3 text-foreground/90">AI Task Breakdown</td>
-                  <td className="p-3 text-muted-foreground">100 / month</td>
-                  <td className="p-3 text-foreground">Unlimited</td>
-                  <td className="p-3 text-foreground">Unlimited</td>
-                </tr>
-                <tr>
-                  <td className="p-3 text-foreground/90">Dependency Graphs</td>
-                  <td className="p-3 text-muted-foreground">Standard</td>
-                  <td className="p-3 text-foreground">Symmetrical</td>
-                  <td className="p-3 text-foreground">Symmetrical</td>
-                </tr>
-                <tr>
-                  <td className="p-3 text-foreground/90">Custom Model integration</td>
-                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
-                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
-                  <td className="p-3 text-primary font-bold">Bring-Your-Own-Key</td>
-                </tr>
-                <tr>
-                  <td className="p-3 text-foreground/90">SSO / SAML Logins</td>
-                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
-                  <td className="p-3 text-muted-foreground"><Minus className="h-3.5 w-3.5 text-muted-foreground/20" /></td>
-                  <td className="p-3 text-foreground/90">Yes</td>
-                </tr>
-                <tr>
-                  <td className="p-3 text-foreground/90">Support SLA</td>
-                  <td className="p-3 text-muted-foreground">Standard</td>
-                  <td className="p-3 text-foreground">Priority (24h)</td>
-                  <td className="p-3 text-primary font-bold">Dedicated Manager (4h)</td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="w-full overflow-x-auto pb-4">
+            <div className="border border-border/40 rounded-xl overflow-hidden bg-card/25 backdrop-blur-md min-w-[700px]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border/30 bg-muted/15">
+                    <th className="p-4 text-[11px] uppercase tracking-wider text-muted-foreground/60 font-bold w-1/4">Feature</th>
+                    <th className="p-4 text-[11px] uppercase tracking-wider text-muted-foreground/60 font-bold w-1/4">Hobby</th>
+                    <th className="p-4 text-[11px] uppercase tracking-wider text-muted-foreground/60 font-bold w-1/4">Pro</th>
+                    <th className="p-4 text-[11px] uppercase tracking-wider text-muted-foreground/60 font-bold w-1/4">Enterprise</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/20 text-sm font-medium">
+                  <tr>
+                    <td className="p-4 text-foreground/90">Active Workspaces</td>
+                    <td className="p-4 text-muted-foreground">1</td>
+                    <td className="p-4 text-foreground">Unlimited</td>
+                    <td className="p-4 text-foreground">Unlimited</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 text-foreground/90">Collaborative Members</td>
+                    <td className="p-4 text-muted-foreground">Solo</td>
+                    <td className="p-4 text-foreground">Unlimited</td>
+                    <td className="p-4 text-foreground">Unlimited</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 text-foreground/90">AI Task Breakdown</td>
+                    <td className="p-4 text-muted-foreground">100 / month</td>
+                    <td className="p-4 text-foreground">Unlimited</td>
+                    <td className="p-4 text-foreground">Unlimited</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 text-foreground/90">Dependency Graphs</td>
+                    <td className="p-4 text-muted-foreground">Standard</td>
+                    <td className="p-4 text-foreground">Symmetrical</td>
+                    <td className="p-4 text-foreground">Symmetrical</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 text-foreground/90">Custom Model integration</td>
+                    <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
+                    <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
+                    <td className="p-4 text-primary font-bold">Bring-Your-Own-Key</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 text-foreground/90">SSO / SAML Logins</td>
+                    <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
+                    <td className="p-4 text-muted-foreground"><Minus className="h-4 w-4 text-muted-foreground/30" /></td>
+                    <td className="p-4 text-foreground/90">Yes</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 text-foreground/90">Support SLA</td>
+                    <td className="p-4 text-muted-foreground">Standard</td>
+                    <td className="p-4 text-foreground">Priority (24h)</td>
+                    <td className="p-4 text-primary font-bold">Dedicated Manager (4h)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -320,7 +315,7 @@ export default function PricingPage() {
                 <div key={idx} className="border border-border/40 rounded-lg overflow-hidden bg-card/15 backdrop-blur-md">
                   <button
                     onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between p-3.5 text-left font-bold text-xs sm:text-sm focus:outline-none transition-colors hover:bg-muted/15"
+                    className="w-full flex items-center justify-between p-4 text-left font-bold text-sm focus:outline-none transition-colors hover:bg-muted/15"
                   >
                     <span>{faq.question}</span>
                     <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -336,7 +331,7 @@ export default function PricingPage() {
                         transition={{ duration: 0.25 }}
                         className="overflow-hidden border-t border-border/30"
                       >
-                        <p className="p-3.5 text-[11px] sm:text-xs text-muted-foreground/85 leading-relaxed font-normal">
+                        <p className="p-4 text-sm text-muted-foreground/85 leading-relaxed font-normal">
                           {faq.answer}
                         </p>
                       </motion.div>
